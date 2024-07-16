@@ -1,4 +1,4 @@
-// Package for Raspberry Pi board
+// Package rpi implements raspberry pi board
 package rpi
 
 import "go.viam.com/rdk/resource"
