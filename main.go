@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"viamrpi/rpi"
+	"viamrpi/rpi-servo"
 
 	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/module"
 	"go.viam.com/utils"
@@ -21,11 +23,13 @@ func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) err
 		return err
 	}
 
-	err = module.AddModelFromRegistry(ctx, board.API, rpi.Model)
-	if err != nil {
+	if err = module.AddModelFromRegistry(ctx, board.API, rpi.Model); err != nil {
 		return err
 	}
-	// Conditionally add pi-servo module
+
+	if err = module.AddModelFromRegistry(ctx, servo.API, rpiservo.Model); err != nil {
+		return err
+	}
 
 	err = module.Start(ctx)
 	defer module.Close(ctx)
