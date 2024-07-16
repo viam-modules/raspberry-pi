@@ -1,0 +1,22 @@
+{
+    "module_id": "viam:raspberry-pi",
+    "visibility": "private",
+    "url": "https://github.com/viam-modules/raspberry-pi",
+    "description": "Viam Go module for raspberry pi board and servo",
+    "models": [
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi"
+      },
+      {
+        "api": "rdk:component:servo",
+        "model": "viam:raspberry-pi:pi-servo"
+      }
+    ],
+    "build": {
+      "build": "make module.tar.gz",
+      "path": "module.tar.gz",
+      "arch" : ["linux/arm64"]
+    },
+    "entrypoint": "bin/viamrpi"
+}
