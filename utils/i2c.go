@@ -1,1 +1,1 @@
-package rpii2c
+package rpiutils
