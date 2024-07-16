@@ -1,4 +1,4 @@
-// Implementation servo component on Raspberry Pi
+// Package rpiservo implements pi servo
 package rpiservo
 
 import "go.viam.com/rdk/resource"
