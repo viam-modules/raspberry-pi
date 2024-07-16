@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"viamrpi/rpi"
+	"viamrpi/rpi-servo"
 
+	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/module"
 	"go.viam.com/utils"
@@ -13,16 +17,22 @@ func main() {
 }
 
 func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) error {
-	rpi, err := module.NewModuleFromArgs(ctx, logger)
+	module, err := module.NewModuleFromArgs(ctx, logger)
 
 	if err != nil {
 		return err
 	}
 
-	// rpi.AddModelFromRegistry(ctx, board.API, Model)
+	if err = module.AddModelFromRegistry(ctx, board.API, rpi.Model); err != nil {
+		return err
+	}
 
-	err = rpi.Start(ctx)
-	defer rpi.Close(ctx)
+	if err = module.AddModelFromRegistry(ctx, servo.API, rpiservo.Model); err != nil {
+		return err
+	}
+
+	err = module.Start(ctx)
+	defer module.Close(ctx)
 	if err != nil {
 		return err
 	}
