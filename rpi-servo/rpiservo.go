@@ -1,5 +1,5 @@
 // Implementation servo component on Raspberry Pi
-package rpi-servo
+package rpiservo
 
 import "go.viam.com/rdk/resource"
 
