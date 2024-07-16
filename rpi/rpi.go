@@ -12,6 +12,36 @@ package rpi
 		  Details on this can be found here -> https://abyz.me.uk/rpi/pigpio/pdif2.html#set_PWM_frequency
 */
 
-import "go.viam.com/rdk/resource"
+import (
+	"context"
+
+	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/components/board/mcp3008helper"
+	"go.viam.com/rdk/logging"
+	"go.viam.com/rdk/resource"
+)
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+
+// A Config describes the configuration of a board and all of its connected parts.
+type Config struct {
+	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
+	DigitalInterrupts []DigitalInterruptConfig            `json:"digital_interrupts,omitempty"`
+}
+
+// init registers a pi board based on pigpio.
+func init() {
+	resource.RegisterComponent(
+		board.API,
+		Model,
+		resource.Registration[board.Board, *Config]{
+			Constructor: func(
+				ctx context.Context,
+				_ resource.Dependencies,
+				conf resource.Config,
+				logger logging.Logger,
+			) (board.Board, error) {
+				return newPigpio(ctx, conf.ResourceName(), conf, logger)
+			},
+		})
+}
