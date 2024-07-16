@@ -25,6 +25,7 @@ func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) err
 	if err != nil {
 		return err
 	}
+	// Conditionally add pi-servo module
 
 	err = module.Start(ctx)
 	defer module.Close(ctx)
