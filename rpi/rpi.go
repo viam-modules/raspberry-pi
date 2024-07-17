@@ -325,7 +325,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 		} else {
 			// This digital interrupt is no longer used.
 			if result := C.teardownInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
-				return picommon.ConvertErrorCodeToMessage(int(result), "error")
+				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 			}
 		}
 	}
