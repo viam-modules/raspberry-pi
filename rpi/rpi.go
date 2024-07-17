@@ -12,11 +12,21 @@ package rpi
 		  Details on this can be found here -> https://abyz.me.uk/rpi/pigpio/pdif2.html#set_PWM_frequency
 */
 
+// #include <stdlib.h>
+// #include <pigpiod_if2.h>
+// #include "pi.h"
+// #cgo LDFLAGS: -lpigpiod_if2
+import "C"
+
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
+	rpiutils "viamrpi/utils"
 
+	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
@@ -73,8 +83,8 @@ type piPigpio struct {
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
-	interrupts   map[string]ReconfigurableDigitalInterrupt
-	interruptsHW map[uint]ReconfigurableDigitalInterrupt
+	interrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+	interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
 	logger       logging.Logger
 	isClosed     bool
 
@@ -125,4 +135,202 @@ func newPigpio(
 	}
 
 	return piInstance, nil
+}
+
+func (pi *piPigpio) Reconfigure(
+	ctx context.Context,
+	_ resource.Dependencies,
+	conf resource.Config,
+) error {
+	cfg, err := resource.NativeConfig[*Config](conf)
+	if err != nil {
+		return err
+	}
+
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+
+	if err := pi.reconfigureAnalogReaders(ctx, cfg); err != nil {
+		return err
+	}
+
+	// This is the only one that actually uses ctx, but we pass it to all previous helpers, too, to
+	// keep the interface consistent.
+	if err := pi.reconfigureInterrupts(ctx, cfg); err != nil {
+		return err
+	}
+
+	instanceMu.Lock()
+	defer instanceMu.Unlock()
+	instances[pi] = struct{}{}
+	return nil
+}
+
+func initializePigpio() (int, error) {
+	instanceMu.Lock()
+	defer instanceMu.Unlock()
+
+	if pigpioInitialized {
+		return -1, nil
+	}
+
+	piID := C.custom_pigpio_start()
+	if piID < 0 {
+		// failed to init, check for common causes
+		_, err := os.Stat("/sys/bus/platform/drivers/raspberrypi-firmware")
+		if err != nil {
+			return -1, errors.New("not running on a pi")
+		}
+		if os.Getuid() != 0 {
+			return -1, errors.New("not running as root, try sudo")
+		}
+		return -1, rpiutils.ConvertErrorCodeToMessage(int(piID), "error")
+	}
+
+	pigpioInitialized = true
+	return int(piID), nil
+}
+
+func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) error {
+	// No need to reconfigure the old analog readers; just throw them out and make new ones.
+	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
+	for _, ac := range cfg.AnalogReaders {
+		channel, err := strconv.Atoi(ac.Pin)
+		if err != nil {
+			return errors.Errorf("bad analog pin (%s)", ac.Pin)
+		}
+
+		bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
+		ar := &mcp3008helper.MCP3008AnalogReader{channel, bus, ac.ChipSelect}
+
+		pi.analogReaders[ac.Name] = pinwrappers.SmoothAnalogReader(ar, board.AnalogReaderConfig{
+			AverageOverMillis: ac.AverageOverMillis, SamplesPerSecond: ac.SamplesPerSecond,
+		}, pi.logger)
+	}
+	return nil
+}
+
+func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
+	// We reuse the old interrupts when possible.
+	oldInterrupts := pi.interrupts
+	oldInterruptsHW := pi.interruptsHW
+	// Like with pi.interrupts and pi.interruptsHW, these two will have identical values, mapped to
+	// using different keys.
+	newInterrupts := map[string]rpiutils.ReconfigurableDigitalInterrupt{}
+	newInterruptsHW := map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
+
+	// This begins as a set of all interrupts, but we'll remove the ones we reuse. Then, we'll
+	// close whatever is left over.
+	interruptsToClose := make(
+		map[rpiutils.ReconfigurableDigitalInterrupt]struct{},
+		len(oldInterrupts),
+	)
+
+	for _, interrupt := range oldInterrupts {
+		interruptsToClose[interrupt] = struct{}{}
+	}
+
+	reuseInterrupt := func(
+		interrupt rpiutils.ReconfigurableDigitalInterrupt,
+		name string,
+		bcom uint,
+	) error {
+		newInterrupts[name] = interrupt
+		newInterruptsHW[bcom] = interrupt
+		delete(interruptsToClose, interrupt)
+
+		// We also need to remove the reused interrupt from oldInterrupts and oldInterruptsHW, to
+		// avoid double-reuse (e.g., the old interrupt had name "foo" on pin 7, and the new config
+		// has name "foo" on pin 8 and name "bar" on pin 7).
+		if oldName, ok := findInterruptName(interrupt, oldInterrupts); ok {
+			delete(oldInterrupts, oldName)
+		} else {
+			// This should never happen. However, if it does, nothing is obviously broken, so we'll
+			// just log the weirdness and continue.
+			pi.logger.CErrorf(ctx,
+				"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
+					"but couldn't find its old name!?", name, bcom)
+		}
+
+		if oldBcom, ok := findInterruptBcom(interrupt, oldInterruptsHW); ok {
+			delete(oldInterruptsHW, oldBcom)
+			if result := C.teardownInterrupt(C.int(pi.piID), C.int(oldBcom)); result != 0 {
+				return picommon.ConvertErrorCodeToMessage(int(result), "error")
+			}
+		} else {
+			// This should never happen, either, but is similarly not really a problem.
+			pi.logger.CErrorf(ctx,
+				"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
+					"but couldn't find its old bcom!?", name, bcom)
+		}
+
+		if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+		}
+		return nil
+	}
+
+	for _, newConfig := range cfg.DigitalInterrupts {
+		bcom, ok := broadcomPinFromHardwareLabel(newConfig.Pin)
+		if !ok {
+			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
+		}
+
+		// Try reusing an interrupt with the same pin
+		if oldInterrupt, ok := oldInterruptsHW[bcom]; ok {
+			if err := reuseInterrupt(oldInterrupt, newConfig.Name, bcom); err != nil {
+				return err
+			}
+			continue
+		}
+		// If that didn't work, try reusing an interrupt with the same name
+		if oldInterrupt, ok := oldInterrupts[newConfig.Name]; ok {
+			if err := reuseInterrupt(oldInterrupt, newConfig.Name, bcom); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Otherwise, create the new interrupt from scratch.
+		di, err := CreateDigitalInterrupt(newConfig)
+		if err != nil {
+			return err
+		}
+		newInterrupts[newConfig.Name] = di
+		newInterruptsHW[bcom] = di
+		if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+			return picommon.ConvertErrorCodeToMessage(int(result), "error")
+		}
+	}
+
+	// For the remaining interrupts, keep any that look implicitly created (interrupts whose name
+	// matches its broadcom address), and get rid of the rest.
+	for interrupt := range interruptsToClose {
+		name, ok := findInterruptName(interrupt, oldInterrupts)
+		if !ok {
+			// This should never happen
+			return errors.Errorf("Logic bug: found old interrupt %s without old name!?", interrupt)
+		}
+
+		bcom, ok := findInterruptBcom(interrupt, oldInterruptsHW)
+		if !ok {
+			// This should never happen, either
+			return errors.Errorf("Logic bug: found old interrupt %s without old bcom!?", interrupt)
+		}
+
+		if expectedBcom, ok := broadcomPinFromHardwareLabel(name); ok && bcom == expectedBcom {
+			// This digital interrupt looks like it was implicitly created. Keep it around!
+			newInterrupts[name] = interrupt
+			newInterruptsHW[bcom] = interrupt
+		} else {
+			// This digital interrupt is no longer used.
+			if result := C.teardownInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+				return picommon.ConvertErrorCodeToMessage(int(result), "error")
+			}
+		}
+	}
+
+	pi.interrupts = newInterrupts
+	pi.interruptsHW = newInterruptsHW
+	return nil
 }
