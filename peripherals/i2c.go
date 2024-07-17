@@ -1,1 +1,1 @@
-package rpiutils
+package rpiperipherals
