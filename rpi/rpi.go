@@ -39,7 +39,7 @@ var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
 	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
-	DigitalInterrupts []DigitalInterruptConfig            `json:"digital_interrupts,omitempty"`
+	DigitalInterrupts []rpiutils.DigitalInterruptConfig   `json:"digital_interrupts,omitempty"`
 }
 
 // init registers a pi board based on pigpio.
@@ -292,7 +292,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 		}
 
 		// Otherwise, create the new interrupt from scratch.
-		di, err := CreateDigitalInterrupt(newConfig)
+		di, err := rpiutils.CreateDigitalInterrupt(newConfig)
 		if err != nil {
 			return err
 		}
@@ -338,8 +338,8 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 // This is a helper function for digital interrupt reconfiguration. It finds the key in the map
 // whose value is the given interrupt, and returns that key and whether we successfully found it.
 func findInterruptName(
-	interrupt ReconfigurableDigitalInterrupt,
-	interrupts map[string]ReconfigurableDigitalInterrupt,
+	interrupt rpiutils.ReconfigurableDigitalInterrupt,
+	interrupts map[string]rpiutils.ReconfigurableDigitalInterrupt,
 ) (string, bool) {
 	for key, value := range interrupts {
 		if value == interrupt {
@@ -351,8 +351,8 @@ func findInterruptName(
 
 // This is a very similar helper function, which does the same thing but for broadcom addresses.
 func findInterruptBcom(
-	interrupt ReconfigurableDigitalInterrupt,
-	interruptsHW map[uint]ReconfigurableDigitalInterrupt,
+	interrupt rpiutils.ReconfigurableDigitalInterrupt,
+	interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt,
 ) (uint, bool) {
 	for key, value := range interruptsHW {
 		if value == interrupt {
