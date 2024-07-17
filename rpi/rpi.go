@@ -271,7 +271,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 	}
 
 	for _, newConfig := range cfg.DigitalInterrupts {
-		bcom, ok := broadcomPinFromHardwareLabel(newConfig.Pin)
+		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(newConfig.Pin)
 		if !ok {
 			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
 		}
@@ -318,7 +318,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 			return errors.Errorf("Logic bug: found old interrupt %s without old bcom!?", interrupt)
 		}
 
-		if expectedBcom, ok := broadcomPinFromHardwareLabel(name); ok && bcom == expectedBcom {
+		if expectedBcom, ok := rpiutils.BroadcomPinFromHardwareLabel(name); ok && bcom == expectedBcom {
 			// This digital interrupt looks like it was implicitly created. Keep it around!
 			newInterrupts[name] = interrupt
 			newInterruptsHW[bcom] = interrupt
