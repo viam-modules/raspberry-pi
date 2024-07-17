@@ -1,4 +1,8 @@
-//go:build !no_pigpio
+/*
+    pi.c: This file is a bridge to setup interrupts for the Raspberry Pi GPIO pins
+    using the pigpiod library. It uses a callback function pigpioInterruptCallback 
+    for interrupt handling, which is exported within rpi.go.
+*/
 #include <pigpiod_if2.h>
 
 extern void pigpioInterruptCallback(int gpio, int level, uint32_t tick);

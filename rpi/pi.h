@@ -1,4 +1,6 @@
-//go:build !no_pigpio
+/*
+    pi.h: Header file for pi.c
+*/
 #pragma once
 
 // interruptCallback calls through to the go linked interrupt callback.
