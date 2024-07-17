@@ -255,7 +255,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 		if oldBcom, ok := findInterruptBcom(interrupt, oldInterruptsHW); ok {
 			delete(oldInterruptsHW, oldBcom)
 			if result := C.teardownInterrupt(C.int(pi.piID), C.int(oldBcom)); result != 0 {
-				return picommon.ConvertErrorCodeToMessage(int(result), "error")
+				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 			}
 		} else {
 			// This should never happen, either, but is similarly not really a problem.
@@ -299,7 +299,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 		newInterrupts[newConfig.Name] = di
 		newInterruptsHW[bcom] = di
 		if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
-			return picommon.ConvertErrorCodeToMessage(int(result), "error")
+			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 		}
 	}
 
@@ -333,4 +333,31 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 	pi.interrupts = newInterrupts
 	pi.interruptsHW = newInterruptsHW
 	return nil
+}
+
+// This is a helper function for digital interrupt reconfiguration. It finds the key in the map
+// whose value is the given interrupt, and returns that key and whether we successfully found it.
+func findInterruptName(
+	interrupt ReconfigurableDigitalInterrupt,
+	interrupts map[string]ReconfigurableDigitalInterrupt,
+) (string, bool) {
+	for key, value := range interrupts {
+		if value == interrupt {
+			return key, true
+		}
+	}
+	return "", false
+}
+
+// This is a very similar helper function, which does the same thing but for broadcom addresses.
+func findInterruptBcom(
+	interrupt ReconfigurableDigitalInterrupt,
+	interruptsHW map[uint]ReconfigurableDigitalInterrupt,
+) (uint, bool) {
+	for key, value := range interruptsHW {
+		if value == interrupt {
+			return key, true
+		}
+	}
+	return 0, false
 }
