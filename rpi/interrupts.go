@@ -12,11 +12,13 @@ import "C"
 import (
 	"context"
 	"fmt"
+	"math"
 
 	rpiutils "viamrpi/utils"
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/logging"
 )
 
 // This is a helper function for digital interrupt reconfiguration. It finds the key in the map
@@ -206,4 +208,49 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 		return d, fmt.Errorf("interrupt %s does not exist", name)
 	}
 	return d, nil
+}
+
+var (
+	lastTick      = uint32(0)
+	tickRollevers = 0
+)
+
+//export pigpioInterruptCallback
+func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
+	if rawTick < lastTick {
+		tickRollevers++
+	}
+	lastTick = rawTick
+
+	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
+
+	instanceMu.RLock()
+	defer instanceMu.RUnlock()
+	for instance := range instances {
+		i := instance.interruptsHW[uint(gpio)]
+		if i == nil {
+			logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)
+			continue
+		}
+		high := true
+		if level == 0 {
+			high = false
+		}
+		// this should *not* block for long otherwise the lock
+		// will be held
+		switch di := i.(type) {
+		case *rpiutils.BasicDigitalInterrupt:
+			err := rpiutils.Tick(instance.cancelCtx, di, high, tick*1000)
+			if err != nil {
+				instance.logger.Error(err)
+			}
+		case *rpiutils.ServoDigitalInterrupt:
+			err := rpiutils.ServoTick(instance.cancelCtx, di, high, tick*1000)
+			if err != nil {
+				instance.logger.Error(err)
+			}
+		default:
+			instance.logger.Error("unknown digital interrupt type")
+		}
+	}
 }
