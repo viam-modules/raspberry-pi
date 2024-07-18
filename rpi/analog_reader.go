@@ -25,7 +25,11 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 		}
 
 		bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
-		ar := &mcp3008helper.MCP3008AnalogReader{channel, bus, ac.ChipSelect}
+		ar := &mcp3008helper.MCP3008AnalogReader{
+			Channel: channel,
+			Bus:     bus,
+			Chip:    ac.ChipSelect,
+		}
 
 		pi.analogReaders[ac.Name] = pinwrappers.SmoothAnalogReader(ar, board.AnalogReaderConfig{
 			AverageOverMillis: ac.AverageOverMillis, SamplesPerSecond: ac.SamplesPerSecond,

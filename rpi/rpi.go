@@ -23,13 +23,20 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
+
 	rpiutils "viamrpi/utils"
 
+	pb "go.viam.com/api/component/board/v1"
+
+	"go.uber.org/multierr"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
+	"go.viam.com/rdk/grpc"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/utils"
 )
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
@@ -188,4 +195,80 @@ func (pi *piPigpio) Reconfigure(
 	defer instanceMu.Unlock()
 	instances[pi] = struct{}{}
 	return nil
+}
+
+// Close attempts to close all parts of the board cleanly.
+func (pi *piPigpio) Close(ctx context.Context) error {
+	var terminate bool
+	// Prevent duplicate calls to Close a board as this may overlap with
+	// the reinitialization of the board
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+	if pi.isClosed {
+		pi.logger.Info("Duplicate call to close pi board detected, skipping")
+		return nil
+	}
+	pi.cancelFunc()
+	pi.activeBackgroundWorkers.Wait()
+
+	var err error
+	for _, analog := range pi.analogReaders {
+		err = multierr.Combine(err, analog.Close(ctx))
+	}
+	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
+
+	for bcom := range pi.interruptsHW {
+		if result := C.teardownInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+			err = multierr.Combine(err, rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+		}
+	}
+	pi.interrupts = map[string]rpiutils.ReconfigurableDigitalInterrupt{}
+	pi.interruptsHW = map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
+
+	instanceMu.Lock()
+	if len(instances) == 1 {
+		terminate = true
+	}
+	delete(instances, pi)
+
+	if terminate {
+		pigpioInitialized = false
+		instanceMu.Unlock()
+		// This has to happen outside of the lock to avoid a deadlock with interrupts.
+		C.gpioTerminate()
+		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
+	} else {
+		instanceMu.Unlock()
+	}
+
+	pi.isClosed = true
+	return err
+}
+
+// StreamTicks starts a stream of digital interrupt ticks.
+func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
+	extra map[string]interface{},
+) error {
+	for _, i := range interrupts {
+		rpiutils.AddCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
+	}
+
+	pi.activeBackgroundWorkers.Add(1)
+
+	utils.ManagedGo(func() {
+		// Wait until it's time to shut down then remove callbacks.
+		select {
+		case <-ctx.Done():
+		case <-pi.cancelCtx.Done():
+		}
+		for _, i := range interrupts {
+			rpiutils.RemoveCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
+		}
+	}, pi.activeBackgroundWorkers.Done)
+
+	return nil
+}
+
+func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration) error {
+	return grpc.UnimplementedError
 }
