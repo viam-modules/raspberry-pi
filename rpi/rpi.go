@@ -16,7 +16,6 @@ package rpi
 // #include <pigpiod_if2.h>
 // #include "pi.h"
 // #cgo LDFLAGS: -lpigpio
-// #cgo pkg-config: libpigpio
 import "C"
 
 import (
