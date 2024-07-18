@@ -173,6 +173,17 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 	return nil
 }
 
+// DigitalInterruptNames returns the names of all known digital interrupts.
+func (pi *piPigpio) DigitalInterruptNames() []string {
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+	names := []string{}
+	for k := range pi.interrupts {
+		names = append(names, k)
+	}
+	return names
+}
+
 // DigitalInterruptByName returns a digital interrupt by name.
 // NOTE: During board setup, if a digital interrupt has not been created
 // for a pin, then this function will attempt to create one with the pin

@@ -235,7 +235,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		pigpioInitialized = false
 		instanceMu.Unlock()
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		C.gpioTerminate()
+		C.pigpio_stop(C.int(pi.piID))
 		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 	} else {
 		instanceMu.Unlock()
