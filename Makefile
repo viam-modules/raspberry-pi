@@ -4,7 +4,7 @@ UNAME_S ?= $(shell uname -s)
 
 build:
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
-	CGO_ENABLED=1 CGO_LDFLAGS="$(CGO_LDFLAGS)" go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
+	go build -ldflags "-Wl,-Bstatic -lpigpio -Wl,-Bdynamic" -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 module.tar.gz: build
 	rm -f $(BIN_OUTPUT_PATH)/module.tar.gz
