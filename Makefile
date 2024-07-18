@@ -3,8 +3,8 @@ TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 UNAME_S ?= $(shell uname -s)
 
 build:
-	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
-	go build -ldflags "-Wl,-Bstatic -lpigpio -Wl,-Bdynamic" -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
+        rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
+        CGO_LDFLAGS='-lpigpiod_if2' go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 module.tar.gz: build
 	rm -f $(BIN_OUTPUT_PATH)/module.tar.gz
