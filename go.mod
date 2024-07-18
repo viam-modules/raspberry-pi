@@ -4,6 +4,8 @@ go 1.21.9
 
 require (
 	github.com/pkg/errors v0.9.1
+	go.uber.org/multierr v1.11.0
+	go.viam.com/api v0.1.317
 	go.viam.com/rdk v0.32.1
 	go.viam.com/utils v0.1.84
 )
@@ -111,9 +113,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	go.viam.com/api v0.1.317 // indirect
 	go.viam.com/test v1.1.1-0.20220913152726-5da9916c08a2 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20230725012225-302865e7556b // indirect
