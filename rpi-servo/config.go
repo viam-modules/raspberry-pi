@@ -9,12 +9,13 @@ import (
 
 // ServoConfig is the config for a pi servo.
 type ServoConfig struct {
-	Pin         string   `json:"pin"`
-	Min         int      `json:"min,omitempty"`
-	Max         int      `json:"max,omitempty"` // specifies a user inputted position limitation
+	BoardName string `json:"board"`
+	Pin       string `json:"pin"`
+
+	Min         int      `json:"min,omitempty"` // specifies a user inputted minimum position limitation
+	Max         int      `json:"max,omitempty"` // specifies a user inputted maximum position limitation
 	StartPos    *float64 `json:"starting_position_degs,omitempty"`
-	HoldPos     *bool    `json:"hold_position,omitempty"` // defaults True. False holds for 500 ms then disables servo
-	BoardName   string   `json:"board"`
+	HoldPos     *bool    `json:"hold_position,omitempty"`    // defaults True. False holds for 500 ms then disables servo
 	MaxRotation int      `json:"max_rotation_deg,omitempty"` // specifies a hardware position limitation. Defaults to 180
 }
 

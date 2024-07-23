@@ -33,6 +33,7 @@ import (
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi-servo")
 
+// Default configuration collected from data sheet
 var (
 	holdTime                = 250000000 // 250ms in nanoseconds
 	servoDefaultMaxRotation = 180
