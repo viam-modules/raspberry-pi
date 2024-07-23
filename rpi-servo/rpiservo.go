@@ -105,7 +105,7 @@ func newPiServo(
 		}
 	} else {
 		setPos := C.set_servo_pulsewidth(
-			theservo.piID, theServo.pin,
+			theServo.piID, theServo.pin,
 			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
 		)
 		errorCode := int(setPos)
