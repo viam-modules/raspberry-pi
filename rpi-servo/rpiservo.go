@@ -241,7 +241,7 @@ func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) 
 	return nil
 }
 
-// Returns whether the servo is actively moving (or attempting to move) under its own power.
+// IsMoving returns whether the servo is actively moving (or attempting to move) under its own power.
 func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 	err := s.pigpioErrors(int(s.res))
 	if err != nil {
