@@ -93,7 +93,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 
 		if oldBcom, ok := findInterruptBcom(interrupt, oldInterruptsHW); ok {
 			delete(oldInterruptsHW, oldBcom)
-			if result := C.teardownInterrupt(C.int(pi.piID), C.int(oldBcom)); result != 0 {
+			if result := C.teardownInterrupt(pi.piID, C.int(oldBcom)); result != 0 {
 				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 			}
 		} else {
@@ -103,7 +103,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 					"but couldn't find its old bcom!?", name, bcom)
 		}
 
-		if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+		if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
 			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 		}
 		return nil
@@ -137,7 +137,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 		}
 		newInterrupts[newConfig.Name] = di
 		newInterruptsHW[bcom] = di
-		if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+		if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
 			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 		}
 	}
@@ -163,7 +163,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 			newInterruptsHW[bcom] = interrupt
 		} else {
 			// This digital interrupt is no longer used.
-			if result := C.teardownInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+			if result := C.teardownInterrupt(pi.piID, C.int(bcom)); result != 0 {
 				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 			}
 		}
@@ -208,7 +208,7 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 			if err != nil {
 				return nil, err
 			}
-			if result := C.setupInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+			if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
 				err := rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 				return nil, errors.Errorf("Unable to set up interrupt on pin %s: %s", name, err)
 			}
