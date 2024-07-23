@@ -185,7 +185,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 	return nil
 }
 
-// returns piGPIO specific errors to user
+// pigpioErrors returns piGPIO specific errors to user
 func (s *piPigpioServo) pigpioErrors(res int) error {
 	switch {
 	case res == C.PI_NOT_SERVO_GPIO:
