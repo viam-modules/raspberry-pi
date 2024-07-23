@@ -7,6 +7,12 @@ package rpiservo
 	uses the pi module's pigpio daemon library to control the servo motor.
 	The servo pin will override the default pin configuration of of the pi
 	module, including PWM frequency and width.
+
+	Servo hardware model: DigiKey - SER0006 DFRobot
+	https://www.digikey.com/en/products/detail/dfrobot/SER0006/7597224?WT.mc_id=frommaker.io
+
+	Servo datasheet:
+	http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf
 */
 
 // #include <stdlib.h>
@@ -235,6 +241,7 @@ func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) 
 	return nil
 }
 
+// Returns whether the servo is actively moving (or attempting to move) under its own power.
 func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 	err := s.pigpioErrors(int(s.res))
 	if err != nil {
