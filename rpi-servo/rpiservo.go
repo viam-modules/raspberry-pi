@@ -245,7 +245,7 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 
 // Close function to stop socket connection to pigpio daemon
 func (s *piPigpioServo) Close(_ context.Context) error {
-	C.custom_pigpio_stop(s.piID)
+	C.pigpio_stop(s.piID)
 
 	return nil
 }
