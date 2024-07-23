@@ -50,9 +50,9 @@ func init() {
 }
 
 func newPiServo(
-	ctx context.Context, 
-	_ resource.Dependencies, 
-	conf resource.Config, 
+	ctx context.Context,
+	_ resource.Dependencies,
+	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
 	newConf, err := resource.NativeConfig[*ServoConfig](conf)
@@ -93,7 +93,7 @@ func newPiServo(
 	}
 
 	theServo.pinname = newConf.Pin
-	piID := custom_pigpio_start()
+	piID := C.custom_pigpio_start()
 	theServo.piID = piID
 
 	if newConf.StartPos == nil {
@@ -104,8 +104,8 @@ func newPiServo(
 		}
 	} else {
 		setPos := C.set_servo_pulsewidth(
-			theservo.piID, theServo.pin, 
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation)))
+			theservo.piID, theServo.pin,
+			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
 		)
 		errorCode := int(setPos)
 		if errorCode != 0 {
@@ -115,20 +115,19 @@ func newPiServo(
 	if newConf.HoldPos == nil || *newConf.HoldPos {
 		theServo.holdPos = true
 	} else {
-		theServo.res = C.gpioGetServoPulsewidth(theServo.pin)
+		theServo.res = C.get_servo_pulsewidth(theServo.piID, theServo.pin)
 		theServo.holdPos = false
 		C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(0)) // disables servo
 	}
 
 	return theServo, nil
-	
+
 }
 
 // piPigpioServo implements a servo.Servo using pigpio.
 type piPigpioServo struct {
 	resource.Named
 	resource.AlwaysRebuild
-	resource.TriviallyCloseable
 	logger      logging.Logger
 	pin         C.uint
 	pinname     string
@@ -138,7 +137,7 @@ type piPigpioServo struct {
 	pulseWidth  int // pulsewidth value, 500-2500us is 0-180 degrees, 0 is off
 	holdPos     bool
 	maxRotation uint32
-	piID		C.int
+	piID        C.int
 }
 
 // Move moves the servo to the given angle (0-180 degrees)
@@ -154,7 +153,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 		angle = s.max
 	}
 	pulseWidth := angleToPulseWidth(int(angle), int(s.maxRotation))
-	res := C.gpioServo(s.pin, C.uint(pulseWidth))
+	res := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(pulseWidth))
 
 	s.pulseWidth = pulseWidth
 
@@ -167,7 +166,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	if !s.holdPos { // the following logic disables a servo once it has reached a position or after a certain amount of time has been reached
 		time.Sleep(time.Duration(holdTime)) // time before a stop is sent
-		setPos := C.gpioServo(s.pin, C.uint(0))
+		setPos := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
 		if setPos < 0 {
 			return errors.Errorf("servo on pin %s failed with code %d", s.pinname, setPos)
 		}
@@ -194,7 +193,7 @@ func (s *piPigpioServo) pigpioErrors(res int) error {
 
 // Position returns the current set angle (degrees) of the servo.
 func (s *piPigpioServo) Position(ctx context.Context, extra map[string]interface{}) (uint32, error) {
-	res := C.gpioGetServoPulsewidth(s.pin)
+	res := C.get_servo_pulsewidth(s.piID, s.pin)
 	err := s.pigpioErrors(int(res))
 	if int(res) != 0 {
 		s.res = res
@@ -223,7 +222,7 @@ func pulseWidthToAngle(pulseWidth, maxRotation int) int {
 func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) error {
 	_, done := s.opMgr.New(ctx)
 	defer done()
-	getPos := C.gpioServo(s.pin, C.uint(0))
+	getPos := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
 	errorCode := int(getPos)
 	if errorCode != 0 {
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
@@ -240,4 +239,10 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 	return s.opMgr.OpRunning(), nil
+}
+
+func (s *piPigpioServo) Close(_ context.Context) error {
+	C.custom_pigpio_stop(s.piID)
+
+	return nil
 }
