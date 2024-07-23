@@ -12,11 +12,11 @@ type ServoConfig struct {
 	BoardName string `json:"board"`
 	Pin       string `json:"pin"`
 
-	Min         int      `json:"min,omitempty"` // specifies a user inputted minimum position limitation
-	Max         int      `json:"max,omitempty"` // specifies a user inputted maximum position limitation
-	StartPos    *float64 `json:"starting_position_degs,omitempty"`
-	HoldPos     *bool    `json:"hold_position,omitempty"`    // defaults True. False holds for 500 ms then disables servo
-	MaxRotation int      `json:"max_rotation_deg,omitempty"` // specifies a hardware position limitation. Defaults to 180
+	Min         int      `json:"min,omitempty"`                    // specifies a user inputted minimum position limitation
+	Max         int      `json:"max,omitempty"`                    // specifies a user inputted maximum position limitation
+	StartPos    *float64 `json:"starting_position_degs,omitempty"` // specifies a starting position. Defaults to 90
+	HoldPos     *bool    `json:"hold_position,omitempty"`          // defaults True. False holds for 500 ms then disables servo
+	MaxRotation int      `json:"max_rotation_deg,omitempty"`       // specifies a hardware position limitation. Defaults to 180
 }
 
 // Validate ensures all parts of the config are valid.

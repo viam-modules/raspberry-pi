@@ -62,6 +62,8 @@ func newPiServo(
 	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
+	// TODO: Organize code with helepr functions
+
 	newConf, err := resource.NativeConfig[*ServoConfig](conf)
 	if err != nil {
 		return nil, err
@@ -82,24 +84,12 @@ func newPiServo(
 		pin:    C.uint(bcom),
 		opMgr:  operation.NewSingleOperationManager(),
 	}
-	if newConf.Min > 0 {
-		theServo.min = uint32(newConf.Min)
-	}
-	if newConf.Max > 0 {
-		theServo.max = uint32(newConf.Max)
-	}
-	theServo.maxRotation = uint32(newConf.MaxRotation)
-	if theServo.maxRotation == 0 {
-		theServo.maxRotation = uint32(servoDefaultMaxRotation)
-	}
-	if theServo.maxRotation < theServo.min {
-		return nil, errors.New("maxRotation is less than minimum")
-	}
-	if theServo.maxRotation < theServo.max {
-		return nil, errors.New("maxRotation is less than maximum")
-	}
 
-	theServo.pinname = newConf.Pin
+	// Validate the and set servo configuration
+	err = theServo.validateAndSetConfiguration(newConf)
+	if err != nil {
+		return nil, err
+	}
 
 	// Start separate connection from board to pigpio daemon
 	// Needs to be called before using other pigpio functions
