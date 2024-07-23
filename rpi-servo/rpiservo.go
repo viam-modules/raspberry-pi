@@ -93,7 +93,11 @@ func newPiServo(
 	}
 
 	theServo.pinname = newConf.Pin
+
+	// Start separate connection from board to pigpio daemon
+	// Needs to be called before using other pigpio functions
 	piID := C.custom_pigpio_start()
+	// Set communication ID for servo
 	theServo.piID = piID
 
 	if newConf.StartPos == nil {
@@ -241,6 +245,7 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 	return s.opMgr.OpRunning(), nil
 }
 
+// Close function to stop socket connection to pigpio daemon
 func (s *piPigpioServo) Close(_ context.Context) error {
 	C.custom_pigpio_stop(s.piID)
 
