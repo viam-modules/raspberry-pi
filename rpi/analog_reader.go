@@ -1,3 +1,5 @@
+//go:build linux
+
 package rpi
 
 /*
@@ -10,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/components/board/genericlinux/buses"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
 )
@@ -24,7 +27,9 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 			return errors.Errorf("bad analog pin (%s)", ac.Pin)
 		}
 
-		bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
+		// bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
+		bus = buses.NewSpiBus(ac.SPIBus)
+
 		ar := &mcp3008helper.MCP3008AnalogReader{
 			Channel: channel,
 			Bus:     bus,
