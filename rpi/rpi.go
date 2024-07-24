@@ -144,7 +144,7 @@ func newPigpio(
 }
 
 // Function initializes connection to pigpio daemon.
-func initializePigpio() (int, error) {
+func initializePigpio() (C.int, error) {
 	instanceMu.Lock()
 	defer instanceMu.Unlock()
 
