@@ -94,13 +94,13 @@ func (s *piPigpioSPIHandle) Xfer(ctx context.Context, baud uint, chipSelect stri
 	txPtr := C.CBytes(tx)
 	defer C.free(txPtr)
 
-	handle := C.spi_open(C.int(s.bus.pi.piID), nativeCS, (C.uint)(baud), (C.uint)(spiFlags))
+	handle := C.spi_open(s.bus.pi.piID, nativeCS, (C.uint)(baud), (C.uint)(spiFlags))
 
 	if handle < 0 {
 		errMsg := fmt.Sprintf("error opening SPI Bus %s, flags were %X", s.bus.busSelect, spiFlags)
 		return nil, rpiutils.ConvertErrorCodeToMessage(int(handle), errMsg)
 	}
-	defer C.spi_close(C.int(s.bus.pi.piID), (C.uint)(handle))
+	defer C.spi_close(s.bus.pi.piID, (C.uint)(handle))
 
 	if gpioCS {
 		// We're going to directly control chip select (not using CE0/CE1/CE2 from SPI controller.)
@@ -116,7 +116,7 @@ func (s *piPigpioSPIHandle) Xfer(ctx context.Context, baud uint, chipSelect stri
 		}
 	}
 
-	ret := C.spi_xfer(C.int(s.bus.pi.piID), (C.uint)(handle), (*C.char)(txPtr), (*C.char)(rxPtr), (C.uint)(count))
+	ret := C.spi_xfer(s.bus.pi.piID, (C.uint)(handle), (*C.char)(txPtr), (*C.char)(rxPtr), (C.uint)(count))
 
 	if gpioCS {
 		chipPin, err := s.bus.pi.GPIOPinByName(chipSelect)

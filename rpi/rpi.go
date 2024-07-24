@@ -94,7 +94,7 @@ type piPigpio struct {
 	logger       logging.Logger
 	isClosed     bool
 
-	piID int
+	piID C.int
 
 	activeBackgroundWorkers sync.WaitGroup
 }
@@ -153,7 +153,7 @@ func initializePigpio() (int, error) {
 	}
 
 	piID := C.custom_pigpio_start()
-	if piID < 0 {
+	if int(piID) < 0 {
 		// failed to init, check for common causes
 		_, err := os.Stat("/sys/bus/platform/drivers/raspberrypi-firmware")
 		if err != nil {
@@ -166,7 +166,7 @@ func initializePigpio() (int, error) {
 	}
 
 	pigpioInitialized = true
-	return int(piID), nil
+	return piID, nil
 }
 
 func (pi *piPigpio) Reconfigure(
@@ -219,7 +219,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
 
 	for bcom := range pi.interruptsHW {
-		if result := C.teardownInterrupt(C.int(pi.piID), C.int(bcom)); result != 0 {
+		if result := C.teardownInterrupt(pi.piID, C.int(bcom)); result != 0 {
 			err = multierr.Combine(err, rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 		}
 	}
@@ -236,7 +236,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		pigpioInitialized = false
 		instanceMu.Unlock()
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		C.pigpio_stop(C.int(pi.piID))
+		C.pigpio_stop(pi.piID)
 		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 	} else {
 		instanceMu.Unlock()
