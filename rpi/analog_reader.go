@@ -25,7 +25,7 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 			return errors.Errorf("bad analog pin (%s)", ac.Pin)
 		}
 
-		// bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
+		// Use genericlinux implementation for SPI bus.
 		bus := buses.NewSpiBus(ac.SPIBus)
 
 		ar := &mcp3008helper.MCP3008AnalogReader{
