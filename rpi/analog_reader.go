@@ -1,5 +1,3 @@
-//go:build linux
-
 package rpi
 
 /*
@@ -28,7 +26,7 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 		}
 
 		// bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
-		bus = buses.NewSpiBus(ac.SPIBus)
+		bus := buses.NewSpiBus(ac.SPIBus)
 
 		ar := &mcp3008helper.MCP3008AnalogReader{
 			Channel: channel,
