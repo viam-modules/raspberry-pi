@@ -200,24 +200,40 @@ func (pi *piPigpio) Reconfigure(
 
 // Close attempts to close all parts of the board cleanly.
 func (pi *piPigpio) Close(ctx context.Context) error {
-	var terminate bool
-	// Prevent duplicate calls to Close a board as this may overlap with
-	// the reinitialization of the board
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
+
 	if pi.isClosed {
 		pi.logger.Info("Duplicate call to close pi board detected, skipping")
 		return nil
 	}
+
 	pi.cancelFunc()
 	pi.activeBackgroundWorkers.Wait()
 
+	var err error
+	err = multierr.Combine(err,
+		closeAnalogReaders(ctx, pi),
+		teardownInterrupts(pi),
+		handleTermination(ctx, pi))
+
+	pi.isClosed = true
+	return err
+}
+
+// closeAnalogReaders closes all analog readers associated with the board.
+func closeAnalogReaders(ctx context.Context, pi *piPigpio) error {
 	var err error
 	for _, analog := range pi.analogReaders {
 		err = multierr.Combine(err, analog.Close(ctx))
 	}
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
+	return err
+}
 
+// teardownInterrupts removes all hardware interrupts and cleans up.
+func teardownInterrupts(pi *piPigpio) error {
+	var err error
 	for bcom := range pi.interruptsHW {
 		if result := C.teardownInterrupt(pi.piID, C.int(bcom)); result != 0 {
 			err = multierr.Combine(err, rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
@@ -225,6 +241,13 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	}
 	pi.interrupts = map[string]rpiutils.ReconfigurableDigitalInterrupt{}
 	pi.interruptsHW = map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
+	return err
+}
+
+// handleTermination manages the termination of the Pi GPIO instance.
+func handleTermination(ctx context.Context, pi *piPigpio) error {
+	var err error
+	var terminate bool
 
 	instanceMu.Lock()
 	if len(instances) == 1 {
@@ -242,7 +265,6 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		instanceMu.Unlock()
 	}
 
-	pi.isClosed = true
 	return err
 }
 
