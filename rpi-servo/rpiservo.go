@@ -7,6 +7,12 @@ package rpiservo
 	uses the pi module's pigpio daemon library to control the servo motor.
 	The servo pin will override the default pin configuration of of the pi
 	module, including PWM frequency and width.
+
+	Servo hardware model: DigiKey - SER0006 DFRobot
+	https://www.digikey.com/en/products/detail/dfrobot/SER0006/7597224?WT.mc_id=frommaker.io
+
+	Servo datasheet:
+	http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf
 */
 
 // #include <stdlib.h>
@@ -33,6 +39,7 @@ import (
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi-servo")
 
+// Default configuration collected from data sheet
 var (
 	holdTime                = 250000000 // 250ms in nanoseconds
 	servoDefaultMaxRotation = 180
@@ -55,6 +62,8 @@ func newPiServo(
 	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
+	// TODO: Organize code with helepr functions
+
 	newConf, err := resource.NativeConfig[*ServoConfig](conf)
 	if err != nil {
 		return nil, err
@@ -75,24 +84,12 @@ func newPiServo(
 		pin:    C.uint(bcom),
 		opMgr:  operation.NewSingleOperationManager(),
 	}
-	if newConf.Min > 0 {
-		theServo.min = uint32(newConf.Min)
-	}
-	if newConf.Max > 0 {
-		theServo.max = uint32(newConf.Max)
-	}
-	theServo.maxRotation = uint32(newConf.MaxRotation)
-	if theServo.maxRotation == 0 {
-		theServo.maxRotation = uint32(servoDefaultMaxRotation)
-	}
-	if theServo.maxRotation < theServo.min {
-		return nil, errors.New("maxRotation is less than minimum")
-	}
-	if theServo.maxRotation < theServo.max {
-		return nil, errors.New("maxRotation is less than maximum")
-	}
 
-	theServo.pinname = newConf.Pin
+	// Validate the and set servo configuration
+	err = theServo.validateAndSetConfiguration(newConf)
+	if err != nil {
+		return nil, err
+	}
 
 	// Start separate connection from board to pigpio daemon
 	// Needs to be called before using other pigpio functions
@@ -108,7 +105,7 @@ func newPiServo(
 		}
 	} else {
 		setPos := C.set_servo_pulsewidth(
-			theservo.piID, theServo.pin,
+			theServo.piID, theServo.pin,
 			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
 		)
 		errorCode := int(setPos)
@@ -178,7 +175,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 	return nil
 }
 
-// returns piGPIO specific errors to user
+// pigpioErrors returns piGPIO specific errors to user
 func (s *piPigpioServo) pigpioErrors(res int) error {
 	switch {
 	case res == C.PI_NOT_SERVO_GPIO:
@@ -234,6 +231,7 @@ func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) 
 	return nil
 }
 
+// IsMoving returns whether the servo is actively moving (or attempting to move) under its own power.
 func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 	err := s.pigpioErrors(int(s.res))
 	if err != nil {
@@ -247,7 +245,7 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 
 // Close function to stop socket connection to pigpio daemon
 func (s *piPigpioServo) Close(_ context.Context) error {
-	C.custom_pigpio_stop(s.piID)
+	C.pigpio_stop(s.piID)
 
 	return nil
 }

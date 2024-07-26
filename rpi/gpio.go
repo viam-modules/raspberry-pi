@@ -67,7 +67,7 @@ func (pi *piPigpio) GetGPIOBcom(bcom int) (bool, error) {
 		if pi.gpioConfigSet == nil {
 			pi.gpioConfigSet = map[int]bool{}
 		}
-		res := C.set_mode(C.int(pi.piID), C.uint(bcom), C.PI_INPUT)
+		res := C.set_mode(pi.piID, C.uint(bcom), C.PI_INPUT)
 		if res != 0 {
 			return false, rpiutils.ConvertErrorCodeToMessage(int(res), "failed to set mode")
 		}
@@ -75,7 +75,7 @@ func (pi *piPigpio) GetGPIOBcom(bcom int) (bool, error) {
 	}
 
 	// gpioRead retrns an int 1 or 0, we convert to a bool
-	return C.gpio_read(C.int(pi.piID), C.uint(bcom)) != 0, nil
+	return C.gpio_read(pi.piID, C.uint(bcom)) != 0, nil
 }
 
 // SetGPIOBcom sets the given broadcom pin to high or low.
@@ -86,7 +86,7 @@ func (pi *piPigpio) SetGPIOBcom(bcom int, high bool) error {
 		if pi.gpioConfigSet == nil {
 			pi.gpioConfigSet = map[int]bool{}
 		}
-		res := C.set_mode(C.int(pi.piID), C.uint(bcom), C.PI_OUTPUT)
+		res := C.set_mode(pi.piID, C.uint(bcom), C.PI_OUTPUT)
 		if res != 0 {
 			return rpiutils.ConvertErrorCodeToMessage(int(res), "failed to set mode")
 		}
@@ -97,12 +97,12 @@ func (pi *piPigpio) SetGPIOBcom(bcom int, high bool) error {
 	if high {
 		v = 1
 	}
-	C.gpio_write(C.int(pi.piID), C.uint(bcom), C.uint(v))
+	C.gpio_write(pi.piID, C.uint(bcom), C.uint(v))
 	return nil
 }
 
 func (pi *piPigpio) pwmBcom(bcom int) (float64, error) {
-	res := C.get_PWM_dutycycle(C.int(pi.piID), C.uint(bcom))
+	res := C.get_PWM_dutycycle(pi.piID, C.uint(bcom))
 	return float64(res) / 255, nil
 }
 
@@ -111,7 +111,7 @@ func (pi *piPigpio) SetPWMBcom(bcom int, dutyCyclePct float64) error {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 	dutyCycle := rdkutils.ScaleByPct(255, dutyCyclePct)
-	pi.duty = int(C.set_PWM_dutycycle(C.int(pi.piID), C.uint(bcom), C.uint(dutyCycle)))
+	pi.duty = int(C.set_PWM_dutycycle(pi.piID, C.uint(bcom), C.uint(dutyCycle)))
 	if pi.duty != 0 {
 		return errors.Errorf("pwm set fail %d", pi.duty)
 	}
@@ -119,7 +119,7 @@ func (pi *piPigpio) SetPWMBcom(bcom int, dutyCyclePct float64) error {
 }
 
 func (pi *piPigpio) pwmFreqBcom(bcom int) (uint, error) {
-	res := C.get_PWM_frequency(C.int(pi.piID), C.uint(bcom))
+	res := C.get_PWM_frequency(pi.piID, C.uint(bcom))
 	return uint(res), nil
 }
 
@@ -130,7 +130,7 @@ func (pi *piPigpio) SetPWMFreqBcom(bcom int, freqHz uint) error {
 	if freqHz == 0 {
 		freqHz = 800 // Original default from libpigpio
 	}
-	newRes := C.set_PWM_frequency(C.int(pi.piID), C.uint(bcom), C.uint(freqHz))
+	newRes := C.set_PWM_frequency(pi.piID, C.uint(bcom), C.uint(freqHz))
 
 	if newRes == C.PI_BAD_USER_GPIO {
 		return rpiutils.ConvertErrorCodeToMessage(int(newRes), "pwm set freq failed")
