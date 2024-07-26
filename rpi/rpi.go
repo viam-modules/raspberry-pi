@@ -221,6 +221,34 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	return err
 }
 
+// StreamTicks starts a stream of digital interrupt ticks.
+func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
+	extra map[string]interface{},
+) error {
+	for _, i := range interrupts {
+		rpiutils.AddCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
+	}
+
+	pi.activeBackgroundWorkers.Add(1)
+
+	utils.ManagedGo(func() {
+		// Wait until it's time to shut down then remove callbacks.
+		select {
+		case <-ctx.Done():
+		case <-pi.cancelCtx.Done():
+		}
+		for _, i := range interrupts {
+			rpiutils.RemoveCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
+		}
+	}, pi.activeBackgroundWorkers.Done)
+
+	return nil
+}
+
+func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration) error {
+	return grpc.UnimplementedError
+}
+
 // closeAnalogReaders closes all analog readers associated with the board.
 func closeAnalogReaders(ctx context.Context, pi *piPigpio) error {
 	var err error
@@ -266,32 +294,4 @@ func handleTermination(ctx context.Context, pi *piPigpio) error {
 	}
 
 	return err
-}
-
-// StreamTicks starts a stream of digital interrupt ticks.
-func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
-	extra map[string]interface{},
-) error {
-	for _, i := range interrupts {
-		rpiutils.AddCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
-	}
-
-	pi.activeBackgroundWorkers.Add(1)
-
-	utils.ManagedGo(func() {
-		// Wait until it's time to shut down then remove callbacks.
-		select {
-		case <-ctx.Done():
-		case <-pi.cancelCtx.Done():
-		}
-		for _, i := range interrupts {
-			rpiutils.RemoveCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
-		}
-	}, pi.activeBackgroundWorkers.Done)
-
-	return nil
-}
-
-func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration) error {
-	return grpc.UnimplementedError
 }
