@@ -93,7 +93,7 @@ func newPiServo(
 
 	// Start separate connection from board to pigpio daemon
 	// Needs to be called before using other pigpio functions
-	piID := C.custom_pigpio_start()
+	piID := C.pigpio_start(nil, nil)
 	// Set communication ID for servo
 	theServo.piID = piID
 
