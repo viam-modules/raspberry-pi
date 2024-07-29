@@ -109,7 +109,7 @@ func TestServoFunctions(t *testing.T) {
 		test.That(t, a, test.ShouldEqual, 180)
 	})
 
-	t.Run(("check Move IsMoving ande pigpio errors"), func(t *testing.T) {
+	t.Run(("check Move IsMoving and pigpio errors"), func(t *testing.T) {
 		ctx := context.Background()
 		s := &piPigpioServo{pinname: "1", maxRotation: 180, opMgr: operation.NewSingleOperationManager()}
 
