@@ -62,22 +62,68 @@ func newPiServo(
 	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
-	// TODO: Organize code with helepr functions
-
-	newConf, err := resource.NativeConfig[*ServoConfig](conf)
+	// Parse the configuration
+	newConf, err := parseConfig(conf)
 	if err != nil {
 		return nil, err
 	}
 
+	// Validate the configuration
+	if err := validateConfig(newConf); err != nil {
+		return nil, err
+	}
+
+	// Get Broadcom pin from hardware label
+	bcom, err := getBroadcomPin(newConf.Pin)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and initialize the servo
+	theServo, err := initializeServo(conf, logger, bcom, newConf)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the initial position of the servo
+	if err := setInitialPosition(theServo, newConf); err != nil {
+		return nil, err
+	}
+
+	// Handle the hold position configuration
+	handleHoldPosition(theServo, newConf)
+
+	return theServo, nil
+}
+
+// parseConfig parses the provided configuration into a ServoConfig.
+func parseConfig(conf resource.Config) (*ServoConfig, error) {
+	newConf, err := resource.NativeConfig[*ServoConfig](conf)
+	if err != nil {
+		return nil, err
+	}
+	return newConf, nil
+}
+
+// validateConfig validates the provided ServoConfig.
+func validateConfig(newConf *ServoConfig) error {
 	if newConf.Pin == "" {
-		return nil, errors.New("need pin for pi servo")
+		return errors.New("need pin for pi servo")
 	}
+	return nil
+}
 
-	bcom, have := rpiutils.BroadcomPinFromHardwareLabel(newConf.Pin)
+// getBroadcomPin retrieves the Broadcom pin number from the hardware label.
+func getBroadcomPin(pin string) (uint, error) {
+	bcom, have := rpiutils.BroadcomPinFromHardwareLabel(pin)
 	if !have {
-		return nil, errors.Errorf("no hw mapping for %s", newConf.Pin)
+		return 0, errors.Errorf("no hw mapping for %s", pin)
 	}
+	return bcom, nil
+}
 
+// initializeServo creates and initializes the piPigpioServo with the provided configuration and logger.
+func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, newConf *ServoConfig) (*piPigpioServo, error) {
 	theServo := &piPigpioServo{
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
@@ -85,9 +131,8 @@ func newPiServo(
 		opMgr:  operation.NewSingleOperationManager(),
 	}
 
-	// Validate the and set servo configuration
-	err = theServo.validateAndSetConfiguration(newConf)
-	if err != nil {
+	// Validate and set the servo configuration
+	if err := theServo.validateAndSetConfiguration(newConf); err != nil {
 		return nil, err
 	}
 
@@ -97,32 +142,40 @@ func newPiServo(
 	// Set communication ID for servo
 	theServo.piID = piID
 
+	return theServo, nil
+}
+
+// setInitialPosition sets the initial position of the servo based on the provided configuration.
+func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
+	var setPos C.int
 	if newConf.StartPos == nil {
-		setPos := C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(1500)) // a 1500ms pulsewidth positions the servo at 90 degrees
-		errorCode := int(setPos)
-		if errorCode != 0 {
-			return nil, rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
-		}
+		// Set the servo to the default 90 degrees position
+		setPos = C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(1500))
 	} else {
-		setPos := C.set_servo_pulsewidth(
+		// Set the servo to the specified start position
+		setPos = C.set_servo_pulsewidth(
 			theServo.piID, theServo.pin,
 			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
 		)
-		errorCode := int(setPos)
-		if errorCode != 0 {
-			return nil, rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
-		}
 	}
+	errorCode := int(setPos)
+	if errorCode != 0 {
+		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
+	}
+	return nil
+}
+
+// handleHoldPosition configures the hold position setting for the servo.
+func handleHoldPosition(theServo *piPigpioServo, newConf *ServoConfig) {
 	if newConf.HoldPos == nil || *newConf.HoldPos {
+		// Hold the servo position
 		theServo.holdPos = true
 	} else {
+		// Release the servo position and disable the servo
 		theServo.res = C.get_servo_pulsewidth(theServo.piID, theServo.pin)
 		theServo.holdPos = false
 		C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(0)) // disables servo
 	}
-
-	return theServo, nil
-
 }
 
 // piPigpioServo implements a servo.Servo using pigpio.
