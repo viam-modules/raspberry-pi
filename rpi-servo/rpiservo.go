@@ -1,3 +1,5 @@
+//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
+
 // Package rpiservo implements pi servo
 package rpiservo
 
@@ -54,6 +56,30 @@ func init() {
 			Constructor: newPiServo,
 		},
 	)
+}
+
+// Validate and set piPigpioServo fields based on the configuration.
+func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
+	if conf.Min > 0 {
+		s.min = uint32(conf.Min)
+	}
+	if conf.Max > 0 {
+		s.max = uint32(conf.Max)
+	}
+	s.maxRotation = uint32(conf.MaxRotation)
+	if s.maxRotation == 0 {
+		s.maxRotation = uint32(servoDefaultMaxRotation)
+	}
+	if s.maxRotation < s.min {
+		return errors.New("maxRotation is less than minimum")
+	}
+	if s.maxRotation < s.max {
+		return errors.New("maxRotation is less than maximum")
+	}
+
+	s.pinname = conf.Pin
+
+	return nil
 }
 
 func newPiServo(

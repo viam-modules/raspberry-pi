@@ -1,9 +1,11 @@
+//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
+
 package main
 
 import (
 	"context"
 	"viamrpi/rpi"
-	"viamrpi/rpi-servo"
+	rpiservo "viamrpi/rpi-servo"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"

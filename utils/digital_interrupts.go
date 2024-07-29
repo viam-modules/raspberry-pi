@@ -1,3 +1,4 @@
+// Package rpiutils contains implementations for digital_interrupts here.
 package rpiutils
 
 import (
@@ -6,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/utils"
