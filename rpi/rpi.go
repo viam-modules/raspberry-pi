@@ -280,6 +280,7 @@ func handleTermination(ctx context.Context, pi *piPigpio) error {
 	var terminate bool
 
 	instanceMu.Lock()
+	// Not defering the Unlock() here because we need to call pigpio_stop() outside the lock.
 	if len(instances) == 1 {
 		terminate = true
 	}
@@ -289,6 +290,7 @@ func handleTermination(ctx context.Context, pi *piPigpio) error {
 		pigpioInitialized = false
 		instanceMu.Unlock()
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
+		// TODO: RSDK-8389
 		C.pigpio_stop(pi.piID)
 		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 	} else {
