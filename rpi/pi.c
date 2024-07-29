@@ -34,7 +34,3 @@ int teardownInterrupt(int pi, int gpio) {
     // Do we need to unset the pullup resistors?
     return result;
 }
-
-int custom_pigpio_start() {
-    return pigpio_start(NULL, NULL);
-}
