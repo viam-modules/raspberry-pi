@@ -88,35 +88,29 @@ func newPiServo(
 	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
-	// Parse the configuration
 	newConf, err := parseConfig(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate the configuration
 	if err := validateConfig(newConf); err != nil {
 		return nil, err
 	}
 
-	// Get Broadcom pin from hardware label
 	bcom, err := getBroadcomPin(newConf.Pin)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and initialize the servo
 	theServo, err := initializeServo(conf, logger, bcom, newConf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Set the initial position of the servo
 	if err := setInitialPosition(theServo, newConf); err != nil {
 		return nil, err
 	}
 
-	// Handle the hold position configuration
 	handleHoldPosition(theServo, newConf)
 
 	return theServo, nil
@@ -157,7 +151,6 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 		opMgr:  operation.NewSingleOperationManager(),
 	}
 
-	// Validate and set the servo configuration
 	if err := theServo.validateAndSetConfiguration(newConf); err != nil {
 		return nil, err
 	}
@@ -173,7 +166,7 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
 	var setPos C.int
 	if newConf.StartPos == nil {
-		// Set the servo to the default 90 degrees position
+		// Set the servo to the default 90 degrees position by sending a 1500ms pulsewidth.
 		setPos = C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(1500))
 	} else {
 		// Set the servo to the specified start position
