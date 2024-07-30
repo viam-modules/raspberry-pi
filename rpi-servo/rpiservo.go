@@ -57,9 +57,11 @@ func init() {
 
 // Validate and set piPigpioServo fields based on the configuration.
 func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
-	if conf.Min > 0 {
+	if conf.Min >= 0 {
 		s.min = uint32(conf.Min)
 	}
+
+	s.max = 180
 	if conf.Max > 0 {
 		s.max = uint32(conf.Max)
 	}
