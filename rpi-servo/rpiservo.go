@@ -288,8 +288,7 @@ func pulseWidthToAngle(pulseWidth, maxRotation int) int {
 func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) error {
 	_, done := s.opMgr.New(ctx)
 	defer done()
-	getPos := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
-	errorCode := int(getPos)
+	errorCode := int(C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0)))
 	if errorCode != 0 {
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
 	}
