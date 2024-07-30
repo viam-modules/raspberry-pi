@@ -153,7 +153,7 @@ func initializePigpio() (C.int, error) {
 		return -1, nil
 	}
 
-	piID := C.custom_pigpio_start()
+	piID := C.pigpio_start(nil, nil)
 	if int(piID) < 0 {
 		// failed to init, check for common causes
 		_, err := os.Stat("/sys/bus/platform/drivers/raspberrypi-firmware")
