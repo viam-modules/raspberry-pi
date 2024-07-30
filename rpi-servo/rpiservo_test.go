@@ -1,8 +1,12 @@
 package rpiservo
 
+// #include <stdlib.h>
+// #include <pigpiod_if2.h>
+import "C"
 import (
 	"context"
 	"testing"
+	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
@@ -82,6 +86,59 @@ func TestPiServo(t *testing.T) {
 }
 
 func TestServoFunctions(t *testing.T) {
+	t.Run("test parse config", func(t *testing.T) {
+		newConf := &ServoConfig{Pin: "100"}
+
+		parsedConf, err := parseConfig(
+			resource.Config{ConvertedAttributes: newConf},
+		)
+
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, parsedConf, test.ShouldNotBeNil)
+		test.That(t, parsedConf.Pin, test.ShouldEqual, "100")
+
+		badConf := &rpi.Config{}
+		parsedConf, err = parseConfig(
+			resource.Config{ConvertedAttributes: badConf},
+		)
+
+		test.That(t, parsedConf, test.ShouldBeNil)
+		// unexpected type, only kind of error
+		test.That(t, err, test.ShouldNotBeNil)
+
+	})
+	t.Run("test config validation", func(t *testing.T) {
+		newConf := &ServoConfig{Pin: "22"}
+		err := validateConfig(newConf)
+		test.That(t, err, test.ShouldBeNil)
+
+		newConf = &ServoConfig{Pin: ""}
+		err = validateConfig(newConf)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "need pin for pi servo")
+	})
+
+	t.Run("test get broadcom pin", func(t *testing.T) {
+		// pin with special name/function
+		bcom, err := getBroadcomPin("sclk")
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, bcom, test.ShouldEqual, 11)
+
+		// standard pin
+		bcom, err = getBroadcomPin("22")
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, bcom, test.ShouldEqual, 25)
+
+		// pin based on IO
+		bcom, err = getBroadcomPin("io21")
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, bcom, test.ShouldEqual, 21)
+
+		// bad pin
+		bcom, err = getBroadcomPin("bad")
+		test.That(t, err.Error(), test.ShouldContainSubstring, "no hw mapping for bad")
+		test.That(t, bcom, test.ShouldEqual, 0)
+	})
+
 	t.Run("check servo math", func(t *testing.T) {
 		pw := angleToPulseWidth(1, servoDefaultMaxRotation)
 		test.That(t, pw, test.ShouldEqual, 511)
