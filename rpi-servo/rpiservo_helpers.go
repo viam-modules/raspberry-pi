@@ -44,9 +44,7 @@ func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
 func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	position := 1500
 	if newConf.StartPos != nil {
-		C.set_servo_pulsewidth(
-			piServo.piID, piServo.pin,
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))))
+		position = angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))
 	}
 	errorCode := int(C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(position)))
 	if errorCode != 0 {
