@@ -1,5 +1,3 @@
-//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
-
 // Package rpi implements raspberry pi board
 package rpi
 

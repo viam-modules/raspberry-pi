@@ -1,5 +1,3 @@
-//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
-
 // Package rpiservo implements pi servo
 package rpiservo
 
@@ -143,7 +141,7 @@ func getBroadcomPin(pin string) (uint, error) {
 
 // initializeServo creates and initializes the piPigpioServo with the provided configuration and logger.
 func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, newConf *ServoConfig) (*piPigpioServo, error) {
-	theServo := &piPigpioServo{
+	piServo := &piPigpioServo{
 		Named:   conf.ResourceName().AsNamed(),
 		logger:  logger,
 		pin:     C.uint(bcom),
@@ -159,7 +157,7 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 	// Needs to be called before using other pigpio functions
 	piID := C.pigpio_start(nil, nil)
 	// Set communication ID for servo
-	theServo.piID = piID
+	piServo.piID = piID
 
 	return piServo, nil
 }
