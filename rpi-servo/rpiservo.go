@@ -165,13 +165,13 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 // setInitialPosition sets the initial position of the servo based on the provided configuration.
 func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	position := 1500
-	if newConf.StartPos != nil{
+	if newConf.StartPos != nil {
 		C.set_servo_pulsewidth(
 			piServo.piID, piServo.pin,
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation)))
+			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))))
 	}
-	errorCode := int(C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(position))
-	if errorCode != 0{
+	errorCode := int(C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(position)))
+	if errorCode != 0 {
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
 	}
 	return nil
@@ -184,7 +184,7 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) {
 		piServo.holdPos = true
 	} else {
 		// Release the servo position and disable the servo
-		piServo.pwInUse= C.get_servo_pulsewidth(piServo.piID, piServo.pin)
+		piServo.pwInUse = C.get_servo_pulsewidth(piServo.piID, piServo.pin)
 		piServo.holdPos = false
 		C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(0)) // disables servo
 	}
@@ -197,7 +197,7 @@ type piPigpioServo struct {
 	logger      logging.Logger
 	pin         C.uint
 	pinname     string
-	pwInUse   C.int
+	pwInUse     C.int
 	min, max    uint32
 	opMgr       *operation.SingleOperationManager
 	pulseWidth  int // pulsewidth value, 500-2500us is 0-180 degrees, 0 is off
@@ -259,15 +259,15 @@ func (s *piPigpioServo) pigpioErrors(res int) error {
 
 // Position returns the current set angle (degrees) of the servo.
 func (s *piPigpioServo) Position(ctx context.Context, extra map[string]interface{}) (uint32, error) {
-	pwInUse:= C.get_servo_pulsewidth(s.piID, s.pin)
-	err := s.pigpioErrors(int(pwmInUse))
-	if int(pwmInUse) != 0 {
-		s.pwInUse= pwmInUse
+	pwInUse := C.get_servo_pulsewidth(s.piID, s.pin)
+	err := s.pigpioErrors(int(pwInUse))
+	if int(pwInUse) != 0 {
+		s.pwInUse = pwInUse
 	}
 	if err != nil {
 		return 0, err
 	}
-	return uint32(pulseWidthToAngle(int(s.pwmInUse), int(s.maxRotation))), nil
+	return uint32(pulseWidthToAngle(int(s.pwInUse), int(s.maxRotation))), nil
 }
 
 // angleToPulseWidth changes the input angle in degrees
