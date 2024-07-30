@@ -93,8 +93,9 @@ func TestInitializationFunctions(t *testing.T) {
 		// invalid conf, maxRotation < min
 		newConf := &ServoConfig{
 			Pin:         "22",
-			MaxRotation: 180,
 			Min:         200,
+			Max:         180,
+			MaxRotation: 180,
 		}
 
 		s, err := initializeServo(conf, logger, bcom, newConf)
@@ -105,6 +106,7 @@ func TestInitializationFunctions(t *testing.T) {
 		// invalid conf, maxRotation < max
 		newConf = &ServoConfig{
 			Pin:         "22",
+			Min:         0,
 			Max:         180,
 			MaxRotation: 179,
 		}
@@ -117,9 +119,9 @@ func TestInitializationFunctions(t *testing.T) {
 		// valid conf
 		newConf = &ServoConfig{
 			Pin:         "22",
-			MaxRotation: 180,
-			Max:         180,
 			Min:         0,
+			Max:         180,
+			MaxRotation: 180,
 		}
 
 		targetPin := 3
@@ -217,8 +219,8 @@ func TestServoFunctions(t *testing.T) {
 		// invalid conf, maxRotation < min
 		newConf := &ServoConfig{
 			Pin:         "22",
-			MaxRotation: 180,
 			Min:         200,
+			MaxRotation: 180,
 			Max:         180,
 		}
 
@@ -229,9 +231,9 @@ func TestServoFunctions(t *testing.T) {
 		// invalid conf, maxRotation < max
 		newConf = &ServoConfig{
 			Pin:         "22",
+			Min:         1,
 			Max:         180,
 			MaxRotation: 179,
-			Min:         0,
 		}
 
 		err = s.validateAndSetConfiguration(newConf)
@@ -241,9 +243,9 @@ func TestServoFunctions(t *testing.T) {
 		// valid conf
 		newConf = &ServoConfig{
 			Pin:         "22",
+			Min:         0,
 			MaxRotation: 1234,
 			Max:         180,
-			Min:         0,
 		}
 
 		targetPin := 3
