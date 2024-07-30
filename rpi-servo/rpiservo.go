@@ -19,7 +19,6 @@ package rpiservo
 
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
-// #cgo LDFLAGS: -lpigpio
 // #include "../rpi/pi.h"
 import "C"
 
