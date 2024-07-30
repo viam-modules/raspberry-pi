@@ -110,7 +110,7 @@ func TestInitializationFunctions(t *testing.T) {
 		s.pinname = "3"
 		initPos = 181.0
 		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
-		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_PULSEWIDTH")
+		test.That(t, err.Error(), test.ShouldContainSubstring, "out of range position")
 
 		C.pigpio_stop(s.piID)
 	})
