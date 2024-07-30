@@ -85,6 +85,105 @@ func TestPiServo(t *testing.T) {
 	})
 }
 
+func TestInitializationFunctions(t *testing.T) {
+	t.Run("test setting initial position", func(t *testing.T) {
+		s := &piPigpioServo{
+			pinname:     "3",
+			maxRotation: 180,
+			opMgr:       operation.NewSingleOperationManager(),
+			piID:        C.pigpio_start(nil, nil),
+		}
+
+		err := setInitialPosition(s, &ServoConfig{StartPos: nil})
+		test.That(t, err, test.ShouldBeNil)
+
+		initPos := 33.0
+		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
+		test.That(t, err, test.ShouldBeNil)
+
+		// invalid pin
+		s.pinname = "bad"
+		err = setInitialPosition(s, &ServoConfig{StartPos: nil})
+		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_GPIO")
+
+		// invalid angle
+		s.pinname = "3"
+		initPos = 181.0
+		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
+		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_PULSEWIDTH")
+
+		C.pigpio_stop(s.piID)
+	})
+
+	t.Run("test handle hold position", func(t *testing.T) {
+		s := &piPigpioServo{
+			pinname:     "3",
+			maxRotation: 180,
+			opMgr:       operation.NewSingleOperationManager(),
+			piID:        C.pigpio_start(nil, nil),
+		}
+
+		handleHoldPosition(s, &ServoConfig{HoldPos: nil})
+		test.That(t, s.holdPos, test.ShouldBeTrue)
+
+		holdPos := true
+		handleHoldPosition(s, &ServoConfig{HoldPos: &holdPos})
+		test.That(t, s.holdPos, test.ShouldBeTrue)
+
+		holdPos = false
+		handleHoldPosition(s, &ServoConfig{HoldPos: &holdPos})
+		test.That(t, s.holdPos, test.ShouldBeFalse)
+
+		C.pigpio_stop(s.piID)
+	})
+
+	t.Run("test servo initialization", func(t *testing.T) {
+		logger := logging.NewTestLogger(t)
+		bcom := uint(3)
+		conf := resource.Config{
+			Name: "servo",
+		}
+
+		// invalid conf, maxRotation < min
+		newConf := &ServoConfig{
+			Pin:         "3",
+			MaxRotation: 180,
+			Min:         200,
+		}
+
+		s, err := initializeServo(conf, logger, bcom, newConf)
+		test.That(t, s, test.ShouldBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than minimum")
+
+		// invalid conf, maxRotation < max
+		newConf = &ServoConfig{
+			Pin:         "3",
+			Max:         180,
+			MaxRotation: 179,
+		}
+
+		s, err = initializeServo(conf, logger, bcom, newConf)
+		test.That(t, s, test.ShouldBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than maximum")
+
+		// valid conf
+		newConf = &ServoConfig{
+			Pin: "3",
+		}
+
+		targetPin := C.uint(3)
+
+		s, err = initializeServo(conf, logger, bcom, newConf)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, s, test.ShouldNotBeNil)
+		test.That(t, int(s.piID), test.ShouldBeGreaterThanOrEqualTo, 0)
+		test.That(t, s.pin, test.ShouldEqual, targetPin)
+
+		// stop pigpio
+		C.pigpio_stop(s.piID)
+	})
+
+}
 func TestServoFunctions(t *testing.T) {
 	t.Run("test parse config", func(t *testing.T) {
 		newConf := &ServoConfig{Pin: "100"}
