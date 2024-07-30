@@ -102,18 +102,18 @@ func newPiServo(
 		return nil, err
 	}
 
-	theServo, err := initializeServo(conf, logger, bcom, newConf)
+	piServo, err := initializeServo(conf, logger, bcom, newConf)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := setInitialPosition(theServo, newConf); err != nil {
+	if err := setInitialPosition(piServo, newConf); err != nil {
 		return nil, err
 	}
 
-	handleHoldPosition(theServo, newConf)
+	handleHoldPosition(piServo, newConf)
 
-	return theServo, nil
+	return piServo, nil
 }
 
 // parseConfig parses the provided configuration into a ServoConfig.
@@ -144,35 +144,35 @@ func getBroadcomPin(pin string) (uint, error) {
 
 // initializeServo creates and initializes the piPigpioServo with the provided configuration and logger.
 func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, newConf *ServoConfig) (*piPigpioServo, error) {
-	theServo := &piPigpioServo{
+	piServo := &piPigpioServo{
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
 		pin:    C.uint(bcom),
 		opMgr:  operation.NewSingleOperationManager(),
 	}
 
-	if err := theServo.validateAndSetConfiguration(newConf); err != nil {
+	if err := piServo.validateAndSetConfiguration(newConf); err != nil {
 		return nil, err
 	}
 
 	// Start a separate connection to the pigpio daemon
 	piID := C.custom_pigpio_start()
-	theServo.piID = piID
+	piServo.piID = piID
 
-	return theServo, nil
+	return piServo, nil
 }
 
 // setInitialPosition sets the initial position of the servo based on the provided configuration.
-func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
+func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	var setPos C.int
 	if newConf.StartPos == nil {
 		// Set the servo to the default 90 degrees position by sending a 1500ms pulsewidth.
-		setPos = C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(1500))
+		setPos = C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(1500))
 	} else {
 		// Set the servo to the specified start position
 		setPos = C.set_servo_pulsewidth(
-			theServo.piID, theServo.pin,
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
+			piServo.piID, piServo.pin,
+			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))),
 		)
 	}
 	errorCode := int(setPos)
@@ -183,15 +183,15 @@ func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
 }
 
 // handleHoldPosition configures the hold position setting for the servo.
-func handleHoldPosition(theServo *piPigpioServo, newConf *ServoConfig) {
+func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) {
 	if newConf.HoldPos == nil || *newConf.HoldPos {
 		// Hold the servo position
-		theServo.holdPos = true
+		piServo.holdPos = true
 	} else {
 		// Release the servo position and disable the servo
-		theServo.res = C.get_servo_pulsewidth(theServo.piID, theServo.pin)
-		theServo.holdPos = false
-		C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(0)) // disables servo
+		piServo.res = C.get_servo_pulsewidth(piServo.piID, piServo.pin)
+		piServo.holdPos = false
+		C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(0)) // disables servo
 	}
 }
 
