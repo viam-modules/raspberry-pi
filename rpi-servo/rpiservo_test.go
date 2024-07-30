@@ -219,6 +219,7 @@ func TestServoFunctions(t *testing.T) {
 			Pin:         "22",
 			MaxRotation: 180,
 			Min:         200,
+			Max:         180,
 		}
 
 		err := s.validateAndSetConfiguration(newConf)
@@ -230,6 +231,7 @@ func TestServoFunctions(t *testing.T) {
 			Pin:         "22",
 			Max:         180,
 			MaxRotation: 179,
+			Min:         0,
 		}
 
 		err = s.validateAndSetConfiguration(newConf)
