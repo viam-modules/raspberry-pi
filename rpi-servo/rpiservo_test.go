@@ -335,29 +335,29 @@ func TestServoFunctions(t *testing.T) {
 		ctx := context.Background()
 		s := &piPigpioServo{pinname: "1", maxRotation: 180, opMgr: operation.NewSingleOperationManager()}
 
-		s.res = -93
-		err := s.pigpioErrors(int(s.res))
+		s.pwInUse = -93
+		err := s.pigpioErrors(int(s.pwInUse))
 		test.That(t, err.Error(), test.ShouldContainSubstring, "pulsewidths")
 		moving, err := s.IsMoving(ctx)
 		test.That(t, moving, test.ShouldBeFalse)
 		test.That(t, err, test.ShouldNotBeNil)
 
-		s.res = -7
-		err = s.pigpioErrors(int(s.res))
+		s.pwInUse = -7
+		err = s.pigpioErrors(int(s.pwInUse))
 		test.That(t, err.Error(), test.ShouldContainSubstring, "range")
 		moving, err = s.IsMoving(ctx)
 		test.That(t, moving, test.ShouldBeFalse)
 		test.That(t, err, test.ShouldNotBeNil)
 
-		s.res = 0
-		err = s.pigpioErrors(int(s.res))
+		s.pwInUse = 0
+		err = s.pigpioErrors(int(s.pwInUse))
 		test.That(t, err, test.ShouldBeNil)
 		moving, err = s.IsMoving(ctx)
 		test.That(t, moving, test.ShouldBeFalse)
 		test.That(t, err, test.ShouldBeNil)
 
-		s.res = 1
-		err = s.pigpioErrors(int(s.res))
+		s.pwInUse = 1
+		err = s.pigpioErrors(int(s.pwInUse))
 		test.That(t, err, test.ShouldBeNil)
 		moving, err = s.IsMoving(ctx)
 		test.That(t, moving, test.ShouldBeFalse)
