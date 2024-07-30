@@ -164,19 +164,14 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 
 // setInitialPosition sets the initial position of the servo based on the provided configuration.
 func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
-	var setPos C.int
-	if newConf.StartPos == nil {
-		// Set the servo to the default 90 degrees position by sending a 1500ms pulsewidth.
-		setPos = C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(1500))
-	} else {
-		// Set the servo to the specified start position
-		setPos = C.set_servo_pulsewidth(
+	position := 1500
+	if newConf.StartPos != nil{
+		C.set_servo_pulsewidth(
 			piServo.piID, piServo.pin,
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))),
-		)
+			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation)))
 	}
-	errorCode := int(setPos)
-	if errorCode != 0 {
+	errorCode := int(C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(position))
+	if errorCode != 0{
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
 	}
 	return nil
