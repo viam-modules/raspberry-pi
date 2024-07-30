@@ -9,7 +9,6 @@ package rpi
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "pi.h"
-// #cgo LDFLAGS: -lpigpio
 import "C"
 
 import (
@@ -51,64 +50,34 @@ func findInterruptBcom(
 	return 0, false
 }
 
-func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
+// reconfigureContext contains the context and state required for reconfiguring interrupts.
+type reconfigureContext struct {
+	pi  *piPigpio
+	ctx context.Context
+
 	// We reuse the old interrupts when possible.
-	oldInterrupts := pi.interrupts
-	oldInterruptsHW := pi.interruptsHW
-	// Like with pi.interrupts and pi.interruptsHW, these two will have identical values, mapped to
+	oldInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+	oldInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+
+	// Like oldInterrupts and oldInterruptsHW, these two will have identical values, mapped to
 	// using different keys.
-	newInterrupts := map[string]rpiutils.ReconfigurableDigitalInterrupt{}
-	newInterruptsHW := map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
+	newInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+	newInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
 
-	// This begins as a set of all interrupts, but we'll remove the ones we reuse. Then, we'll
-	// close whatever is left over.
-	interruptsToClose := make(
-		map[rpiutils.ReconfigurableDigitalInterrupt]struct{},
-		len(oldInterrupts),
-	)
+	interruptsToClose map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
+}
 
-	for _, interrupt := range oldInterrupts {
-		interruptsToClose[interrupt] = struct{}{}
-	}
-
-	reuseInterrupt := func(
-		interrupt rpiutils.ReconfigurableDigitalInterrupt,
-		name string,
-		bcom uint,
-	) error {
-		newInterrupts[name] = interrupt
-		newInterruptsHW[bcom] = interrupt
-		delete(interruptsToClose, interrupt)
-
-		// We also need to remove the reused interrupt from oldInterrupts and oldInterruptsHW, to
-		// avoid double-reuse (e.g., the old interrupt had name "foo" on pin 7, and the new config
-		// has name "foo" on pin 8 and name "bar" on pin 7).
-		if oldName, ok := findInterruptName(interrupt, oldInterrupts); ok {
-			delete(oldInterrupts, oldName)
-		} else {
-			// This should never happen. However, if it does, nothing is obviously broken, so we'll
-			// just log the weirdness and continue.
-			pi.logger.CErrorf(ctx,
-				"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
-					"but couldn't find its old name!?", name, bcom)
-		}
-
-		if oldBcom, ok := findInterruptBcom(interrupt, oldInterruptsHW); ok {
-			delete(oldInterruptsHW, oldBcom)
-			if result := C.teardownInterrupt(pi.piID, C.int(oldBcom)); result != 0 {
-				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
-			}
-		} else {
-			// This should never happen, either, but is similarly not really a problem.
-			pi.logger.CErrorf(ctx,
-				"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
-					"but couldn't find its old bcom!?", name, bcom)
-		}
-
-		if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
-			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
-		}
-		return nil
+// reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
+// It reuses existing interrupts when possible and creates new ones if necessary.
+func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
+	reconfigCtx := &reconfigureContext{
+		pi:                pi,
+		ctx:               ctx,
+		oldInterrupts:     pi.interrupts,
+		oldInterruptsHW:   pi.interruptsHW,
+		newInterrupts:     make(map[string]rpiutils.ReconfigurableDigitalInterrupt),
+		newInterruptsHW:   make(map[uint]rpiutils.ReconfigurableDigitalInterrupt),
+		interruptsToClose: initializeInterruptsToClose(pi.interrupts),
 	}
 
 	for _, newConfig := range cfg.DigitalInterrupts {
@@ -117,62 +86,116 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
 		}
 
-		// Try reusing an interrupt with the same pin
-		if oldInterrupt, ok := oldInterruptsHW[bcom]; ok {
-			if err := reuseInterrupt(oldInterrupt, newConfig.Name, bcom); err != nil {
-				return err
-			}
-			continue
-		}
-		// If that didn't work, try reusing an interrupt with the same name
-		if oldInterrupt, ok := oldInterrupts[newConfig.Name]; ok {
-			if err := reuseInterrupt(oldInterrupt, newConfig.Name, bcom); err != nil {
-				return err
-			}
-			continue
-		}
-
-		// Otherwise, create the new interrupt from scratch.
-		di, err := rpiutils.CreateDigitalInterrupt(newConfig)
-		if err != nil {
+		if err := reconfigCtx.tryReuseOrCreateInterrupt(newConfig, bcom); err != nil {
 			return err
-		}
-		newInterrupts[newConfig.Name] = di
-		newInterruptsHW[bcom] = di
-		if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
-			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 		}
 	}
 
-	// For the remaining interrupts, keep any that look implicitly created (interrupts whose name
-	// matches its broadcom address), and get rid of the rest.
-	for interrupt := range interruptsToClose {
-		name, ok := findInterruptName(interrupt, oldInterrupts)
+	if err := reconfigCtx.cleanupUnusedInterrupts(); err != nil {
+		return err
+	}
+
+	pi.interrupts = reconfigCtx.newInterrupts
+	pi.interruptsHW = reconfigCtx.newInterruptsHW
+	return nil
+}
+
+// type aliases for initializeInterruptsToClose function
+type InterruptMap map[string]rpiutils.ReconfigurableDigitalInterrupt
+type InterruptSet map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
+
+// initializeInterruptsToClose initializes a map of interrupts to be closed by adding all old interrupts to it.
+func initializeInterruptsToClose(oldInterrupts InterruptMap) InterruptSet {
+	interruptsToClose := make(map[rpiutils.ReconfigurableDigitalInterrupt]struct{}, len(oldInterrupts))
+	for _, interrupt := range oldInterrupts {
+		interruptsToClose[interrupt] = struct{}{}
+	}
+	return interruptsToClose
+}
+
+// tryReuseOrCreateInterrupt attempts to reuse an existing interrupt or create a new one if no reusable interrupt is found.
+// It tries to reuse an interrupt by its hardware pin or name, and if both fail, it creates a new interrupt.
+func (ctx *reconfigureContext) tryReuseOrCreateInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+	if oldInterrupt, ok := ctx.oldInterruptsHW[bcom]; ok {
+		return ctx.reuseInterrupt(oldInterrupt, newConfig.Name, bcom)
+	}
+
+	if oldInterrupt, ok := ctx.oldInterrupts[newConfig.Name]; ok {
+		return ctx.reuseInterrupt(oldInterrupt, newConfig.Name, bcom)
+	}
+
+	return ctx.createNewInterrupt(newConfig, bcom)
+}
+
+// reuseInterrupt reconfigures an existing interrupt for reuse and updates the necessary maps and configurations.
+// It removes the reused interrupt from the list of interrupts to be closed and updates the new interrupt maps.
+func (ctx *reconfigureContext) reuseInterrupt(interrupt rpiutils.ReconfigurableDigitalInterrupt, name string, bcom uint) error {
+	ctx.newInterrupts[name] = interrupt
+	ctx.newInterruptsHW[bcom] = interrupt
+	delete(ctx.interruptsToClose, interrupt)
+
+	if oldName, ok := findInterruptName(interrupt, ctx.oldInterrupts); ok {
+		delete(ctx.oldInterrupts, oldName)
+	} else {
+		ctx.pi.logger.CErrorf(ctx.ctx,
+			"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
+				"but couldn't find its old name!?", name, bcom)
+	}
+
+	if oldBcom, ok := findInterruptBcom(interrupt, ctx.oldInterruptsHW); ok {
+		delete(ctx.oldInterruptsHW, oldBcom)
+		if result := C.teardownInterrupt(ctx.pi.piID, C.int(oldBcom)); result != 0 {
+			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+		}
+	} else {
+		ctx.pi.logger.CErrorf(ctx.ctx,
+			"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
+				"but couldn't find its old bcom!?", name, bcom)
+	}
+
+	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
+		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+	}
+	return nil
+}
+
+// createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
+func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+	di, err := rpiutils.CreateDigitalInterrupt(newConfig)
+	if err != nil {
+		return err
+	}
+	ctx.newInterrupts[newConfig.Name] = di
+	ctx.newInterruptsHW[bcom] = di
+	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
+		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+	}
+	return nil
+}
+
+// createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
+// It adds the new interrupt to the new interrupt maps and sets up the interrupt in the hardware.
+func (ctx *reconfigureContext) cleanupUnusedInterrupts() error {
+	for interrupt := range ctx.interruptsToClose {
+		name, ok := findInterruptName(interrupt, ctx.oldInterrupts)
 		if !ok {
-			// This should never happen
-			return errors.Errorf("Logic bug: found old interrupt %s without old name!?", interrupt)
+			return errors.Errorf("found old interrupt %s without old name!?", interrupt)
 		}
 
-		bcom, ok := findInterruptBcom(interrupt, oldInterruptsHW)
+		bcom, ok := findInterruptBcom(interrupt, ctx.oldInterruptsHW)
 		if !ok {
-			// This should never happen, either
-			return errors.Errorf("Logic bug: found old interrupt %s without old bcom!?", interrupt)
+			return errors.Errorf("found old interrupt %s without old bcom!?", interrupt)
 		}
 
 		if expectedBcom, ok := rpiutils.BroadcomPinFromHardwareLabel(name); ok && bcom == expectedBcom {
-			// This digital interrupt looks like it was implicitly created. Keep it around!
-			newInterrupts[name] = interrupt
-			newInterruptsHW[bcom] = interrupt
+			ctx.newInterrupts[name] = interrupt
+			ctx.newInterruptsHW[bcom] = interrupt
 		} else {
-			// This digital interrupt is no longer used.
-			if result := C.teardownInterrupt(pi.piID, C.int(bcom)); result != 0 {
+			if result := C.teardownInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
 				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
 			}
 		}
 	}
-
-	pi.interrupts = newInterrupts
-	pi.interruptsHW = newInterruptsHW
 	return nil
 }
 
