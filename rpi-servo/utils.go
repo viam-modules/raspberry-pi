@@ -12,7 +12,7 @@ func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
 		s.min = uint32(conf.Min)
 	}
 
-	// Set to 180 if not set
+	// Set max to 180 if not set/invalid
 	s.max = 180
 	if conf.Max > 0 {
 		s.max = uint32(conf.Max)

@@ -1,3 +1,5 @@
+//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
+
 // Package rpi implements raspberry pi board
 package rpi
 
@@ -15,7 +17,6 @@ package rpi
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "pi.h"
-// #cgo LDFLAGS: -lpigpio
 import "C"
 
 import (
@@ -194,7 +195,6 @@ func (pi *piPigpio) Reconfigure(
 
 	instanceMu.Lock()
 	defer instanceMu.Unlock()
-	instances[pi] = struct{}{}
 	return nil
 }
 
@@ -214,8 +214,11 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	var err error
 	err = multierr.Combine(err,
 		closeAnalogReaders(ctx, pi),
-		teardownInterrupts(pi),
-		handleTermination(ctx, pi))
+		teardownInterrupts(pi))
+
+	//TODO: test this with multiple instences of the board.
+	C.pigpio_stop(pi.piID)
+	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
 	return err
@@ -269,29 +272,5 @@ func teardownInterrupts(pi *piPigpio) error {
 	}
 	pi.interrupts = map[string]rpiutils.ReconfigurableDigitalInterrupt{}
 	pi.interruptsHW = map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
-	return err
-}
-
-// handleTermination manages the termination of the Pi GPIO instance.
-func handleTermination(ctx context.Context, pi *piPigpio) error {
-	var err error
-	var terminate bool
-
-	instanceMu.Lock()
-	if len(instances) == 1 {
-		terminate = true
-	}
-	delete(instances, pi)
-
-	if terminate {
-		pigpioInitialized = false
-		instanceMu.Unlock()
-		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		C.pigpio_stop(pi.piID)
-		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
-	} else {
-		instanceMu.Unlock()
-	}
-
 	return err
 }

@@ -1,9 +1,8 @@
-// Contains Servo Config to ensure it is valid with a pin and board name.
+// Package rpiservo contains servo config to ensure it is valid with a pin and board name.
 package rpiservo
 
 import (
 	"github.com/pkg/errors"
-
 	"go.viam.com/rdk/resource"
 )
 

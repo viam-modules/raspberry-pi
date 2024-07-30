@@ -1,3 +1,5 @@
+//go:build linux && (arm64 || arm) && !no_pigpio && !no_cgo
+
 // Package rpiservo implements pi servo
 package rpiservo
 
@@ -55,44 +57,62 @@ func init() {
 	)
 }
 
+// Validate and set piPigpioServo fields based on the configuration.
+func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
+	if conf.Min > 0 {
+		s.min = uint32(conf.Min)
+	}
+	if conf.Max > 0 {
+		s.max = uint32(conf.Max)
+	}
+	s.maxRotation = uint32(conf.MaxRotation)
+	if s.maxRotation == 0 {
+		s.maxRotation = uint32(servoDefaultMaxRotation)
+	}
+	if s.maxRotation < s.min {
+		return errors.New("maxRotation is less than minimum")
+	}
+	if s.maxRotation < s.max {
+		return errors.New("maxRotation is less than maximum")
+	}
+
+	s.pinname = conf.Pin
+
+	return nil
+}
+
 func newPiServo(
 	ctx context.Context,
 	_ resource.Dependencies,
 	conf resource.Config,
 	logger logging.Logger,
 ) (servo.Servo, error) {
-	// Parse the configuration
 	newConf, err := parseConfig(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate the configuration
 	if err := validateConfig(newConf); err != nil {
 		return nil, err
 	}
 
-	// Get Broadcom pin from hardware label
 	bcom, err := getBroadcomPin(newConf.Pin)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and initialize the servo
-	theServo, err := initializeServo(conf, logger, bcom, newConf)
+	piServo, err := initializeServo(conf, logger, bcom, newConf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Set the initial position of the servo
-	if err := setInitialPosition(theServo, newConf); err != nil {
+	if err := setInitialPosition(piServo, newConf); err != nil {
 		return nil, err
 	}
 
-	// Handle the hold position configuration
-	handleHoldPosition(theServo, newConf)
+	handleHoldPosition(piServo, newConf)
 
-	return theServo, nil
+	return piServo, nil
 }
 
 // parseConfig parses the provided configuration into a ServoConfig.
@@ -131,8 +151,7 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 		opMgr:   operation.NewSingleOperationManager(),
 	}
 
-	// Validate and set the servo configuration
-	if err := theServo.validateAndSetConfiguration(newConf); err != nil {
+	if err := piServo.validateAndSetConfiguration(newConf); err != nil {
 		return nil, err
 	}
 
@@ -142,23 +161,18 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 	// Set communication ID for servo
 	theServo.piID = piID
 
-	return theServo, nil
+	return piServo, nil
 }
 
 // setInitialPosition sets the initial position of the servo based on the provided configuration.
-func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
-	var setPos C.int
-	if newConf.StartPos == nil {
-		// Set the servo to the default 90 degrees position
-		setPos = C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(1500))
-	} else {
-		// Set the servo to the specified start position
-		setPos = C.set_servo_pulsewidth(
-			theServo.piID, theServo.pin,
-			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(theServo.maxRotation))),
-		)
+func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
+	position := 1500
+	if newConf.StartPos != nil {
+		C.set_servo_pulsewidth(
+			piServo.piID, piServo.pin,
+			C.uint(angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))))
 	}
-	errorCode := int(setPos)
+	errorCode := int(C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(position)))
 	if errorCode != 0 {
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
 	}
@@ -166,15 +180,15 @@ func setInitialPosition(theServo *piPigpioServo, newConf *ServoConfig) error {
 }
 
 // handleHoldPosition configures the hold position setting for the servo.
-func handleHoldPosition(theServo *piPigpioServo, newConf *ServoConfig) {
+func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) {
 	if newConf.HoldPos == nil || *newConf.HoldPos {
 		// Hold the servo position
-		theServo.holdPos = true
+		piServo.holdPos = true
 	} else {
 		// Release the servo position and disable the servo
-		theServo.res = C.get_servo_pulsewidth(theServo.piID, theServo.pin)
-		theServo.holdPos = false
-		C.set_servo_pulsewidth(theServo.piID, theServo.pin, C.uint(0)) // disables servo
+		piServo.pwInUse = C.get_servo_pulsewidth(piServo.piID, piServo.pin)
+		piServo.holdPos = false
+		C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(0)) // disables servo
 	}
 }
 
@@ -185,7 +199,7 @@ type piPigpioServo struct {
 	logger      logging.Logger
 	pin         C.uint
 	pinname     string
-	res         C.int
+	pwInUse     C.int
 	min, max    uint32
 	opMgr       *operation.SingleOperationManager
 	pulseWidth  int // pulsewidth value, 500-2500us is 0-180 degrees, 0 is off
@@ -207,12 +221,12 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 		angle = s.max
 	}
 	pulseWidth := angleToPulseWidth(int(angle), int(s.maxRotation))
-	res := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(pulseWidth))
+	errCode := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(pulseWidth))
 
 	s.pulseWidth = pulseWidth
 
-	if res != 0 {
-		err := s.pigpioErrors(int(res))
+	if errCode != 0 {
+		err := s.pigpioErrors(int(errCode))
 		return err
 	}
 
@@ -220,9 +234,9 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	if !s.holdPos { // the following logic disables a servo once it has reached a position or after a certain amount of time has been reached
 		time.Sleep(time.Duration(holdTime)) // time before a stop is sent
-		setPos := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
-		if setPos < 0 {
-			return errors.Errorf("servo on pin %s failed with code %d", s.pinname, setPos)
+		errCode := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
+		if errCode < 0 {
+			return errors.Errorf("servo on pin %s failed with code %d", s.pinname, errCode)
 		}
 	}
 	return nil
@@ -247,15 +261,15 @@ func (s *piPigpioServo) pigpioErrors(res int) error {
 
 // Position returns the current set angle (degrees) of the servo.
 func (s *piPigpioServo) Position(ctx context.Context, extra map[string]interface{}) (uint32, error) {
-	res := C.get_servo_pulsewidth(s.piID, s.pin)
-	err := s.pigpioErrors(int(res))
-	if int(res) != 0 {
-		s.res = res
+	pwInUse := C.get_servo_pulsewidth(s.piID, s.pin)
+	err := s.pigpioErrors(int(pwInUse))
+	if int(pwInUse) != 0 {
+		s.pwInUse = pwInUse
 	}
 	if err != nil {
 		return 0, err
 	}
-	return uint32(pulseWidthToAngle(int(s.res), int(s.maxRotation))), nil
+	return uint32(pulseWidthToAngle(int(s.pwInUse), int(s.maxRotation))), nil
 }
 
 // angleToPulseWidth changes the input angle in degrees
@@ -276,8 +290,7 @@ func pulseWidthToAngle(pulseWidth, maxRotation int) int {
 func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) error {
 	_, done := s.opMgr.New(ctx)
 	defer done()
-	getPos := C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0))
-	errorCode := int(getPos)
+	errorCode := int(C.set_servo_pulsewidth(s.piID, s.pin, C.uint(0)))
 	if errorCode != 0 {
 		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
 	}
@@ -286,11 +299,11 @@ func (s *piPigpioServo) Stop(ctx context.Context, extra map[string]interface{}) 
 
 // IsMoving returns whether the servo is actively moving (or attempting to move) under its own power.
 func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
-	err := s.pigpioErrors(int(s.res))
+	err := s.pigpioErrors(int(s.pwInUse))
 	if err != nil {
 		return false, err
 	}
-	if int(s.res) == 0 {
+	if int(s.pwInUse) == 0 {
 		return false, nil
 	}
 	return s.opMgr.OpRunning(), nil
