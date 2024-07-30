@@ -164,7 +164,7 @@ func TestInitializationFunctions(t *testing.T) {
 		s.pin = 10000
 		err = setInitialPosition(s, &ServoConfig{StartPos: nil})
 		test.That(t, err, test.ShouldNotBeNil)
-		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_GPIO")
+		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_USER_GPIO")
 
 		// invalid angle
 		s.pin = 22
