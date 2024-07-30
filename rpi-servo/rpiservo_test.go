@@ -211,6 +211,49 @@ func TestInitializationFunctions(t *testing.T) {
 
 }
 func TestServoFunctions(t *testing.T) {
+	t.Run("test validate and set configuration", func(t *testing.T) {
+		s := &piPigpioServo{}
+
+		// invalid conf, maxRotation < min
+		newConf := &ServoConfig{
+			Pin:         "22",
+			MaxRotation: 180,
+			Min:         200,
+		}
+
+		err := s.validateAndSetConfiguration(newConf)
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than minimum")
+
+		// invalid conf, maxRotation < max
+		newConf = &ServoConfig{
+			Pin:         "22",
+			Max:         180,
+			MaxRotation: 179,
+		}
+
+		err = s.validateAndSetConfiguration(newConf)
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than maximum")
+
+		// valid conf
+		newConf = &ServoConfig{
+			Pin:         "22",
+			MaxRotation: 1234,
+			Max:         180,
+			Min:         0,
+		}
+
+		targetPin := 3
+
+		err = s.validateAndSetConfiguration(newConf)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, int(s.piID), test.ShouldBeGreaterThanOrEqualTo, 0)
+		test.That(t, int(s.pin), test.ShouldEqual, targetPin)
+		test.That(t, s.max, test.ShouldEqual, 180)
+		test.That(t, s.min, test.ShouldEqual, 0)
+		test.That(t, s.maxRotation, test.ShouldEqual, 1234)
+	})
 	t.Run("test parse config", func(t *testing.T) {
 		newConf := &ServoConfig{Pin: "100"}
 
