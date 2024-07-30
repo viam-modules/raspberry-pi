@@ -196,7 +196,6 @@ func (pi *piPigpio) Reconfigure(
 
 	instanceMu.Lock()
 	defer instanceMu.Unlock()
-	instances[pi] = struct{}{}
 	return nil
 }
 
@@ -216,8 +215,11 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	var err error
 	err = multierr.Combine(err,
 		closeAnalogReaders(ctx, pi),
-		teardownInterrupts(pi),
-		handleTermination(ctx, pi))
+		teardownInterrupts(pi))
+
+	//TODO: test this with multiple instences of the board.
+	C.pigpio_stop(pi.piID)
+	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
 	return err
@@ -271,31 +273,5 @@ func teardownInterrupts(pi *piPigpio) error {
 	}
 	pi.interrupts = map[string]rpiutils.ReconfigurableDigitalInterrupt{}
 	pi.interruptsHW = map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
-	return err
-}
-
-// handleTermination manages the termination of the Pi GPIO instance.
-func handleTermination(ctx context.Context, pi *piPigpio) error {
-	var err error
-	var terminate bool
-
-	instanceMu.Lock()
-	// Not defering the Unlock() here because we need to call pigpio_stop() outside the lock.
-	if len(instances) == 1 {
-		terminate = true
-	}
-	delete(instances, pi)
-
-	if terminate {
-		pigpioInitialized = false
-		instanceMu.Unlock()
-		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		// TODO: RSDK-8389
-		C.pigpio_stop(pi.piID)
-		pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
-	} else {
-		instanceMu.Unlock()
-	}
-
 	return err
 }
