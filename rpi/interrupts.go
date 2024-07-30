@@ -53,12 +53,18 @@ func findInterruptBcom(
 
 // reconfigureContext contains the context and state required for reconfiguring interrupts.
 type reconfigureContext struct {
-	pi                *piPigpio
-	ctx               context.Context
-	oldInterrupts     map[string]rpiutils.ReconfigurableDigitalInterrupt
-	oldInterruptsHW   map[uint]rpiutils.ReconfigurableDigitalInterrupt
-	newInterrupts     map[string]rpiutils.ReconfigurableDigitalInterrupt
-	newInterruptsHW   map[uint]rpiutils.ReconfigurableDigitalInterrupt
+	pi  *piPigpio
+	ctx context.Context
+
+	// We reuse the old interrupts when possible.
+	oldInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+	oldInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+
+	// Like oldInterrupts and oldInterruptsHW, these two will have identical values, mapped to
+	// using different keys.
+	newInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+	newInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+
 	interruptsToClose map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
 }
 
