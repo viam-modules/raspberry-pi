@@ -92,7 +92,6 @@ func TestInitializationFunctions(t *testing.T) {
 
 		// invalid conf, maxRotation < min
 		newConf := &ServoConfig{
-			Pin:         "22",
 			Min:         200,
 			Max:         180,
 			MaxRotation: 180,
@@ -105,7 +104,6 @@ func TestInitializationFunctions(t *testing.T) {
 
 		// invalid conf, maxRotation < max
 		newConf = &ServoConfig{
-			Pin:         "22",
 			Min:         0,
 			Max:         180,
 			MaxRotation: 179,
@@ -118,7 +116,6 @@ func TestInitializationFunctions(t *testing.T) {
 
 		// valid conf
 		newConf = &ServoConfig{
-			Pin:         "22",
 			Min:         0,
 			Max:         180,
 			MaxRotation: 180,
@@ -248,12 +245,8 @@ func TestServoFunctions(t *testing.T) {
 			Max:         180,
 		}
 
-		targetPin := 3
-
 		err = s.validateAndSetConfiguration(newConf)
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, int(s.piID), test.ShouldBeGreaterThanOrEqualTo, 0)
-		test.That(t, int(s.pin), test.ShouldEqual, targetPin)
 		test.That(t, s.max, test.ShouldEqual, 180)
 		test.That(t, s.min, test.ShouldEqual, 0)
 		test.That(t, s.maxRotation, test.ShouldEqual, 1234)

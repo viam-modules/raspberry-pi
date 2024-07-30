@@ -124,10 +124,11 @@ func getBroadcomPin(pin string) (uint, error) {
 // initializeServo creates and initializes the piPigpioServo with the provided configuration and logger.
 func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, newConf *ServoConfig) (*piPigpioServo, error) {
 	theServo := &piPigpioServo{
-		Named:  conf.ResourceName().AsNamed(),
-		logger: logger,
-		pin:    C.uint(bcom),
-		opMgr:  operation.NewSingleOperationManager(),
+		Named:   conf.ResourceName().AsNamed(),
+		logger:  logger,
+		pin:     C.uint(bcom),
+		pinname: newConf.Pin,
+		opMgr:   operation.NewSingleOperationManager(),
 	}
 
 	// Validate and set the servo configuration
