@@ -99,6 +99,7 @@ func TestInitializationFunctions(t *testing.T) {
 
 		s, err := initializeServo(conf, logger, bcom, newConf)
 		test.That(t, s, test.ShouldBeNil)
+		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than minimum")
 
 		// invalid conf, maxRotation < max
@@ -110,6 +111,7 @@ func TestInitializationFunctions(t *testing.T) {
 
 		s, err = initializeServo(conf, logger, bcom, newConf)
 		test.That(t, s, test.ShouldBeNil)
+		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "maxRotation is less than maximum")
 
 		// valid conf
@@ -159,14 +161,16 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 
 		// invalid pin
-		s.pinname = "bad"
+		s.pin = 10000
 		err = setInitialPosition(s, &ServoConfig{StartPos: nil})
+		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_GPIO")
 
 		// invalid angle
-		s.pinname = "22"
+		s.pin = 22
 		initPos = 181.0
 		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
+		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_PULSEWIDTH")
 
 		// close pigpio
