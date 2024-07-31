@@ -16,6 +16,7 @@ type ServoConfig struct {
 	StartPos    *float64 `json:"starting_position_degs,omitempty"` // specifies a starting position. Defaults to 90
 	HoldPos     *bool    `json:"hold_position,omitempty"`          // defaults True. False holds for 500 ms then disables servo
 	MaxRotation int      `json:"max_rotation_deg,omitempty"`       // specifies a hardware position limitation. Defaults to 180
+	Freq        int      `json:"frequency_hz,omitempty"`           // specifies the pwm frequency to drive to servo.
 }
 
 // Validate ensures all parts of the config are valid.

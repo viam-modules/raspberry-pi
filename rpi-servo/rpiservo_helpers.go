@@ -34,6 +34,9 @@ func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
 	if s.maxRotation < s.max {
 		return errors.New("maxRotation is less than maximum")
 	}
+	if conf.Freq > 0 {
+		s.pwmFreqHz = C.uint(conf.Freq)
+	}
 
 	s.pinname = conf.Pin
 
@@ -46,24 +49,41 @@ func setInitialPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	if newConf.StartPos != nil {
 		position = angleToPulseWidth(int(*newConf.StartPos), int(piServo.maxRotation))
 	}
-	errorCode := int(C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(position)))
-	if errorCode != 0 {
-		return rpiutils.ConvertErrorCodeToMessage(errorCode, "gpioServo failed with")
+	err := piServo.setServoPulseWidth(position)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 // handleHoldPosition configures the hold position setting for the servo.
-func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) {
+func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	if newConf.HoldPos == nil || *newConf.HoldPos {
 		// Hold the servo position
 		piServo.holdPos = true
 	} else {
 		// Release the servo position and disable the servo
-		piServo.pwInUse = C.get_servo_pulsewidth(piServo.piID, piServo.pin)
+		piServo.pwInUse = C.get_PWM_dutycycle(piServo.piID, piServo.pin)
 		piServo.holdPos = false
-		C.set_servo_pulsewidth(piServo.piID, piServo.pin, C.uint(0)) // disables servo
+		piServo.setServoPulseWidth(0)
 	}
+}
+
+// sets the servo's pulse width
+func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
+	errCode := C.set_PWM_frequency(s.piID, s.pin, s.pwmFreqHz)
+	if errCode < 0 {
+		return errors.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+	}
+	errCode = C.set_PWM_range(s.piID, s.pin, 1e6/s.pwmFreqHz)
+	if errCode < 0 {
+		return errors.Errorf("servo set pwm range on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+	}
+	errCode = C.set_PWM_dutycycle(s.piID, s.pin, C.uint(pulseWidth))
+	if errCode < 0 {
+		return errors.Errorf("servo set pwm duty cycle on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+	}
+	return nil
 }
 
 // parseConfig parses the provided configuration into a ServoConfig.
