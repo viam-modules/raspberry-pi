@@ -35,8 +35,6 @@ func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
 		return errors.New("maxRotation is less than maximum")
 	}
 
-	s.pinname = conf.Pin
-
 	return nil
 }
 
