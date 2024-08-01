@@ -10,10 +10,12 @@ module.tar.gz: build
 	rm -f $(BIN_OUTPUT_PATH)/module.tar.gz
 	tar czf $(BIN_OUTPUT_PATH)/module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi
 
-test:
-	sudo apt install libnlopt-dev
-	go test ./...
+update-rdk:
+	go get go.viam.com/rdk@latest
+	go mod tidy
 
+test:
+	go test ./...
 
 tool-install:
 	GOBIN=`pwd`/$(TOOL_BIN) go install \

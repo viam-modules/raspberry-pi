@@ -1,4 +1,4 @@
-name: run linter and unit tests on each commit
+name: Run gofmt & unit tests
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
     paths:
       - '**/**.go'
       - 'Makefile'
-      - '.github/workflows/test.yml'
+      - '.github/workflows/lint-test.yml'
 
 jobs:
   quality-checks:
@@ -18,19 +18,23 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
+    
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.21
+        go-version: 1.22
 
     - name: Install dependencies
       run: |
         sudo apt-get update
+        sudo apt-get install -y libnlopt-dev
+
+    - name: Check gofmt
+      run: |
+        if [ -n "$(gofmt -d .)" ]; then
+          echo "gofmt is unhappy with your code quality!! Please run 'make lint' and commit the changes."
+          exit 1
+        fi
 
     - name: Run unit tests
       run: make test
-
-    - name: Run linter
-      run: make lint
-      
