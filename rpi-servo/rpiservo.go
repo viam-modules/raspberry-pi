@@ -93,7 +93,7 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 		pin:       C.uint(bcom),
 		pinname:   newConf.Pin,
 		opMgr:     operation.NewSingleOperationManager(),
-		pwmFreqHz: 50,
+		pwmFreqHz: 50, // default frequency for most pi hobby servos
 	}
 
 	if err := piServo.validateAndSetConfiguration(newConf); err != nil {
