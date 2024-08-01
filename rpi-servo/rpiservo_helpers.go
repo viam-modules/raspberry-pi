@@ -35,9 +35,7 @@ func (s *piPigpioServo) validateAndSetConfiguration(conf *ServoConfig) error {
 		return errors.New("maxRotation is less than maximum")
 	}
 
-	// we default to a frequency of 50 Hz in the raspberry pi servo creation,
-	// to cater to most hobby servos
-	// we ignore frequency if it is zero
+	// if user doesn't provide a frequency, we keep the default value of 50 Hz
 	if conf.Freq > 0 {
 		s.pwmFreqHz = C.uint(conf.Freq)
 	}

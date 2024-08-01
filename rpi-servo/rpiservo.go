@@ -96,6 +96,8 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 		pwmFreqHz: 50, // default frequency for most pi hobby servos
 	}
 
+	piServo.logger.Infof("setting default pwm frequency of 50 Hz")
+
 	if err := piServo.validateAndSetConfiguration(newConf); err != nil {
 		return nil, err
 	}
