@@ -65,8 +65,12 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 		// Release the servo position and disable the servo
 		piServo.pwInUse = C.get_PWM_dutycycle(piServo.piID, piServo.pin)
 		piServo.holdPos = false
-		piServo.setServoPulseWidth(0)
+		err := piServo.setServoPulseWidth(0)
+		if err != nil {
+			return fmt.Errorf("erroring setting pulse width to 0")
+		}
 	}
+	return nil
 }
 
 // sets the servo's pulse width
