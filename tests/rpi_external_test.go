@@ -114,7 +114,7 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 
 		// set pin to low
-		err = pin.Set(nil, false, nil)
+		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -124,7 +124,7 @@ func TestPiPigpio(t *testing.T) {
 		before, err := i1.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
-		err = pin.Set(nil, true, nil)
+		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -133,7 +133,7 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, after-before, test.ShouldEqual, int64(1))
 
-		err = pin.Set(nil, false, nil)
+		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -144,7 +144,7 @@ func TestPiPigpio(t *testing.T) {
 		before, err = i2.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
-		err = pin.Set(nil, true, nil)
+		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
