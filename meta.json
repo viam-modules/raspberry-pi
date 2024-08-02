@@ -1,5 +1,5 @@
 {
-    "module_id": "viam-hardware-testing:raspberry-pi",
+    "module_id": "viam-hardware-testing:pi4-mod",
     "visibility": "private",
     "url": "https://github.com/viam-modules/raspberry-pi",
     "description": "Viam Go module for raspberry pi board and servo",
