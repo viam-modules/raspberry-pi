@@ -6,11 +6,11 @@
     "models": [
       {
         "api": "rdk:component:board",
-        "model": "viam:raspberry-pi:rpi"
+        "model": "viam-hardware-testing:raspberry-pi:rpi"
       },
       {
         "api": "rdk:component:servo",
-        "model": "viam:raspberry-pi:pi-servo"
+        "model": "viam-hardware-testing:raspberry-pi:pi-servo"
       }
     ],
     "build": {
@@ -18,5 +18,5 @@
       "path": "module.tar.gz",
       "arch" : ["linux/arm64"]
     },
-    "entrypoint": "bin/viamrpi"
+    "entrypoint": "bin/raspberry-pi"
 }

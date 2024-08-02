@@ -32,7 +32,7 @@ import (
 	"go.viam.com/rdk/resource"
 )
 
-var Model = resource.NewModel("viam", "raspberry-pi", "rpi-servo")
+var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi-servo")
 
 // Default configuration collected from data sheet
 var (

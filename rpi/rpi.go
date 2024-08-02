@@ -39,7 +39,7 @@ import (
 	"go.viam.com/utils"
 )
 
-var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
