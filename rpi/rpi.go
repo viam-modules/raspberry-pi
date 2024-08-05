@@ -89,12 +89,14 @@ type piPigpio struct {
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
-	interrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
+
+	interrupts []RpiInterrupt
+	// interrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
 	interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
 	logger       logging.Logger
 	isClosed     bool
 
-	piID C.int
+	piID C.int // id to communicate with pigpio daemon
 
 	activeBackgroundWorkers sync.WaitGroup
 }

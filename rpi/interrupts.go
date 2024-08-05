@@ -22,6 +22,11 @@ import (
 	"go.viam.com/rdk/logging"
 )
 
+type RpiInterrupt struct {
+	interrupt  rpiutils.ReconfigurableDigitalInterrupt
+	callbackID C.int // callback ID to close pi callback connection
+}
+
 // This is a helper function for digital interrupt reconfiguration. It finds the key in the map
 // whose value is the given interrupt, and returns that key and whether we successfully found it.
 func findInterruptName(
@@ -55,13 +60,11 @@ type reconfigureContext struct {
 	ctx context.Context
 
 	// We reuse the old interrupts when possible.
-	oldInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
-	oldInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+	oldInterrupts []RpiInterrupt
 
 	// Like oldInterrupts and oldInterruptsHW, these two will have identical values, mapped to
 	// using different keys.
-	newInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
-	newInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+	newInterrupts []RpiInterrupt
 
 	interruptsToClose map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
 }
@@ -70,22 +73,28 @@ type reconfigureContext struct {
 // It reuses existing interrupts when possible and creates new ones if necessary.
 func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
 	reconfigCtx := &reconfigureContext{
-		pi:                pi,
-		ctx:               ctx,
-		oldInterrupts:     pi.interrupts,
-		oldInterruptsHW:   pi.interruptsHW,
-		newInterrupts:     make(map[string]rpiutils.ReconfigurableDigitalInterrupt),
-		newInterruptsHW:   make(map[uint]rpiutils.ReconfigurableDigitalInterrupt),
-		interruptsToClose: initializeInterruptsToClose(pi.interrupts),
+		pi:            pi,
+		ctx:           ctx,
+		oldInterrupts: pi.interrupts,
 	}
 
+	// teardown old interrupts
+	for _, interrupt := range reconfigCtx.oldInterrupts {
+		if result := C.teardownInterrupt(interrupt.callbackID); result != 0 {
+			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+		}
+	}
+
+	// Set new interrupts based on config
 	for _, newConfig := range cfg.DigitalInterrupts {
-		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(newConfig.Pin)
+		// check if pin is valid
+		_, ok := rpiutils.BroadcomPinFromHardwareLabel(newConfig.Pin)
 		if !ok {
 			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
 		}
 
-		if err := reconfigCtx.tryReuseOrCreateInterrupt(newConfig, bcom); err != nil {
+		// create new interrupt
+		if err := reconfigCtx.createNewInterrupt(newConfig); err != nil {
 			return err
 		}
 	}
@@ -95,7 +104,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 	}
 
 	pi.interrupts = reconfigCtx.newInterrupts
-	pi.interruptsHW = reconfigCtx.newInterruptsHW
+	// pi.interruptsHW = reconfigCtx.newInterruptsHW
 	return nil
 }
 
@@ -115,6 +124,7 @@ func initializeInterruptsToClose(oldInterrupts InterruptMap) InterruptSet {
 // tryReuseOrCreateInterrupt attempts to reuse an existing interrupt or create a new one if no reusable interrupt is found.
 // It tries to reuse an interrupt by its hardware pin or name, and if both fail, it creates a new interrupt.
 func (ctx *reconfigureContext) tryReuseOrCreateInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+
 	if oldInterrupt, ok := ctx.oldInterruptsHW[bcom]; ok {
 		return ctx.reuseInterrupt(oldInterrupt, newConfig.Name, bcom)
 	}
@@ -158,17 +168,45 @@ func (ctx *reconfigureContext) reuseInterrupt(interrupt rpiutils.ReconfigurableD
 	return nil
 }
 
+// // createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
+// func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+// 	di, err := rpiutils.CreateDigitalInterrupt(newConfig)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	ctx.newInterrupts[newConfig.Name] = di
+// 	ctx.newInterruptsHW[bcom] = di
+// 	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result < 0 {
+// 		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+// 	}
+
+// 	// set callback for the interrupts
+// 	// ctx.newInterruptsHW[bcom].
+
+//		return nil
+//	}
+//
 // createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
-func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInterruptConfig) error {
 	di, err := rpiutils.CreateDigitalInterrupt(newConfig)
 	if err != nil {
 		return err
 	}
-	ctx.newInterrupts[newConfig.Name] = di
-	ctx.newInterruptsHW[bcom] = di
-	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
-		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+
+	newInterrupt := &RpiInterrupt{
+		interrupt: di,
 	}
+
+	ctx.newInterrupts = append(ctx.newInterrupts, *newInterrupt)
+
+	// returns callback ID on success >= 0
+	callbackID := C.setupInterrupt(ctx.pi.piID, C.int(bcom))
+	if int(callbackID) < 0 {
+		return rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
+	}
+
+	newInterrupt.callbackID = callbackID
+
 	return nil
 }
 
