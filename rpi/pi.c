@@ -25,12 +25,13 @@ int setupInterrupt(int pi, int gpio) {
     if (result != 0) {
         return result;
     }
+    // successful call returns a callback ID that can be used to cancel the callback
     result = callback(pi, gpio, EITHER_EDGE, interruptCallback);
     return result;
 }
 
-int teardownInterrupt(int pi, int gpio) {
-    int result = callback(pi, gpio, EITHER_EDGE, NULL);
+int teardownInterrupt(unsigned int callback_id) {
+    int result = callback_cancel(callback_id);
     // Do we need to unset the pullup resistors?
     return result;
 }
