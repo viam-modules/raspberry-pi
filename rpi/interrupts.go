@@ -24,7 +24,7 @@ import (
 
 type RpiInterrupt struct {
 	interrupt  rpiutils.ReconfigurableDigitalInterrupt
-	callbackID C.int // callback ID to close pi callback connection
+	callbackID C.uint // callback ID to close pi callback connection
 }
 
 // Function finds an interrupt by its name.
@@ -114,7 +114,7 @@ func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInte
 		return rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
 	}
 
-	newInterrupt.callbackID = callbackID
+	newInterrupt.callbackID = C.uint(callbackID)
 
 	return nil
 }
@@ -161,7 +161,7 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 
 			pi.interrupts[bcom] = &RpiInterrupt{
 				interrupt:  d,
-				callbackID: callbackID,
+				callbackID: C.uint(callbackID),
 			}
 			return d, nil
 		}
