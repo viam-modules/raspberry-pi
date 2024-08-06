@@ -144,7 +144,7 @@ func TestPiPigpio(t *testing.T) {
 	// test servo movement and digital interrupt
 	// this function is within rpi in order to access piPigpio
 	t.Run("servo in/out", func(t *testing.T) {
-		servoReg, ok := resource.LookupRegistration(servo.API, Model)
+		servoReg, ok := resource.LookupRegistration(servo.API, rpiservo.Model)
 		test.That(t, ok, test.ShouldBeTrue)
 		test.That(t, servoReg, test.ShouldNotBeNil)
 		servoInt, err := servoReg.Constructor(

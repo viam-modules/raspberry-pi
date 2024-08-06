@@ -149,7 +149,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	s.pulseWidth = pulseWidth
 
-	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulswidth send on pin and servo moves
+	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulsewidth send on pin and servo moves
 
 	if !s.holdPos { // the following logic disables a servo once it has reached a position or after a certain amount of time has been reached
 		time.Sleep(time.Duration(holdTime)) // time before a stop is sent
