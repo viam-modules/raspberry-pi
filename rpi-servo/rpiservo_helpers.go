@@ -77,6 +77,11 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 
 // sets the servo's pulse width
 func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
+	// Check if pulse width is within the valid range
+	if pulseWidth < 0 || pulseWidth > 2500 {
+		return errors.New("Invalid pulse width: out of range [0, 2500]")
+	}
+
 	errCode := C.set_PWM_frequency(s.piID, s.pin, s.pwmFreqHz)
 	if errCode < 0 {
 		return errors.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))

@@ -159,15 +159,21 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		servo1 := servoInt.(servo.Servo)
 
+		// Move to 90 deg and check position
 		err = servo1.Move(ctx, 90, nil)
 		test.That(t, err, test.ShouldBeNil)
-
-		err = servo1.Move(ctx, 190, nil)
-		test.That(t, err, test.ShouldNotBeNil)
 
 		v, err := servo1.Position(ctx, nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, int(v), test.ShouldEqual, 90)
+
+		// should move to max position even though 190 is out of range
+		err = servo1.Move(ctx, 190, nil)
+		test.That(t, err, test.ShouldBeNil)
+
+		v, err = servo1.Position(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, int(v), test.ShouldEqual, 180)
 
 		time.Sleep(300 * time.Millisecond)
 
