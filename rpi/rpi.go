@@ -77,10 +77,7 @@ func (conf *Config) Validate(path string) ([]string, error) {
 // accessed via pigpio.
 type piPigpio struct {
 	resource.Named
-	// To prevent deadlocks, we must never lock this mutex while instanceMu, defined below, is
-	// locked. It's okay to lock instanceMu while this is locked, though. This invariant prevents
-	// deadlocks if both mutexes are locked by separate goroutines and are each waiting to lock the
-	// other as well.
+
 	mu            sync.Mutex
 	cancelCtx     context.Context
 	cancelFunc    context.CancelFunc
@@ -98,15 +95,6 @@ type piPigpio struct {
 
 	activeBackgroundWorkers sync.WaitGroup
 }
-
-var (
-	pigpioInitialized bool
-	// To prevent deadlocks, we must never lock the mutex of a specific piPigpio struct, above,
-	// while this is locked. It is okay to lock this while one of those other mutexes is locked
-	// instead.
-	instanceMu sync.RWMutex
-	instances  = map[*piPigpio]struct{}{}
-)
 
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
@@ -133,9 +121,6 @@ func newPigpio(
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
 		C.pigpio_stop(C.int(piID))
-		instanceMu.Lock()
-		pigpioInitialized = false
-		instanceMu.Unlock()
 		logger.CError(ctx, "Pi GPIO terminated due to failed init.")
 		return nil, err
 	}
@@ -145,13 +130,6 @@ func newPigpio(
 
 // Function initializes connection to pigpio daemon.
 func initializePigpio() (C.int, error) {
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
-
-	if pigpioInitialized {
-		return -1, nil
-	}
-
 	piID := C.pigpio_start(nil, nil)
 	if int(piID) < 0 {
 		// failed to init, check for common causes
@@ -165,7 +143,6 @@ func initializePigpio() (C.int, error) {
 		return -1, rpiutils.ConvertErrorCodeToMessage(int(piID), "error")
 	}
 
-	pigpioInitialized = true
 	return piID, nil
 }
 
@@ -192,8 +169,6 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
 	return nil
 }
 
