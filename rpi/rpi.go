@@ -125,8 +125,6 @@ func newPigpio(
 		return nil, err
 	}
 
-	instance = piInstance
-
 	return piInstance, nil
 }
 
@@ -171,6 +169,8 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	instance = pi
+
 	return nil
 }
 
@@ -192,12 +192,12 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		closeAnalogReaders(ctx, pi),
 		teardownInterrupts(pi))
 
+	instance = nil
 	//TODO: test this with multiple instences of the board.
 	C.pigpio_stop(pi.piID)
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
-	instance = nil
 	return err
 }
 
