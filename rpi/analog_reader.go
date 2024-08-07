@@ -26,6 +26,15 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 		}
 
 		// Use genericlinux implementation for SPI bus.
+		switch ac.SPIBus {
+		case "24", "0", "io8":
+			ac.SPIBus = "0"
+		case "26", "1", "io7":
+			ac.SPIBus = "1"
+		default:
+			return errors.Errorf("bad SPI bus (%s)", ac.SPIBus)
+		}
+
 		bus := buses.NewSpiBus(ac.SPIBus)
 
 		ar := &mcp3008helper.MCP3008AnalogReader{
