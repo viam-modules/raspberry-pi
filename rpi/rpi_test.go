@@ -98,13 +98,15 @@ func TestPiPigpio(t *testing.T) {
 	})
 
 	t.Run("basic interrupts", func(t *testing.T) {
-		err := p.SetGPIOBcom(17, false)
+		// Test interrupt i1 on pin 11 (bcom 17)
+		i1, err := p.DigitalInterruptByName("i1")
+		test.That(t, err, test.ShouldBeNil)
+
+		err = p.SetGPIOBcom(17, false)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
 
-		i1, err := p.DigitalInterruptByName("i1")
-		test.That(t, err, test.ShouldBeNil)
 		before, err := i1.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
@@ -117,17 +119,23 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, after-before, test.ShouldEqual, int64(1))
 
+		// Set and create interrupt on pin 13
+		i2, err := p.DigitalInterruptByName("13")
+		test.That(t, err, test.ShouldBeNil)
+		// Set pin 13 (bcom 27) to LOW
 		err = p.SetGPIOBcom(27, false)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
+
+		// interrupt not created, bad pin name
 		_, err = p.DigitalInterruptByName("some")
 		test.That(t, err, test.ShouldNotBeNil)
-		i2, err := p.DigitalInterruptByName("13")
-		test.That(t, err, test.ShouldBeNil)
+
 		before, err = i2.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
+		// Set pin 13 (bcom 27) to HIGH
 		err = p.SetGPIOBcom(27, true)
 		test.That(t, err, test.ShouldBeNil)
 
