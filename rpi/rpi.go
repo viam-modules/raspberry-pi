@@ -45,6 +45,13 @@ var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
 type Config struct {
 	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
 	DigitalInterrupts []rpiutils.DigitalInterruptConfig   `json:"digital_interrupts,omitempty"`
+	Pulls             []PullConfig                        `json:"configs ,omitempty"`
+}
+
+// PullConfig defines the config for pull up/pull down resistors.
+type PullConfig struct {
+	Pin  string `json:"pin"`
+	Pull string `json:"pull"`
 }
 
 // init registers a pi board based on pigpio.
@@ -67,6 +74,18 @@ func (conf *Config) Validate(path string) ([]string, error) {
 	for idx, c := range conf.DigitalInterrupts {
 		if err := c.Validate(fmt.Sprintf("%s.%s.%d", path, "digital_interrupts", idx)); err != nil {
 			return nil, err
+		}
+	}
+
+	for _, c := range conf.Pulls {
+		if c.Pin == "" {
+			return nil, resource.NewConfigValidationFieldRequiredError(path, "pin")
+		}
+		if c.Pull == "" {
+			return nil, resource.NewConfigValidationFieldRequiredError(path, "pull")
+		}
+		if !(c.Pull == "up" || c.Pull == "down" || c.Pull == "none") {
+			return nil, fmt.Errorf("supported pull config attributes are up, down, and none")
 		}
 	}
 	return nil, nil
@@ -94,6 +113,8 @@ type piPigpio struct {
 	isClosed     bool
 
 	piID C.int
+
+	pulls map[int]string // mapping of gpio pin to pull up/down
 
 	activeBackgroundWorkers sync.WaitGroup
 }
@@ -194,6 +215,34 @@ func (pi *piPigpio) Reconfigure(
 	instanceMu.Lock()
 	defer instanceMu.Unlock()
 	return nil
+}
+
+func (pi *piPigpio) ReconfigurePulls(ctx context.Context, cfg *Config) {
+	for _, pullConf := range cfg.Pulls {
+		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
+		if !have {
+			pi.logger.Errorf("no gpio pin found for %s", pullConf.Pull)
+			continue
+		}
+		switch pullConf.Pull {
+		case "none":
+			if result := C.setPullNone(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		case "up":
+			if result := C.setPullUp(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		case "down":
+			if result := C.setPullDown(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		default:
+			pi.logger.Error("unexpected pull")
+		}
+
+	}
+
 }
 
 // Close attempts to close all parts of the board cleanly.
