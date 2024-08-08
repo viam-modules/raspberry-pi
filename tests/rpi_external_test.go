@@ -1,3 +1,4 @@
+/* rpi_test runs same tests as rpi_test, but using exported board functions only */
 package rpi_test
 
 import (
@@ -108,7 +109,8 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, vI, test.ShouldEqual, 8000)
 	})
 
-	t.Run("external basic interrupts", func(t *testing.T) {
+	// interrupt is configured on pi board creation
+	t.Run("external preconfigured basic interrupt test", func(t *testing.T) {
 		// Test interrupt i1 on pin 11 (bcom 17)
 		i1, err := p.DigitalInterruptByName("i1")
 		test.That(t, err, test.ShouldBeNil)
@@ -133,13 +135,16 @@ func TestPiPigpio(t *testing.T) {
 		after, err := i1.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, after-before, test.ShouldEqual, int64(1))
+	})
 
+	// digital interrupt creates by name (on valid pin)
+	t.Run("external create new basic interrupt test", func(t *testing.T) {
 		// Set and create interrupt on pin 13
 		i2, err := p.DigitalInterruptByName("13")
 		test.That(t, err, test.ShouldBeNil)
 
 		// Set pin 13 (bcom 27) to LOW
-		pin, err = p.GPIOPinByName("13")
+		pin, err := p.GPIOPinByName("13")
 		test.That(t, err, test.ShouldBeNil)
 		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
@@ -150,7 +155,7 @@ func TestPiPigpio(t *testing.T) {
 		_, err = p.DigitalInterruptByName("some")
 		test.That(t, err, test.ShouldNotBeNil)
 
-		before, err = i2.Value(context.Background(), nil)
+		before, err := i2.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		// Set pin 13 (bcom 27) to HIGH
@@ -159,7 +164,7 @@ func TestPiPigpio(t *testing.T) {
 
 		time.Sleep(5 * time.Millisecond)
 
-		after, err = i2.Value(context.Background(), nil)
+		after, err := i2.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, after-before, test.ShouldEqual, int64(1))
 
