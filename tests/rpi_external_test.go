@@ -109,21 +109,22 @@ func TestPiPigpio(t *testing.T) {
 	})
 
 	t.Run("external basic interrupts", func(t *testing.T) {
-		// interrupt i1 on pin 11
-		pin, err := p.GPIOPinByName("11")
+		// Test interrupt i1 on pin 11 (bcom 17)
+		i1, err := p.DigitalInterruptByName("i1")
 		test.That(t, err, test.ShouldBeNil)
 
-		// set pin to low
+		// set pin state to LOW for interrupt test
+		pin, err := p.GPIOPinByName("11")
+		test.That(t, err, test.ShouldBeNil)
 		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
 
-		i1, err := p.DigitalInterruptByName("i1")
-		test.That(t, err, test.ShouldBeNil)
 		before, err := i1.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
+		// set pin state to HIGH to trigger interrupt
 		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
@@ -133,17 +134,26 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, after-before, test.ShouldEqual, int64(1))
 
+		// Set and create interrupt on pin 13
+		i2, err := p.DigitalInterruptByName("13")
+		test.That(t, err, test.ShouldBeNil)
+
+		// Set pin 13 (bcom 27) to LOW
+		pin, err = p.GPIOPinByName("13")
+		test.That(t, err, test.ShouldBeNil)
 		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
+
+		// interrupt not created, bad pin name
 		_, err = p.DigitalInterruptByName("some")
 		test.That(t, err, test.ShouldNotBeNil)
-		i2, err := p.DigitalInterruptByName("13")
-		test.That(t, err, test.ShouldBeNil)
+
 		before, err = i2.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
+		// Set pin 13 (bcom 27) to HIGH
 		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
@@ -175,15 +185,21 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		servo1 := servoInt.(servo.Servo)
 
+		// Move to 90 deg and check position
 		err = servo1.Move(ctx, 90, nil)
 		test.That(t, err, test.ShouldBeNil)
-
-		err = servo1.Move(ctx, 190, nil)
-		test.That(t, err, test.ShouldNotBeNil)
 
 		v, err := servo1.Position(ctx, nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, int(v), test.ShouldEqual, 90)
+
+		// should move to max position even though 190 is out of range
+		err = servo1.Move(ctx, 190, nil)
+		test.That(t, err, test.ShouldBeNil)
+
+		v, err = servo1.Position(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, int(v), test.ShouldEqual, 180)
 
 		time.Sleep(300 * time.Millisecond)
 
@@ -191,6 +207,20 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		val, err := servoI.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, val, test.ShouldAlmostEqual, int64(1500), 500) // this is a tad noisy
+		test.That(t, val, test.ShouldAlmostEqual, int64(2500), 100) // this is a tad noisy
+
+		// Next position (120 deg)
+		err = servo1.Move(ctx, 120, nil)
+		test.That(t, err, test.ShouldBeNil)
+		
+		v, err = servo1.Position(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, int(v), test.ShouldEqual, 120)
+
+		time.Sleep(300 * time.Millisecond)
+		val, err = servoI.Value(context.Background(), nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, val, test.ShouldAlmostEqual, int64(1833), 50) // this is a tad noisy
+
 	})
 }
