@@ -84,15 +84,15 @@ func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
 
 	errCode := C.set_PWM_frequency(s.piID, s.pin, s.pwmFreqHz)
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	errCode = C.set_PWM_range(s.piID, s.pin, 1e6/s.pwmFreqHz)
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm range on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm range on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	errCode = C.set_PWM_dutycycle(s.piID, s.pin, C.uint(pulseWidth))
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm duty cycle on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm duty cycle on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	return nil
 }
