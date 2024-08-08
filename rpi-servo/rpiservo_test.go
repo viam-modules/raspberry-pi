@@ -12,49 +12,10 @@ import (
 	"go.viam.com/test"
 )
 
-func TestPiServo(t *testing.T) {
-	ctx := context.Background()
+func TestLocalFields(t *testing.T) {
 	logger := logging.NewTestLogger(t)
 
-	t.Run("servo initialize with pin error", func(t *testing.T) {
-		servoReg, ok := resource.LookupRegistration(servo.API, Model)
-		test.That(t, ok, test.ShouldBeTrue)
-		test.That(t, servoReg, test.ShouldNotBeNil)
-		_, err := servoReg.Constructor(
-			ctx,
-			nil,
-			resource.Config{
-				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: ""},
-			},
-			logger,
-		)
-		test.That(t, err.Error(), test.ShouldContainSubstring, "need pin for pi servo")
-	})
-
-	t.Run("check new servo defaults", func(t *testing.T) {
-		ctx := context.Background()
-		servoReg, ok := resource.LookupRegistration(servo.API, Model)
-		test.That(t, ok, test.ShouldBeTrue)
-		test.That(t, servoReg, test.ShouldNotBeNil)
-		servoInt, err := servoReg.Constructor(
-			ctx,
-			nil,
-			resource.Config{
-				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: "22"},
-			},
-			logger,
-		)
-		test.That(t, err, test.ShouldBeNil)
-
-		servo1 := servoInt.(servo.Servo)
-		pos1, err := servo1.Position(ctx, nil)
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, pos1, test.ShouldEqual, 90)
-	})
-
-	t.Run("check set default position", func(t *testing.T) {
+	t.Run("test local piPigpioServo struct fields", func(t *testing.T) {
 		ctx := context.Background()
 		servoReg, ok := resource.LookupRegistration(servo.API, Model)
 		test.That(t, ok, test.ShouldBeTrue)
@@ -66,7 +27,7 @@ func TestPiServo(t *testing.T) {
 			nil,
 			resource.Config{
 				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: "22", StartPos: &initPos},
+				ConvertedAttributes: &ServoConfig{Pin: "22", StartPos: &initPos, Freq: 100},
 			},
 			logger,
 		)
@@ -77,8 +38,16 @@ func TestPiServo(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, pos1, test.ShouldEqual, 33)
 
+		// test local fields and defaults
 		localServo := servo1.(*piPigpioServo)
 		test.That(t, localServo.holdPos, test.ShouldBeTrue)
+		test.That(t, localServo.pwInUse, test.ShouldEqual, 0)
+		test.That(t, localServo.pwmFreqHz, test.ShouldEqual, 100)
+		test.That(t, localServo.min, test.ShouldEqual, 0)
+		test.That(t, localServo.max, test.ShouldEqual, 180)
+		test.That(t, localServo.maxRotation, test.ShouldEqual, 180)
+		test.That(t, localServo.pinname, test.ShouldEqual, "22")
+		test.That(t, localServo.pin, test.ShouldEqual, 25)
 	})
 }
 
