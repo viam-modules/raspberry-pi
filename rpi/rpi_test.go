@@ -189,6 +189,20 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		val, err := servoI.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, val, test.ShouldAlmostEqual, int64(1500), 500) // this is a tad noisy
+		test.That(t, val, test.ShouldAlmostEqual, int64(2500), 100) // this is a tad noisy
+
+		// Next position (120 deg)
+		err = servo1.Move(ctx, 120, nil)
+		test.That(t, err, test.ShouldBeNil)
+		
+		v, err = servo1.Position(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, int(v), test.ShouldEqual, 120)
+
+		time.Sleep(300 * time.Millisecond)
+		val, err = servoI.Value(context.Background(), nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, val, test.ShouldAlmostEqual, int64(1833), 50) // this is a tad noisy
+
 	})
 }
