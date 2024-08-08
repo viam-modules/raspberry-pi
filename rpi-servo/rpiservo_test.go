@@ -41,7 +41,7 @@ func TestLocalFields(t *testing.T) {
 		// test local fields and defaults
 		localServo := servo1.(*piPigpioServo)
 		test.That(t, localServo.holdPos, test.ShouldBeTrue)
-		test.That(t, localServo.pwInUse, test.ShouldEqual, 0)
+		test.That(t, localServo.pwInUse, test.ShouldAlmostEqual, 866, 1)
 		test.That(t, localServo.pwmFreqHz, test.ShouldEqual, 100)
 		test.That(t, localServo.min, test.ShouldEqual, 0)
 		test.That(t, localServo.max, test.ShouldEqual, 180)
