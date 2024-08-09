@@ -114,6 +114,11 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
+	err := startPigpiod(logger)
+	if err != nil {
+		return nil, err
+	}
+
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
