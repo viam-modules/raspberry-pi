@@ -25,16 +25,18 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 			return errors.Errorf("bad analog pin (%s)", ac.Pin)
 		}
 
+		chipSelect := ac.ChipSelect
+
 		// Use genericlinux implementation for SPI bus.
-		switch ac.SPIBus {
-		case "24", "ce0", "io8":
+		switch chipSelect {
+		case "24", "ce0", "io8", "0":
 			// HW pin 24 maps to chip select 0
-			ac.SPIBus = "0"
-		case "26", "ce1", "io7":
+			chipSelect = "0"
+		case "26", "ce1", "io7", "1":
 			// HW pin 26 maps to chip select 1
-			ac.SPIBus = "1"
+			chipSelect = "1"
 		default:
-			return errors.Errorf("bad SPI bus (%s), choose hardware pin 24 (ce0) or pin 26 (ce1)", ac.SPIBus)
+			return errors.Errorf("bad chip select (%s), choose chip select 0 (pin 24) or 1 (pin 26)", chipSelect)
 		}
 
 		bus := buses.NewSpiBus(ac.SPIBus)
