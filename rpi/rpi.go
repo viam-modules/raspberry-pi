@@ -114,8 +114,9 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	err := startPigpiod(logger)
+	err := startPigpiod(ctx, logger)
 	if err != nil {
+		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
 

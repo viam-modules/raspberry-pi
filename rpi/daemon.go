@@ -1,12 +1,13 @@
 package rpi
 
 import (
+	"context"
 	"os/exec"
 
 	"go.viam.com/rdk/logging"
 )
 
-func startPigpiod(logger logging.Logger) error {
+func startPigpiod(ctx context.Context, logger logging.Logger) error {
 	checkCmd := exec.Command("pgrep", "pigpiod")
 	output, err := checkCmd.Output()
 
@@ -18,7 +19,7 @@ func startPigpiod(logger logging.Logger) error {
 		return err
 	}
 
-	logger.Info("pigpiod is already running, skipping start")
+	logger.CInfo(ctx, "pigpiod is already running, skipping start")
 	return nil
 }
 
