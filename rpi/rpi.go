@@ -26,11 +26,8 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "viamrpi/utils"
-
-	pb "go.viam.com/api/component/board/v1"
-
 	"go.uber.org/multierr"
+	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
@@ -38,6 +35,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "viamrpi/utils"
 )
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
@@ -207,7 +205,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	boardInstanceMu.Lock()
 	boardInstance = nil
 	boardInstanceMu.Unlock()
-	//TODO: test this with multiple instences of the board.
+	// TODO: test this with multiple instences of the board.
 	C.pigpio_stop(pi.piID)
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 

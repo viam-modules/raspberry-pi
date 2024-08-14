@@ -25,12 +25,11 @@ import (
 	"context"
 	"time"
 
-	"go.viam.com/utils"
-
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/utils"
 )
 
 var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi-servo")
@@ -159,7 +158,6 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }

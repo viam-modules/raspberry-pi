@@ -3,12 +3,12 @@ package rpi_test
 import (
 	"context"
 	"testing"
-	rpiservo "viamrpi/rpi-servo"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	rpiservo "viamrpi/rpi-servo"
 )
 
 func TestPiServo(t *testing.T) {

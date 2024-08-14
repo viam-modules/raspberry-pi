@@ -7,11 +7,10 @@ import "C"
 
 import (
 	"fmt"
-	rpiutils "viamrpi/utils"
 
 	"github.com/pkg/errors"
-
 	"go.viam.com/rdk/resource"
+	rpiutils "viamrpi/utils"
 )
 
 // Validate and set piPigpioServo fields based on the configuration.

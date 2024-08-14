@@ -12,11 +12,11 @@ import "C"
 
 import (
 	"context"
-	rpiutils "viamrpi/utils"
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
+	rpiutils "viamrpi/utils"
 )
 
 // GPIOPinByName returns a GPIOPin by name.

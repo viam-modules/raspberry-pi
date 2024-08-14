@@ -3,13 +3,13 @@ package rpiservo
 import (
 	"context"
 	"testing"
-	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"viamrpi/rpi"
 )
 
 func TestConstructor(t *testing.T) {
@@ -176,8 +176,8 @@ func TestInitializationFunctions(t *testing.T) {
 		// close pigpio
 		s.Close(nil)
 	})
-
 }
+
 func TestServoFunctions(t *testing.T) {
 	t.Run("test validate and set configuration", func(t *testing.T) {
 		s := &piPigpioServo{}
@@ -239,7 +239,6 @@ func TestServoFunctions(t *testing.T) {
 		test.That(t, parsedConf, test.ShouldBeNil)
 		// unexpected type, only kind of error
 		test.That(t, err, test.ShouldNotBeNil)
-
 	})
 	t.Run("test config validation", func(t *testing.T) {
 		newConf := &ServoConfig{Pin: "22"}

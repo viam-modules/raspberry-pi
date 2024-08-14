@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"viamrpi/rpi"
-	rpiservo "viamrpi/rpi-servo"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/module"
 	"go.viam.com/utils"
+	"viamrpi/rpi"
+	rpiservo "viamrpi/rpi-servo"
 )
 
 func main() {
@@ -18,7 +18,6 @@ func main() {
 
 func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) error {
 	module, err := module.NewModuleFromArgs(ctx, logger)
-
 	if err != nil {
 		return err
 	}

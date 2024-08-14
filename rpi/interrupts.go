@@ -15,10 +15,9 @@ import (
 	"fmt"
 	"math"
 
-	rpiutils "viamrpi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
+	rpiutils "viamrpi/utils"
 )
 
 type rpiInterrupt struct {

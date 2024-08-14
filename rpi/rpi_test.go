@@ -5,14 +5,13 @@ import (
 	"os"
 	"testing"
 	"time"
-	rpiservo "viamrpi/rpi-servo"
-	rpiutils "viamrpi/utils"
-
-	"go.viam.com/test"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/test"
+	rpiservo "viamrpi/rpi-servo"
+	rpiutils "viamrpi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
@@ -151,7 +150,7 @@ func TestPiPigpio(t *testing.T) {
 
 		_, err = p.DigitalInterruptByName("11")
 		test.That(t, err, test.ShouldBeNil)
-	}) 
+	})
 
 	// test servo movement and digital interrupt
 	// this function is within rpi in order to access piPigpio
@@ -198,7 +197,7 @@ func TestPiPigpio(t *testing.T) {
 		// Next position (120 deg)
 		err = servo1.Move(ctx, 120, nil)
 		test.That(t, err, test.ShouldBeNil)
-		
+
 		v, err = servo1.Position(ctx, nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, int(v), test.ShouldEqual, 120)
@@ -207,6 +206,5 @@ func TestPiPigpio(t *testing.T) {
 		val, err = servoI.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, val, test.ShouldAlmostEqual, int64(1833), 50) // this is a tad noisy
-
 	})
 }
