@@ -13,7 +13,7 @@ func startPigpiod(ctx context.Context, logger logging.Logger) error {
 
 	if err != nil || len(output) == 0 {
 		// pigpiod is not running, start it
-		startCmd := exec.Command("sudo", "pigpiod")
+		startCmd := exec.Command("pigpiod")
 		err := startCmd.Run()
 
 		return err
