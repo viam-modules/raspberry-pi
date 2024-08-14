@@ -120,6 +120,9 @@ func newPigpio(
 		return nil, err
 	}
 
+	// Wait for pigpiod to start up. 50ms is usually enough.
+	time.Sleep(50 * time.Millisecond)
+
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
@@ -225,6 +228,10 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
+
+	if err := stopPigpiod(); err != nil {
+		pi.logger.CError(ctx, "Failed to stop pigpiod.")
+	}
 	return err
 }
 
