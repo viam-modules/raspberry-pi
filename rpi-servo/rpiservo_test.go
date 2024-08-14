@@ -3,13 +3,13 @@ package rpiservo
 import (
 	"context"
 	"testing"
+	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	"viamrpi/rpi"
 )
 
 func TestConstructor(t *testing.T) {

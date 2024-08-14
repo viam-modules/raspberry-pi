@@ -80,7 +80,9 @@ func newPiServo(
 		return nil, err
 	}
 
-	handleHoldPosition(piServo, newConf)
+	if err := handleHoldPosition(piServo, newConf); err != nil {
+		return nil, err
+	}
 
 	return piServo, nil
 }

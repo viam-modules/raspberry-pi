@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/module"
 	"go.viam.com/utils"
-	"viamrpi/rpi"
+
 	rpiservo "viamrpi/rpi-servo"
 )
 
