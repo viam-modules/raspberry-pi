@@ -106,9 +106,6 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	boardInstanceMu.Lock()
-	defer boardInstanceMu.Unlock()
-
 	if boardInstance != nil {
 		return nil, errors.New("only one instance of rpi board is allowed")
 	}

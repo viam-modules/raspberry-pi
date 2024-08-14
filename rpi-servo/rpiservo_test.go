@@ -139,7 +139,7 @@ func TestInitializationFunctions(t *testing.T) {
 		initPos = 181.0
 		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
 		test.That(t, err, test.ShouldNotBeNil)
-		test.That(t, err.Error(), test.ShouldContainSubstring, "Invalid pulse width")
+		test.That(t, err.Error(), test.ShouldContainSubstring, "invalid pulse width")
 
 		// close pigpio
 		s.Close(nil)
