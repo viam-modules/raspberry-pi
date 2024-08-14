@@ -41,6 +41,7 @@ import (
 
 // Model represents a raspberry pi board model.
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+
 var (
 	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
 	boardInstanceMu sync.RWMutex // mutex to protect boardInstance
@@ -127,7 +128,7 @@ func newPigpio(
 
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		C.pigpio_stop(C.int(piID))
+		C.pigpio_stop(piID)
 		logger.CError(ctx, "Pi GPIO terminated due to failed init.")
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func (pi *piPigpio) Reconfigure(
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 
-	if err := pi.reconfigureAnalogReaders(ctx, cfg); err != nil {
+	if err := pi.reconfigureAnalogReaders(cfg); err != nil {
 		return err
 	}
 

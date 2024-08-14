@@ -32,6 +32,7 @@ import (
 	"go.viam.com/utils"
 )
 
+// Model represents a pi servo model.
 var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi-servo")
 
 // Default configuration collected from data sheet

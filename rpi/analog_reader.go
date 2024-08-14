@@ -5,7 +5,6 @@ package rpi
 */
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -16,7 +15,7 @@ import (
 )
 
 // Helper functions to configure analog readers and interrupts.
-func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) error {
+func (pi *piPigpio) reconfigureAnalogReaders(cfg *Config) error {
 	// No need to reconfigure the old analog readers; just throw them out and make new ones.
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
 	for _, ac := range cfg.AnalogReaders {
