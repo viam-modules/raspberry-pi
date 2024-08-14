@@ -24,16 +24,13 @@ test:
 	go test ./...
 
 .PHONY: tool-install
-tool-install: $(TOOL_BIN)/combined $(TOOL_BIN)/golangci-lint $(TOOL_BIN)/actionlint
+tool-install: $(TOOL_BIN)/golangci-lint
 
-$(TOOL_BIN)/combined $(TOOL_BIN)/golangci-lint $(TOOL_BIN)/actionlint:
-	GOBIN=`pwd`/$(TOOL_BIN) go install \
-	github.com/edaniels/golinters/cmd/combined \
-	github.com/golangci/golangci-lint/cmd/golangci-lint \
-	github.com/rhysd/actionlint/cmd/actionlint
+$(TOOL_BIN)/golangci-lint:
+	GOBIN=`pwd`/$(TOOL_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 .PHONY: lint
-lint: tool-install
+lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
 	$(TOOL_BIN)/golangci-lint run -v --fix
 
