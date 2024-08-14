@@ -90,10 +90,9 @@ type piPigpio struct {
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
-	interrupts map[uint]*RpiInterrupt
-	// interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
-	logger   logging.Logger
-	isClosed bool
+	interrupts map[uint]*rpiInterrupt
+	logger     logging.Logger
+	isClosed   bool
 
 	piID C.int // id to communicate with pigpio daemon
 
@@ -258,6 +257,6 @@ func teardownInterrupts(pi *piPigpio) error {
 			err = multierr.Combine(err, rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 		}
 	}
-	pi.interrupts = map[uint]*RpiInterrupt{}
+	pi.interrupts = map[uint]*rpiInterrupt{}
 	return err
 }
