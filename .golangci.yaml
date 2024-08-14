@@ -76,6 +76,7 @@ issues:
       linters:
         - dupword
         - exhaustive
+        - errcheck
         - goconst
         - gosec
   exclude-use-default: false
