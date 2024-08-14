@@ -1,3 +1,4 @@
+// package main is a module with raspberry pi board component.
 package main
 
 import (
