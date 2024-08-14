@@ -184,11 +184,13 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 
 	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
+	instanceMu.RLock()
+	defer instanceMu.RUnlock()
+
 	// instance has to be initialized before callback can be called
 	if instance == nil {
 		return
 	}
-
 	i := instance.interrupts[uint(gpio)]
 	if i == nil {
 		logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)

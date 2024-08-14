@@ -40,7 +40,11 @@ import (
 	"go.viam.com/utils"
 )
 
-var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
+var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+var (
+	instance   *piPigpio
+	instanceMu sync.RWMutex
+)
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
@@ -130,6 +134,9 @@ func newPigpio(
 
 // Function initializes connection to pigpio daemon.
 func initializePigpio() (C.int, error) {
+	instanceMu.Lock()
+	defer instanceMu.Unlock()
+
 	piID := C.pigpio_start(nil, nil)
 	if int(piID) < 0 {
 		// failed to init, check for common causes
@@ -169,6 +176,8 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	instanceMu.Lock()
+	defer instanceMu.Unlock()
 	instance = pi
 
 	return nil
@@ -192,7 +201,9 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		closeAnalogReaders(ctx, pi),
 		teardownInterrupts(pi))
 
+	instanceMu.Lock()
 	instance = nil
+	instanceMu.Unlock()
 	//TODO: test this with multiple instences of the board.
 	C.pigpio_stop(pi.piID)
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
