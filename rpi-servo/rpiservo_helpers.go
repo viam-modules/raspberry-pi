@@ -77,17 +77,22 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 
 // sets the servo's pulse width
 func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
+	// Check if pulse width is within the valid range
+	if pulseWidth < 0 || pulseWidth > 2500 {
+		return errors.New("invalid pulse width: out of range [0, 2500]")
+	}
+
 	errCode := C.set_PWM_frequency(s.piID, s.pin, s.pwmFreqHz)
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm frequency on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	errCode = C.set_PWM_range(s.piID, s.pin, 1e6/s.pwmFreqHz)
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm range on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm range on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	errCode = C.set_PWM_dutycycle(s.piID, s.pin, C.uint(pulseWidth))
 	if errCode < 0 {
-		return errors.Errorf("servo set pwm duty cycle on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
+		return fmt.Errorf("servo set pwm duty cycle on pin %s failed: %w", s.pinname, s.pigpioErrors(int(errCode)))
 	}
 	return nil
 }
@@ -122,9 +127,9 @@ func getBroadcomPin(pin string) (uint, error) {
 func (s *piPigpioServo) pigpioErrors(res int) error {
 	switch {
 	case res == C.PI_NOT_SERVO_GPIO:
-		return errors.Errorf("gpioservo pin %s is not set up to send and receive pulsewidths", s.pinname)
+		return errors.Errorf("servo on pin %s is not set up to send and receive pulsewidths", s.pinname)
 	case res == C.PI_BAD_PULSEWIDTH:
-		return errors.Errorf("gpioservo on pin %s trying to reach out of range position", s.pinname)
+		return errors.Errorf("servo on pin %s trying to reach out of range position", s.pinname)
 	case res == 0:
 		return nil
 	case res < 0 && res != C.PI_BAD_PULSEWIDTH && res != C.PI_NOT_SERVO_GPIO:

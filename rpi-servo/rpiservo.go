@@ -137,9 +137,11 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	if s.min > 0 && angle < s.min {
 		angle = s.min
+		s.logger.Warnf("move angle %d is less than minimum %d, setting default to minimum angle", angle, s.min)
 	}
 	if s.max > 0 && angle > s.max {
 		angle = s.max
+		s.logger.Warnf("move angle %d is greater than maximum %d, setting default to maximum angle", angle, s.max)
 	}
 	pulseWidth := angleToPulseWidth(int(angle), int(s.maxRotation))
 	err := s.setServoPulseWidth(pulseWidth)
@@ -149,7 +151,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	s.pulseWidth = pulseWidth
 
-	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulswidth send on pin and servo moves
+	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulsewidth send on pin and servo moves
 
 	if !s.holdPos { // the following logic disables a servo once it has reached a position or after a certain amount of time has been reached
 		time.Sleep(time.Duration(holdTime)) // time before a stop is sent
