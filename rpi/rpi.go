@@ -107,7 +107,7 @@ func newPigpio(
 	logger logging.Logger,
 ) (board.Board, error) {
 	if boardInstance != nil {
-		return nil, errors.New("only one instance of rpi board is allowed")
+		return nil, errors.New("only one instance of rpi board is allowed. Please delete the existing one before creating a new one")
 	}
 
 	piID, err := initializePigpio()
