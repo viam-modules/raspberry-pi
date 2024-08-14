@@ -12,7 +12,7 @@ import (
 	"go.viam.com/test"
 )
 
-func TestLocalFields(t *testing.T) {
+func TestConstructor(t *testing.T) {
 	logger := logging.NewTestLogger(t)
 
 	t.Run("test local piPigpioServo struct fields", func(t *testing.T) {
@@ -39,15 +39,15 @@ func TestLocalFields(t *testing.T) {
 		test.That(t, pos1, test.ShouldEqual, 33)
 
 		// test local fields and defaults
-		localServo := servo1.(*piPigpioServo)
-		test.That(t, localServo.holdPos, test.ShouldBeTrue)
-		test.That(t, localServo.pwInUse, test.ShouldAlmostEqual, 866, 1)
-		test.That(t, localServo.pwmFreqHz, test.ShouldEqual, 100)
-		test.That(t, localServo.min, test.ShouldEqual, 0)
-		test.That(t, localServo.max, test.ShouldEqual, 180)
-		test.That(t, localServo.maxRotation, test.ShouldEqual, 180)
-		test.That(t, localServo.pinname, test.ShouldEqual, "22")
-		test.That(t, localServo.pin, test.ShouldEqual, 25)
+		testServo := servo1.(*piPigpioServo)
+		test.That(t, testServo.holdPos, test.ShouldBeTrue)
+		test.That(t, testServo.pwInUse, test.ShouldAlmostEqual, 866, 1)
+		test.That(t, testServo.pwmFreqHz, test.ShouldEqual, 100)
+		test.That(t, testServo.min, test.ShouldEqual, 0)
+		test.That(t, testServo.max, test.ShouldEqual, 180)
+		test.That(t, testServo.maxRotation, test.ShouldEqual, 180)
+		test.That(t, testServo.pinname, test.ShouldEqual, "22")
+		test.That(t, testServo.pin, test.ShouldEqual, 25)
 	})
 }
 

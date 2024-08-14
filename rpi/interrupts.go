@@ -19,7 +19,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
-	"go.viam.com/rdk/logging"
 )
 
 type rpiInterrupt struct {
@@ -27,7 +26,7 @@ type rpiInterrupt struct {
 	callbackID C.uint // callback ID to close pi callback connection
 }
 
-// Function finds an interrupt by its name.
+// findInterruptByName finds an interrupt by its name, such as: "interrupt-1"
 func findInterruptByName(
 	name string,
 	interrupts map[uint]*rpiInterrupt,
@@ -176,34 +175,34 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 
 	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
-	instanceMu.RLock()
-	defer instanceMu.RUnlock()
+	boardInstanceMu.RLock()
+	defer boardInstanceMu.RUnlock()
 
-	// instance has to be initialized before callback can be called
-	if instance == nil {
+	// boardInstance has to be initialized before callback can be called
+	if boardInstance == nil {
 		return
 	}
-	i := instance.interrupts[uint(gpio)]
-	if i == nil {
-		logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)
+	interrupts := boardInstance.interrupts[uint(gpio)]
+	if interrupts == nil {
+		boardInstance.logger.Infof("no DigitalInterrupt configured for gpio %d", gpio)
 		return
 	}
 	high := true
 	if level == 0 {
 		high = false
 	}
-	switch di := i.interrupt.(type) {
+	switch di := interrupts.interrupt.(type) {
 	case *rpiutils.BasicDigitalInterrupt:
-		err := rpiutils.Tick(instance.cancelCtx, di, high, tick*1000)
+		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)
 		if err != nil {
-			instance.logger.Error(err)
+			boardInstance.logger.Error(err)
 		}
 	case *rpiutils.ServoDigitalInterrupt:
-		err := rpiutils.ServoTick(instance.cancelCtx, di, high, tick*1000)
+		err := rpiutils.ServoTick(boardInstance.cancelCtx, di, high, tick*1000)
 		if err != nil {
-			instance.logger.Error(err)
+			boardInstance.logger.Error(err)
 		}
 	default:
-		instance.logger.Error("unknown digital interrupt type")
+		boardInstance.logger.Error("unknown digital interrupt type")
 	}
 }

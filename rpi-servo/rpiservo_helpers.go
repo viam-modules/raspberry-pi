@@ -79,7 +79,7 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
 	// Check if pulse width is within the valid range
 	if pulseWidth < 0 || pulseWidth > 2500 {
-		return errors.New("Invalid pulse width: out of range [0, 2500]")
+		return errors.New("invalid pulse width: out of range [0, 2500]")
 	}
 
 	errCode := C.set_PWM_frequency(s.piID, s.pin, s.pwmFreqHz)
@@ -127,9 +127,9 @@ func getBroadcomPin(pin string) (uint, error) {
 func (s *piPigpioServo) pigpioErrors(res int) error {
 	switch {
 	case res == C.PI_NOT_SERVO_GPIO:
-		return errors.Errorf("gpioservo pin %s is not set up to send and receive pulsewidths", s.pinname)
+		return errors.Errorf("servo on pin %s is not set up to send and receive pulsewidths", s.pinname)
 	case res == C.PI_BAD_PULSEWIDTH:
-		return errors.Errorf("gpioservo on pin %s trying to reach out of range position", s.pinname)
+		return errors.Errorf("servo on pin %s trying to reach out of range position", s.pinname)
 	case res == 0:
 		return nil
 	case res < 0 && res != C.PI_BAD_PULSEWIDTH && res != C.PI_NOT_SERVO_GPIO:

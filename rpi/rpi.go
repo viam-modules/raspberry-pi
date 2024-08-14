@@ -42,8 +42,8 @@ import (
 
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
 var (
-	instance   *piPigpio
-	instanceMu sync.RWMutex
+	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
+	boardInstanceMu sync.RWMutex // mutex to protect boardInstance
 )
 
 // A Config describes the configuration of a board and all of its connected parts.
@@ -133,8 +133,8 @@ func newPigpio(
 
 // Function initializes connection to pigpio daemon.
 func initializePigpio() (C.int, error) {
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
+	boardInstanceMu.Lock()
+	defer boardInstanceMu.Unlock()
 
 	piID := C.pigpio_start(nil, nil)
 	if int(piID) < 0 {
@@ -175,9 +175,9 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
-	instance = pi
+	boardInstanceMu.Lock()
+	defer boardInstanceMu.Unlock()
+	boardInstance = pi
 
 	return nil
 }
@@ -200,9 +200,9 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		closeAnalogReaders(ctx, pi),
 		teardownInterrupts(pi))
 
-	instanceMu.Lock()
-	instance = nil
-	instanceMu.Unlock()
+	boardInstanceMu.Lock()
+	boardInstance = nil
+	boardInstanceMu.Unlock()
 	//TODO: test this with multiple instences of the board.
 	C.pigpio_stop(pi.piID)
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")

@@ -137,11 +137,11 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	if s.min > 0 && angle < s.min {
 		angle = s.min
-		s.logger.Warnf("Move angle %d is less than minimum %d, setting to minimum angle", angle, s.min)
+		s.logger.Warnf("move angle %d is less than minimum %d, setting default to minimum angle", angle, s.min)
 	}
 	if s.max > 0 && angle > s.max {
 		angle = s.max
-		s.logger.Warnf("Move angle %d is greater than maximum %d, setting to maximum angle", angle, s.max)
+		s.logger.Warnf("move angle %d is greater than maximum %d, setting default to maximum angle", angle, s.max)
 	}
 	pulseWidth := angleToPulseWidth(int(angle), int(s.maxRotation))
 	err := s.setServoPulseWidth(pulseWidth)
