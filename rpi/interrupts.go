@@ -184,33 +184,29 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 
 	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
-	instanceMu.RLock()
-	defer instanceMu.RUnlock()
-	for instance := range instances {
-		i := instance.interrupts[uint(gpio)]
-		if i == nil {
-			logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)
-			continue
+	i := instance.interrupts[uint(gpio)]
+	if i == nil {
+		logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)
+		return
+	}
+	high := true
+	if level == 0 {
+		high = false
+	}
+	// this should *not* block for long otherwise the lock
+	// will be held
+	switch di := i.interrupt.(type) {
+	case *rpiutils.BasicDigitalInterrupt:
+		err := rpiutils.Tick(instance.cancelCtx, di, high, tick*1000)
+		if err != nil {
+			instance.logger.Error(err)
 		}
-		high := true
-		if level == 0 {
-			high = false
+	case *rpiutils.ServoDigitalInterrupt:
+		err := rpiutils.ServoTick(instance.cancelCtx, di, high, tick*1000)
+		if err != nil {
+			instance.logger.Error(err)
 		}
-		// this should *not* block for long otherwise the lock
-		// will be held
-		switch di := i.interrupt.(type) {
-		case *rpiutils.BasicDigitalInterrupt:
-			err := rpiutils.Tick(instance.cancelCtx, di, high, tick*1000)
-			if err != nil {
-				instance.logger.Error(err)
-			}
-		case *rpiutils.ServoDigitalInterrupt:
-			err := rpiutils.ServoTick(instance.cancelCtx, di, high, tick*1000)
-			if err != nil {
-				instance.logger.Error(err)
-			}
-		default:
-			instance.logger.Error("unknown digital interrupt type")
-		}
+	default:
+		instance.logger.Error("unknown digital interrupt type")
 	}
 }

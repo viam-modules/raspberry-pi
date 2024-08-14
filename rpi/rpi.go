@@ -125,6 +125,8 @@ func newPigpio(
 		return nil, err
 	}
 
+	instance = piInstance
+
 	return piInstance, nil
 }
 
@@ -195,6 +197,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
+	instance = nil
 	return err
 }
 
