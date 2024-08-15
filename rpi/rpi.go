@@ -26,8 +26,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "viamrpi/utils"
-
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -37,6 +35,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "viamrpi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -109,7 +108,7 @@ var (
 	instances  = map[*piPigpio]struct{}{}
 )
 
-var daemonBootDelayMs = time.Duration(50) * time.Millisecond
+var daemonBootDelay = time.Duration(50) * time.Millisecond
 
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
@@ -128,7 +127,7 @@ func newPigpio(
 		logger.CInfo(ctx, "pigpiod is already running, skipping start")
 	} else {
 		// Wait for pigpiod to start up if it wasn't already running.
-		time.Sleep(time.Duration(daemonBootDelayMs) * time.Millisecond)
+		time.Sleep(daemonBootDelay)
 	}
 
 	piID, err := initializePigpio()

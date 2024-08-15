@@ -9,7 +9,6 @@ import (
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	"viamrpi/rpi"
 )
 
 func TestConstructor(t *testing.T) {
