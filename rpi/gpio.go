@@ -13,10 +13,11 @@ import "C"
 import (
 	"context"
 
+	rpiutils "viamrpi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
-	rpiutils "viamrpi/utils"
 )
 
 // GPIOPinByName returns a GPIOPin by name.
@@ -120,6 +121,7 @@ func (pi *piPigpio) SetPWMBcom(bcom int, dutyCyclePct float64) error {
 
 func (pi *piPigpio) pwmFreqBcom(bcom int) (uint, error) {
 	res := C.get_PWM_frequency(pi.piID, C.uint(bcom))
+	// some random comment for testing
 	return uint(res), nil
 }
 
