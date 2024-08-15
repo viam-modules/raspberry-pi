@@ -107,6 +107,8 @@ var (
 	instances  = map[*piPigpio]struct{}{}
 )
 
+var daemonBootDelayMs = 50
+
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
 	ctx context.Context,
@@ -114,7 +116,7 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	daemonAlreadyRunning, err := startPigpiod(ctx, logger)
+	daemonAlreadyRunning, err := startPigpiod()
 	if err != nil {
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
@@ -124,7 +126,7 @@ func newPigpio(
 		logger.CInfo(ctx, "pigpiod is already running, skipping start")
 	} else {
 		// Wait for pigpiod to start up if it wasn't already running.
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Duration(daemonBootDelayMs) * time.Millisecond)
 	}
 
 	piID, err := initializePigpio()
