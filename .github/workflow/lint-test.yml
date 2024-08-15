@@ -29,8 +29,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libnlopt-dev
 
-    - name: Run unit tests
-      run: make test
+    - name: Run lint
+      run: make lint
 
     - name: Run unit tests
       run: make test
