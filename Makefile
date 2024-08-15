@@ -32,7 +32,7 @@ $(TOOL_BIN)/golangci-lint:
 .PHONY: lint
 lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
-	$(TOOL_BIN)/golangci-lint run -v --fix
+	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml
 
 .PHONY: docker
 docker:
