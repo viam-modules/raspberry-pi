@@ -7,15 +7,16 @@ package rpi
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "pi.h"
+// #cgo LDFLAGS: -lpigpiod_if2
 import "C"
 
 import (
 	"context"
-	rpiutils "viamrpi/utils"
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
+	rpiutils "viamrpi/utils"
 )
 
 // GPIOPinByName returns a GPIOPin by name.

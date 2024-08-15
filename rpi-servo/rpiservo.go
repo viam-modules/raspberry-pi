@@ -5,7 +5,7 @@ package rpiservo
 	This driver contains various functionalities of a servo motor used in
 	conjunction with a Raspberry Pi. The servo connects via a GPIO pin and
 	uses the pi module's pigpio daemon library to control the servo motor.
-	The servo pin will override the default pin configuration of of the pi
+	The servo pin will override the default pin configuration of the pi
 	module, including PWM frequency and width.
 
 	Servo hardware model: DigiKey - SER0006 DFRobot
@@ -18,20 +18,21 @@ package rpiservo
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "../rpi/pi.h"
+// #cgo LDFLAGS: -lpigpiod_if2
 import "C"
 
 import (
 	"context"
 	"time"
 
-	"go.viam.com/utils"
-
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/utils"
 )
 
+// Model represents a pi servo model.
 var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi-servo")
 
 // Default configuration collected from data sheet
@@ -80,7 +81,9 @@ func newPiServo(
 		return nil, err
 	}
 
-	handleHoldPosition(piServo, newConf)
+	if err := handleHoldPosition(piServo, newConf); err != nil {
+		return nil, err
+	}
 
 	return piServo, nil
 }
@@ -136,9 +139,11 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	if s.min > 0 && angle < s.min {
 		angle = s.min
+		s.logger.Warnf("move angle %d is less than minimum %d, setting default to minimum angle", angle, s.min)
 	}
 	if s.max > 0 && angle > s.max {
 		angle = s.max
+		s.logger.Warnf("move angle %d is greater than maximum %d, setting default to maximum angle", angle, s.max)
 	}
 	pulseWidth := angleToPulseWidth(int(angle), int(s.maxRotation))
 	err := s.setServoPulseWidth(pulseWidth)
@@ -148,7 +153,7 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 
 	s.pulseWidth = pulseWidth
 
-	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulswidth send on pin and servo moves
+	utils.SelectContextOrWait(ctx, time.Duration(pulseWidth)*time.Microsecond) // duration of pulsewidth send on pin and servo moves
 
 	if !s.holdPos { // the following logic disables a servo once it has reached a position or after a certain amount of time has been reached
 		time.Sleep(time.Duration(holdTime)) // time before a stop is sent
@@ -156,7 +161,6 @@ func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
@@ -198,6 +202,7 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 }
 
 // Close function to stop socket connection to pigpio daemon
+// TODO: RSDK-7972-graceful closing
 func (s *piPigpioServo) Close(_ context.Context) error {
 	C.pigpio_stop(s.piID)
 

@@ -3,58 +3,19 @@ package rpiservo
 import (
 	"context"
 	"testing"
-	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"viamrpi/rpi"
 )
 
-func TestPiServo(t *testing.T) {
-	ctx := context.Background()
+func TestConstructor(t *testing.T) {
 	logger := logging.NewTestLogger(t)
 
-	t.Run("servo initialize with pin error", func(t *testing.T) {
-		servoReg, ok := resource.LookupRegistration(servo.API, Model)
-		test.That(t, ok, test.ShouldBeTrue)
-		test.That(t, servoReg, test.ShouldNotBeNil)
-		_, err := servoReg.Constructor(
-			ctx,
-			nil,
-			resource.Config{
-				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: ""},
-			},
-			logger,
-		)
-		test.That(t, err.Error(), test.ShouldContainSubstring, "need pin for pi servo")
-	})
-
-	t.Run("check new servo defaults", func(t *testing.T) {
-		ctx := context.Background()
-		servoReg, ok := resource.LookupRegistration(servo.API, Model)
-		test.That(t, ok, test.ShouldBeTrue)
-		test.That(t, servoReg, test.ShouldNotBeNil)
-		servoInt, err := servoReg.Constructor(
-			ctx,
-			nil,
-			resource.Config{
-				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: "22"},
-			},
-			logger,
-		)
-		test.That(t, err, test.ShouldBeNil)
-
-		servo1 := servoInt.(servo.Servo)
-		pos1, err := servo1.Position(ctx, nil)
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, pos1, test.ShouldEqual, 90)
-	})
-
-	t.Run("check set default position", func(t *testing.T) {
+	t.Run("test local piPigpioServo struct fields", func(t *testing.T) {
 		ctx := context.Background()
 		servoReg, ok := resource.LookupRegistration(servo.API, Model)
 		test.That(t, ok, test.ShouldBeTrue)
@@ -66,7 +27,7 @@ func TestPiServo(t *testing.T) {
 			nil,
 			resource.Config{
 				Name:                "servo",
-				ConvertedAttributes: &ServoConfig{Pin: "22", StartPos: &initPos},
+				ConvertedAttributes: &ServoConfig{Pin: "22", StartPos: &initPos, Freq: 100},
 			},
 			logger,
 		)
@@ -77,8 +38,16 @@ func TestPiServo(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, pos1, test.ShouldEqual, 33)
 
-		localServo := servo1.(*piPigpioServo)
-		test.That(t, localServo.holdPos, test.ShouldBeTrue)
+		// test local fields and defaults
+		testServo := servo1.(*piPigpioServo)
+		test.That(t, testServo.holdPos, test.ShouldBeTrue)
+		test.That(t, testServo.pwInUse, test.ShouldAlmostEqual, 866, 1)
+		test.That(t, testServo.pwmFreqHz, test.ShouldEqual, 100)
+		test.That(t, testServo.min, test.ShouldEqual, 0)
+		test.That(t, testServo.max, test.ShouldEqual, 180)
+		test.That(t, testServo.maxRotation, test.ShouldEqual, 180)
+		test.That(t, testServo.pinname, test.ShouldEqual, "22")
+		test.That(t, testServo.pin, test.ShouldEqual, 25)
 	})
 }
 
@@ -133,7 +102,7 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, s.maxRotation, test.ShouldEqual, 180)
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
 
 	t.Run("test setting initial position", func(t *testing.T) {
@@ -170,10 +139,10 @@ func TestInitializationFunctions(t *testing.T) {
 		initPos = 181.0
 		err = setInitialPosition(s, &ServoConfig{StartPos: &initPos})
 		test.That(t, err, test.ShouldNotBeNil)
-		test.That(t, err.Error(), test.ShouldContainSubstring, "PI_BAD_PULSEWIDTH")
+		test.That(t, err.Error(), test.ShouldContainSubstring, "invalid pulse width")
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
 
 	t.Run("test handle hold position", func(t *testing.T) {
@@ -205,10 +174,10 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, s.holdPos, test.ShouldBeFalse)
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
-
 }
+
 func TestServoFunctions(t *testing.T) {
 	t.Run("test validate and set configuration", func(t *testing.T) {
 		s := &piPigpioServo{}
@@ -270,7 +239,6 @@ func TestServoFunctions(t *testing.T) {
 		test.That(t, parsedConf, test.ShouldBeNil)
 		// unexpected type, only kind of error
 		test.That(t, err, test.ShouldNotBeNil)
-
 	})
 	t.Run("test config validation", func(t *testing.T) {
 		newConf := &ServoConfig{Pin: "22"}

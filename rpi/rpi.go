@@ -15,6 +15,7 @@ package rpi
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "pi.h"
+// #cgo LDFLAGS: -lpigpiod_if2
 import "C"
 
 import (
@@ -27,9 +28,8 @@ import (
 
 	rpiutils "viamrpi/utils"
 
-	pb "go.viam.com/api/component/board/v1"
-
 	"go.uber.org/multierr"
+	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
@@ -39,7 +39,13 @@ import (
 	"go.viam.com/utils"
 )
 
-var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
+// Model represents a raspberry pi board model.
+var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+
+var (
+	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
+	boardInstanceMu sync.RWMutex // mutex to protect boardInstance
+)
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
@@ -76,10 +82,7 @@ func (conf *Config) Validate(path string) ([]string, error) {
 // accessed via pigpio.
 type piPigpio struct {
 	resource.Named
-	// To prevent deadlocks, we must never lock this mutex while instanceMu, defined below, is
-	// locked. It's okay to lock instanceMu while this is locked, though. This invariant prevents
-	// deadlocks if both mutexes are locked by separate goroutines and are each waiting to lock the
-	// other as well.
+
 	mu            sync.Mutex
 	cancelCtx     context.Context
 	cancelFunc    context.CancelFunc
@@ -88,12 +91,11 @@ type piPigpio struct {
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
-	interrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
-	interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
-	logger       logging.Logger
-	isClosed     bool
+	interrupts map[uint]*rpiInterrupt
+	logger     logging.Logger
+	isClosed   bool
 
-	piID C.int
+	piID C.int // id to communicate with pigpio daemon
 
 	activeBackgroundWorkers sync.WaitGroup
 }
@@ -147,10 +149,7 @@ func newPigpio(
 
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
 		// This has to happen outside of the lock to avoid a deadlock with interrupts.
-		C.pigpio_stop(C.int(piID))
-		instanceMu.Lock()
-		pigpioInitialized = false
-		instanceMu.Unlock()
+		C.pigpio_stop(piID)
 		logger.CError(ctx, "Pi GPIO terminated due to failed init.")
 		return nil, err
 	}
@@ -160,12 +159,8 @@ func newPigpio(
 
 // Function initializes connection to pigpio daemon.
 func initializePigpio() (C.int, error) {
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
-
-	if pigpioInitialized {
-		return -1, nil
-	}
+	boardInstanceMu.Lock()
+	defer boardInstanceMu.Unlock()
 
 	piID := C.pigpio_start(nil, nil)
 	if int(piID) < 0 {
@@ -180,7 +175,6 @@ func initializePigpio() (C.int, error) {
 		return -1, rpiutils.ConvertErrorCodeToMessage(int(piID), "error")
 	}
 
-	pigpioInitialized = true
 	return piID, nil
 }
 
@@ -197,7 +191,7 @@ func (pi *piPigpio) Reconfigure(
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 
-	if err := pi.reconfigureAnalogReaders(ctx, cfg); err != nil {
+	if err := pi.reconfigureAnalogReaders(cfg); err != nil {
 		return err
 	}
 
@@ -207,8 +201,10 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	instanceMu.Lock()
-	defer instanceMu.Unlock()
+	boardInstanceMu.Lock()
+	defer boardInstanceMu.Unlock()
+	boardInstance = pi
+
 	return nil
 }
 
@@ -230,7 +226,10 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 		closeAnalogReaders(ctx, pi),
 		teardownInterrupts(pi))
 
-	//TODO: test this with multiple instences of the board.
+	boardInstanceMu.Lock()
+	boardInstance = nil
+	boardInstanceMu.Unlock()
+	// TODO: test this with multiple instences of the board.
 	C.pigpio_stop(pi.piID)
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
@@ -285,12 +284,11 @@ func closeAnalogReaders(ctx context.Context, pi *piPigpio) error {
 // teardownInterrupts removes all hardware interrupts and cleans up.
 func teardownInterrupts(pi *piPigpio) error {
 	var err error
-	for bcom := range pi.interruptsHW {
-		if result := C.teardownInterrupt(pi.piID, C.int(bcom)); result != 0 {
+	for _, rpiInterrupt := range pi.interrupts {
+		if result := C.teardownInterrupt(rpiInterrupt.callbackID); result != 0 {
 			err = multierr.Combine(err, rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 		}
 	}
-	pi.interrupts = map[string]rpiutils.ReconfigurableDigitalInterrupt{}
-	pi.interruptsHW = map[uint]rpiutils.ReconfigurableDigitalInterrupt{}
+	pi.interrupts = map[uint]*rpiInterrupt{}
 	return err
 }

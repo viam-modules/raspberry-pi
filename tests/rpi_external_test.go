@@ -1,49 +1,62 @@
-package rpi
+/* rpi_test runs same tests as rpi_test, but using exported board functions only */
+package rpi_test
 
 import (
 	"context"
 	"os"
 	"testing"
 	"time"
+	"viamrpi/rpi"
 
+	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+
 	rpiservo "viamrpi/rpi-servo"
 	rpiutils "viamrpi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
+	piReg, ok := resource.LookupRegistration(board.API, rpi.Model)
+	test.That(t, ok, test.ShouldBeTrue)
+	test.That(t, piReg, test.ShouldNotBeNil)
+
 	ctx := context.Background()
 	logger := logging.NewTestLogger(t)
 
-	cfg := Config{
+	cfg := rpi.Config{
 		DigitalInterrupts: []rpiutils.DigitalInterruptConfig{
 			{Name: "i1", Pin: "11"}, // bcom 17
 			{Name: "servo-i", Pin: "22", Type: "servo"},
 		},
 	}
-	resourceConfig := resource.Config{
-		Name:                "foo",
-		ConvertedAttributes: &cfg,
-	}
 
-	pp, err := newPigpio(ctx, nil, resourceConfig, logger)
+	piInt, err := piReg.Constructor(
+		ctx,
+		nil,
+		resource.Config{
+			Name:                "rpi",
+			ConvertedAttributes: &cfg,
+		},
+		logger,
+	)
+
 	if os.Getuid() != 0 || err != nil && err.Error() == "not running on a pi" {
 		t.Skip("not running as root on a pi")
 		return
 	}
-	test.That(t, err, test.ShouldBeNil)
 
-	p := pp.(*piPigpio)
+	test.That(t, err, test.ShouldBeNil)
+	p := piInt.(board.Board)
 
 	defer func() {
 		err := p.Close(ctx)
 		test.That(t, err, test.ShouldBeNil)
 	}()
 
-	t.Run("gpio and pwm", func(t *testing.T) {
+	t.Run("external gpio and pwm", func(t *testing.T) {
 		pin, err := p.GPIOPinByName("29")
 		test.That(t, err, test.ShouldBeNil)
 
@@ -97,12 +110,15 @@ func TestPiPigpio(t *testing.T) {
 	})
 
 	// interrupt is configured on pi board creation
-	t.Run("preconfigured basic interrupt test", func(t *testing.T) {
+	t.Run("external preconfigured basic interrupt test", func(t *testing.T) {
 		// Test interrupt i1 on pin 11 (bcom 17)
 		i1, err := p.DigitalInterruptByName("i1")
 		test.That(t, err, test.ShouldBeNil)
 
-		err = p.SetGPIOBcom(17, false)
+		// set pin state to LOW for interrupt test
+		pin, err := p.GPIOPinByName("11")
+		test.That(t, err, test.ShouldBeNil)
+		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -110,7 +126,8 @@ func TestPiPigpio(t *testing.T) {
 		before, err := i1.Value(context.Background(), nil)
 		test.That(t, err, test.ShouldBeNil)
 
-		err = p.SetGPIOBcom(17, true)
+		// set pin state to HIGH to trigger interrupt
+		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -121,12 +138,15 @@ func TestPiPigpio(t *testing.T) {
 	})
 
 	// digital interrupt creates by name (on valid pin)
-	t.Run("create new basic interrupt test", func(t *testing.T) {
+	t.Run("external create new basic interrupt test", func(t *testing.T) {
 		// Set and create interrupt on pin 13
 		i2, err := p.DigitalInterruptByName("13")
 		test.That(t, err, test.ShouldBeNil)
+
 		// Set pin 13 (bcom 27) to LOW
-		err = p.SetGPIOBcom(27, false)
+		pin, err := p.GPIOPinByName("13")
+		test.That(t, err, test.ShouldBeNil)
+		err = pin.Set(ctx, false, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -139,7 +159,7 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 
 		// Set pin 13 (bcom 27) to HIGH
-		err = p.SetGPIOBcom(27, true)
+		err = pin.Set(ctx, true, nil)
 		test.That(t, err, test.ShouldBeNil)
 
 		time.Sleep(5 * time.Millisecond)
@@ -154,7 +174,7 @@ func TestPiPigpio(t *testing.T) {
 
 	// test servo movement and digital interrupt
 	// this function is within rpi in order to access piPigpio
-	t.Run("servo in/out", func(t *testing.T) {
+	t.Run("external servo in/out", func(t *testing.T) {
 		servoReg, ok := resource.LookupRegistration(servo.API, rpiservo.Model)
 		test.That(t, ok, test.ShouldBeTrue)
 		test.That(t, servoReg, test.ShouldNotBeNil)
