@@ -6,14 +6,13 @@ import (
 	"os"
 	"testing"
 	"time"
-	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-
+	"viamrpi/rpi"
 	rpiservo "viamrpi/rpi-servo"
 	rpiutils "viamrpi/utils"
 )
