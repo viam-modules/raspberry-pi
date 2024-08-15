@@ -202,6 +202,7 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 }
 
 // Close function to stop socket connection to pigpio daemon
+// TODO: RSDK-7972-graceful closing
 func (s *piPigpioServo) Close(_ context.Context) error {
 	C.pigpio_stop(s.piID)
 
