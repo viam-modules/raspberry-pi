@@ -102,7 +102,7 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, s.maxRotation, test.ShouldEqual, 180)
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
 
 	t.Run("test setting initial position", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, err.Error(), test.ShouldContainSubstring, "invalid pulse width")
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
 
 	t.Run("test handle hold position", func(t *testing.T) {
@@ -174,7 +174,7 @@ func TestInitializationFunctions(t *testing.T) {
 		test.That(t, s.holdPos, test.ShouldBeFalse)
 
 		// close pigpio
-		s.Close(nil)
+		s.Close(context.TODO())
 	})
 }
 
