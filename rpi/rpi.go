@@ -99,6 +99,16 @@ type piPigpio struct {
 	activeBackgroundWorkers sync.WaitGroup
 }
 
+var (
+	pigpioInitialized bool
+	// To prevent deadlocks, we must never lock the mutex of a specific piPigpio struct, above,
+	// while this is locked. It is okay to lock this while one of those other mutexes is locked
+	// instead.
+	instanceMu sync.RWMutex
+	instances  = map[*piPigpio]struct{}{}
+        daemonBootDelay = time.Duration(50) * time.Millisecond
+)
+
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
 	ctx context.Context,
@@ -106,14 +116,24 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	if boardInstance != nil {
-		return nil, errors.New("only one instance of rpi board is allowed. Please delete the existing one before creating a new one")
+	daemonAlreadyRunning, err := startPigpiod()
+	if err != nil {
+		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
+		return nil, err
+	}
+
+	if daemonAlreadyRunning {
+		logger.CInfo(ctx, "pigpiod is already running, skipping start")
+	} else {
+		// Wait for pigpiod to start up if it wasn't already running.
+		time.Sleep(daemonBootDelay)
 	}
 
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
 	}
+	logger.CInfo(ctx, "successfully started pigpiod")
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 	piInstance := &piPigpio{
@@ -212,6 +232,12 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
+
+	if err := stopPigpiod(); err != nil {
+		pi.logger.CError(ctx, "failed to stop pigpiod.")
+	}
+	pi.logger.CDebug(ctx, "successfully stopped pigpiod.")
+
 	return err
 }
 

@@ -5,6 +5,9 @@ import (
 	"testing"
 	"viamrpi/rpi"
 
+	"viamrpi/rpi"
+
+	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
@@ -12,8 +15,38 @@ import (
 	"go.viam.com/test"
 )
 
+func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
+
+	// create board dependency
+	piReg, ok := resource.LookupRegistration(board.API, rpi.Model)
+	test.That(t, ok, test.ShouldBeTrue)
+	test.That(t, piReg, test.ShouldNotBeNil)
+
+	piInt, err := piReg.Constructor(
+		ctx,
+		nil,
+		resource.Config{
+			Name:                "rpi",
+			ConvertedAttributes: &rpi.Config{},
+		},
+		logging.NewTestLogger(t),
+	)
+
+	test.That(t, err, test.ShouldBeNil)
+	p := piInt.(board.Board)
+
+	return p
+}
+
 func TestConstructor(t *testing.T) {
 	logger := logging.NewTestLogger(t)
+	ctx := context.Background()
+
+	p := createDummyBoard(t, ctx)
+	defer func() {
+		err := p.Close(ctx)
+		test.That(t, err, test.ShouldBeNil)
+	}()
 
 	t.Run("test local piPigpioServo struct fields", func(t *testing.T) {
 		ctx := context.Background()
@@ -52,6 +85,14 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestInitializationFunctions(t *testing.T) {
+	ctx := context.Background()
+
+	p := createDummyBoard(t, ctx)
+	defer func() {
+		err := p.Close(ctx)
+		test.That(t, err, test.ShouldBeNil)
+	}()
+
 	t.Run("test servo initialization", func(t *testing.T) {
 		logger := logging.NewTestLogger(t)
 		bcom := uint(3)
