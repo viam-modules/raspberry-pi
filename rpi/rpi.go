@@ -106,9 +106,8 @@ var (
 	// instead.
 	instanceMu sync.RWMutex
 	instances  = map[*piPigpio]struct{}{}
+        daemonBootDelay = time.Duration(50) * time.Millisecond
 )
-
-var daemonBootDelay = time.Duration(50) * time.Millisecond
 
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
