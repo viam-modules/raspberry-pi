@@ -114,19 +114,24 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	err := startPigpiod(ctx, logger)
+	daemonAlreadyRunning, err := startPigpiod(ctx, logger)
 	if err != nil {
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
 
-	// Wait for pigpiod to start up. 50ms is usually enough.
-	time.Sleep(50 * time.Millisecond)
+	if daemonAlreadyRunning {
+		logger.CInfo(ctx, "pigpiod is already running, skipping start")
+	} else {
+		// Wait for pigpiod to start up if it wasn't already running.
+		time.Sleep(50 * time.Millisecond)
+	}
 
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
 	}
+	logger.CInfo(ctx, "successfully started pigpiod")
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 	piInstance := &piPigpio{
@@ -230,8 +235,10 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.isClosed = true
 
 	if err := stopPigpiod(); err != nil {
-		pi.logger.CError(ctx, "Failed to stop pigpiod.")
+		pi.logger.CError(ctx, "failed to stop pigpiod.")
 	}
+	pi.logger.CDebug(ctx, "successfully stopped pigpiod.")
+
 	return err
 }
 

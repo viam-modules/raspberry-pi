@@ -1,31 +1,28 @@
 package rpi
 
 import (
-	"context"
 	"os/exec"
-
-	"go.viam.com/rdk/logging"
 )
 
-func startPigpiod(ctx context.Context, logger logging.Logger) error {
+// startPigpiod starts the pigpiod daemon if it is not already running.
+// Uses pgrep to check if pigpiod process exists, if not, start it.
+// Assumes viam-server is running as root.
+func startPigpiod() (bool, error) {
 	checkCmd := exec.Command("pgrep", "pigpiod")
 	output, err := checkCmd.Output()
 
 	if err != nil || len(output) == 0 {
 		// pigpiod is not running, start it
 		startCmd := exec.Command("pigpiod")
-		err = startCmd.Run()
 
-		return err
+		return false, startCmd.Run()
 	}
-
-	logger.CInfo(ctx, "pigpiod is already running, skipping start")
-	return nil
+	return true, nil
 }
 
+// stopPigpiod stops the pigpiod daemon.
 func stopPigpiod() error {
-	cmd := exec.Command("killall", "pigpiod")
-	err := cmd.Run()
+	stopCmd := exec.Command("killall", "pigpiod")
 
-	return err
+	return stopCmd.Run()
 }
