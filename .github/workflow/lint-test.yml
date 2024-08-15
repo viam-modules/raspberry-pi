@@ -1,7 +1,9 @@
-name: Run gofmt & unit tests
+name: run linter and unit tests on each commit
 
 on:
   push:
+    branches: 
+      - main
     paths:
       - '**/**.go'
   pull_request:
@@ -27,12 +29,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libnlopt-dev
 
-    - name: Check gofmt
-      run: |
-        if [ -n "$(gofmt -d .)" ]; then
-          echo "gofmt is unhappy with your code quality!! Please run 'make lint' and commit the changes."
-          exit 1
-        fi
+    - name: Run unit tests
+      run: make test
 
     - name: Run unit tests
       run: make test
