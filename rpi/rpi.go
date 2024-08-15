@@ -107,7 +107,7 @@ var (
 	instances  = map[*piPigpio]struct{}{}
 )
 
-var daemonBootDelayMs = 50
+var daemonBootDelayMs = time.Duration(50) * time.Millisecond
 
 // newPigpio makes a new pigpio based Board using the given config.
 func newPigpio(
