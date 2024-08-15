@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	rpiservo "viamrpi/rpi-servo"
+	rpiutils "viamrpi/utils"
+
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiservo "viamrpi/rpi-servo"
-	rpiutils "viamrpi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
@@ -43,6 +44,7 @@ func TestPiPigpio(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 	}()
 
+	// a comment
 	t.Run("gpio and pwm", func(t *testing.T) {
 		pin, err := p.GPIOPinByName("29")
 		test.That(t, err, test.ShouldBeNil)
