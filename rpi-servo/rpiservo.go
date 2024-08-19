@@ -201,10 +201,22 @@ func (s *piPigpioServo) IsMoving(ctx context.Context) (bool, error) {
 	return s.opMgr.OpRunning(), nil
 }
 
-// Close function to stop socket connection to pigpio daemon
-// TODO: RSDK-7972-graceful closing
-func (s *piPigpioServo) Close(_ context.Context) error {
+// Close gracefully stops any ongoing operations and disconnects from the pigpio daemon.
+func (s *piPigpioServo) Close(ctx context.Context) error {
+	s.logger.Debug("Attempting to gracefully stop ongoing operations")
+	_, done := s.opMgr.New(ctx)
+	defer done()
+
+	// Set pulse width to 0 to stop the servo
+	err := s.setServoPulseWidth(0)
+	if err != nil {
+		s.logger.Errorf("Failed to set pulse width to 0: %v", err)
+		return err
+	}
+
+	s.logger.Debug("Stopping pigpio connection")
 	C.pigpio_stop(s.piID)
 
+	s.logger.Info("Successfully closed pigpio connection")
 	return nil
 }
