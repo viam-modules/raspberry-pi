@@ -6,7 +6,7 @@ on:
       runs-on:
         default: buildjet-2vcpu-ubuntu-2204-arm
       container:
-        default: ghcr.io/viam-modules/raspberry-pi
+        default: ghcr.io/viam-modules/raspberry-pi:arm64
   push:
     branches: [ main ]
     paths-ignore:
