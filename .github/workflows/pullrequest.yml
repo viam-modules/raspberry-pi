@@ -10,4 +10,4 @@ on:
     
 jobs:
   test:
-    uses: viam-modules/cloudslam-wrapper/.github/workflows/test.yml@main
+    uses: viam-modules/raspberry-pi/.github/workflows/test.yml@main
