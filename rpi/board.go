@@ -104,9 +104,9 @@ var (
 	// To prevent deadlocks, we must never lock the mutex of a specific piPigpio struct, above,
 	// while this is locked. It is okay to lock this while one of those other mutexes is locked
 	// instead.
-	instanceMu sync.RWMutex
-	instances  = map[*piPigpio]struct{}{}
-        daemonBootDelay = time.Duration(50) * time.Millisecond
+	instanceMu      sync.RWMutex
+	instances       = map[*piPigpio]struct{}{}
+	daemonBootDelay = time.Duration(50) * time.Millisecond
 )
 
 // newPigpio makes a new pigpio based Board using the given config.
