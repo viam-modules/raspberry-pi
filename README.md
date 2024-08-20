@@ -1,11 +1,11 @@
 # `raspberry-pi`
 
-This module implements the [`"rdk:component:board"` API](https://docs.viam.com/components/board/) and [`"rdk:component:servo"` API](https://docs.viam.com/components/servo/) to integrate the Raspberry Pi 4 board or any servos connected to the board into your machine.
+This module implements the [`"rdk:component:board"` API](https://docs.viam.com/components/board/) and [`"rdk:component:servo"` API](https://docs.viam.com/components/servo/) to integrate the Raspberry Pi 4, 3 and Zero 2 W board or any servos connected to the board into your machine.
 
-This module replaces the `board:pi` and `servo:pi` components in RDK as a step into the modular future of Viam. Furthermore, this module fixes the `pigpio` shutdown issue.
+This module replaces the `board:pi` and `servo:pi` components in RDK as a step into the modular future of Viam. Furthermore, this module handles the `PI_INIT_FAILED` issue.
 
 Two models are provided:
-* `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4 board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
+* `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
 
 ## Configure your board

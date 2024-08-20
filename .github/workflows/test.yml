@@ -16,7 +16,7 @@ jobs:
             runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
             platform: linux/arm64
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-large-arm
     container:
       image: ${{ matrix.image }}
       options: --platform ${{ matrix.platform }}
