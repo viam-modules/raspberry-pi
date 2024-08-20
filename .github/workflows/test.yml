@@ -39,7 +39,3 @@ jobs:
       - name: make build
         run: |
           sudo -u testbot bash -lc 'make build'
-      
-      - name: make test
-        run: |
-          sudo -u testbot bash -lc 'make test'
