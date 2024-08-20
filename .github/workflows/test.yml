@@ -15,7 +15,6 @@ jobs:
           - arch: arm64
             runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
-            platform: linux/arm64
     runs-on: ${{ matrix.arch }}
     container:
       image: ${{ matrix.image }}
