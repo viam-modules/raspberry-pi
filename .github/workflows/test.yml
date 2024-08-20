@@ -13,15 +13,16 @@ jobs:
       matrix:
         include:
           - arch: arm64
+            runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
             platform: linux/arm64
-    runs-on: buildjet-8vcpu-ubuntu-2204-arm
+    runs-on: ${{ matrix.arch }}
     container:
       image: ${{ matrix.image }}
-      options: --platform ${{ matrix.platform }}
     timeout-minutes: 45
     
     steps:
+      
       - name: Checkout main
         if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v3
@@ -31,19 +32,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-
-      # Ensure the container is running, or start it if it's not
-      - name: Ensure container is running or start it
-        run: |
-          container_id=$(docker ps -q -f "ancestor=${{ matrix.image }}")
-          if [ -z "$container_id" ]; then
-            echo "Container is not running. Starting it..."
-            docker run -d --name my_container ${{ matrix.image }}
-            container_id=$(docker ps -q -f "name=my_container")
-          else
-            echo "Container is already running."
-          fi
-          echo "Running container ID: $container_id"
       
       - name: apt update
         run: |
@@ -55,7 +43,6 @@ jobs:
           git add .
           chown -R testbot:testbot .
           sudo -u testbot bash -lc 'make lint'
-
           if [ -n "$GEN_DIFF" ]; then
               echo '"make lint" resulted in changes not in git' 1>&2
               git status
