@@ -1,17 +1,25 @@
 name: Test
 
 on:
-  workflow_dispatch:
-  workflow_call:
+  push:
+    branches: 
+      - main
+    paths:
+      - '**/**.go'
+  pull_request:
+    paths:
+      - '**/**.go'
+      - 'Makefile'
+      - '.github/workflows/test.yml'
 
 jobs:
   build_and_test:
     strategy:
       matrix:
         include:
-          - arch: arm64
+          - arch: ubuntu-large-arm
             image: ghcr.io/viam-modules/raspberry-pi:arm64
-            platform: linux/arm64/v3
+            platform: linux/arm64
     runs-on: ${{ matrix.arch }}
     container:
       image: ${{ matrix.image }}
