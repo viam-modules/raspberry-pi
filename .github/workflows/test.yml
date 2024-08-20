@@ -15,13 +15,12 @@ jobs:
           - arch: arm64
             runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
-    runs-on: ${{ matrix.arch }}
+    runs-on: ubuntu-latest
     container:
       image: ${{ matrix.image }}
     timeout-minutes: 45
     
     steps:
-      
       - name: Checkout main
         if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v3
