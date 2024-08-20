@@ -10,7 +10,7 @@ on:
     paths:
       - '**/**.go'
       - 'Makefile'
-      - '.github/workflows/test.yml'
+      - '.github/workflows/test.yml@main'
 
 jobs:
   build_and_test:
