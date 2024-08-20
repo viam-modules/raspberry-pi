@@ -20,7 +20,7 @@ jobs:
     
     steps:
       
-      - name: Checkout main
+      - name: Checkout
         if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v3
       
@@ -30,9 +30,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       
-      - name: apt update
-        run: |
-          apt-get update
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      # - name: apt update
+      #   run: |
+      #     apt-get update
         
       - name: Verify no uncommitted changes from make lint
         run: |
