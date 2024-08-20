@@ -91,7 +91,7 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
 
 # Changes from rdk
 ## Library usage
-The module now relies on the pigpio daemon to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
+The module now relies on the **pigpio daemon** to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
 
 The daemon essentially supports all the same functionality as the traditional library. Instead of using `pigpio.h` C library, it uses the daemon library, which is mostly identical: `pigpiod_if2.h`. The primary difference is how the library is set up. Before, we used `gpioInitialise()` and `gpioTerminate()` to initialize and close the board connection. Now, we must start up the daemon with `sudo pigpiod` and connect to the daemon using the C functions `pigpio_start` and `pigpio_stop`. `pigpio_start` returns an ID that all the daemon library functions take in as the first argument so the daemon knows to use that connection to execute board functionality. Details can be found here: https://abyz.me.uk/rpi/pigpio/pdif2.html
 
