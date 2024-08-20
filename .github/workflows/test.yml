@@ -10,8 +10,8 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
+            platform: linux/arm64
     runs-on: ${{ matrix.runner }}
     container:
       image: ${{ matrix.image }}
