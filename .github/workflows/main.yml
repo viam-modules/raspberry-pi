@@ -1,0 +1,19 @@
+name: Build and Publish Latest
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ 'main' ]
+    paths-ignore:
+      - 'README.md'
+
+# To test workflow updates you need to work in a branch directly on viam-modules/raspberry-pi
+# and tag your working branch instead of @main in any viam-modules/raspberry-pi "uses" below.
+# Don't forget to tag back to @main before merge.
+
+jobs:
+  test:
+    uses: viam-modules/raspberry-pi/.github/workflows/test.yml@main

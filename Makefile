@@ -3,7 +3,7 @@ TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 UNAME_S ?= $(shell uname -s)
 
 .PHONY: build
-build: $(BIN_OUTPUT_PATH)/raspberry-pi
+build: $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 $(BIN_OUTPUT_PATH)/raspberry-pi: *.go go.* */*.go */*.c */*.h
 	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
