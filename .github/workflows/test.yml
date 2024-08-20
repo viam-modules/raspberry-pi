@@ -16,7 +16,7 @@ jobs:
             runner: [ubuntu-latest]
             image: ghcr.io/viam-modules/raspberry-pi:arm64
             platform: linux/arm64
-    runs-on: ${{ matrix.arch }}
+    runs-on: buildjet-8vcpu-ubuntu-2204-arm
     container:
       image: ${{ matrix.image }}
     timeout-minutes: 45
