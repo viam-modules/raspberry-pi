@@ -20,7 +20,8 @@ Fill in the attributes as applicable to your board, according to the example bel
   "components": [
     {
       "name": "<your-pi-board-name>",
-      "model": "pi",
+      // change the model name back to "viam:raspberry-pi:rpi" once this module is public
+      "model": "viam-hardware-testing:raspberry-pi:rpi",
       "type": "board",
       "namespace": "rdk",
       "attributes": {
@@ -41,9 +42,16 @@ Fill in the attributes as applicable to your board, according to the example bel
           }
         ]
       },
-      "depends_on": []
     }
   ]
+  "modules": [
+    {
+      "type": "registry",
+      "name": "viam-hardware-testing_raspberry-pi",
+      "module_id": "viam-hardware-testing:raspberry-pi",
+      "version": "0.0.1"
+    }
+  ],
 }
 ```
 
@@ -54,7 +62,8 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
   "components": [
     {
       "name": "<your-servo-name>",
-      "model": "pi",
+      // change the model name back to "viam:raspberry-pi:rpi-servo" once this module is public
+      "model": "viam-hardware-testing:raspberry-pi:rpi-servo",
       "type": "servo",
       "namespace": "rdk",
       "attributes": {
@@ -68,7 +77,16 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
         "frequency_hz": <int>
       }
     }
-  }
+  ],
+  "modules": [
+    {
+      "type": "registry",
+      "name": "viam-hardware-testing_raspberry-pi",
+      "module_id": "viam-hardware-testing:raspberry-pi",
+      "version": "0.0.1"
+    }
+  ],
+}
 ```
 
 # Changes from rdk
