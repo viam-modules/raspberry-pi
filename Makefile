@@ -41,3 +41,7 @@ docker:
 .PHONY: docker-upload
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
+
+.PHONY: clean
+clean:
+	rm -rf *.o
