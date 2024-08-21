@@ -36,7 +36,7 @@ lint: $(TOOL_BIN)/golangci-lint
 
 .PHONY: docker
 docker:
-	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64
+	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64 .
 
 .PHONY: docker-upload
 docker-upload:

@@ -1,6 +1,6 @@
-FROM debian:bookworm
+FROM debian:bullseye
 
-ARG GO_VERSION=1.21
+ARG GO_VERSION=1.23.0
 
 # Backports repo
 RUN echo "deb http://deb.debian.org/debian $(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)-backports main" > /etc/apt/sources.list.d/backports.list
@@ -8,10 +8,11 @@ RUN echo "deb http://deb.debian.org/debian $(grep VERSION_CODENAME /etc/os-relea
 RUN --mount=type=cache,target=/var/cache/apt apt-get update
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get install -qqy \
-    golang-${GO_VERSION}-go git make curl gpg wget sudo nano file procps bash
+    git build-essential make curl gpg wget sudo nano file procps bash
 
-RUN update-alternatives --install /usr/bin/go go /usr/lib/go-${GO_VERSION}/bin/go 10 \
-    --slave /usr/bin/gofmt gofmt /usr/lib/go-${GO_VERSION}/bin/gofmt
+RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-arm64.tar.gz | tar -xzv -C /usr/local && \
+    update-alternatives --install /usr/bin/go go /usr/local/go/bin/go 10 \
+    --slave /usr/bin/gofmt gofmt /usr/local/go/bin/gofmt
 
 #Raspberry Pi repo
 RUN curl http://archive.raspberrypi.org/debian/raspberrypi.gpg.key -o /etc/apt/trusted.gpg.d/raspberrypi.asc && echo "deb http://archive.raspberrypi.com/debian $(grep VERSION_CODENAME /etc/os-release | cut -d= -f2) main" > /etc/apt/sources.list.d/raspi.list
