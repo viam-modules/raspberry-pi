@@ -8,7 +8,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiservo "viamrpi/rpi-servo"
+	rpiservo "raspberry-pi/rpi-servo"
 )
 
 func TestPiServo(t *testing.T) {

@@ -26,8 +26,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "viamrpi/utils"
-
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -37,6 +35,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.

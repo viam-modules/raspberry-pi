@@ -15,7 +15,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiutils "viamrpi/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 func TestPiHardware(t *testing.T) {

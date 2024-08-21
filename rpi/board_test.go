@@ -10,8 +10,8 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiservo "viamrpi/rpi-servo"
-	rpiutils "viamrpi/utils"
+	rpiservo "raspberry-pi/rpi-servo"
+	rpiutils "raspberry-pi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {

@@ -123,7 +123,7 @@ One error during testing relates to the way interrupts are started. When the int
 
 **Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
 ```bash
-CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc go test -c -o ./bin/ viamrpi/...
+CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc go test -c -o ./bin/ raspberry-pi/...
 # run test (-test.v for verbose)
 sudo ./bin/${test_package}.tests$
 ```

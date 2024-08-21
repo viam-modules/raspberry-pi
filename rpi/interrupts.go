@@ -17,7 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
-	rpiutils "viamrpi/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 type rpiInterrupt struct {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/resource"
-	rpiutils "viamrpi/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Validate and set piPigpioServo fields based on the configuration.
