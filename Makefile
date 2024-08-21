@@ -9,10 +9,10 @@ $(BIN_OUTPUT_PATH)/raspberry-pi: *.go go.* */*.go */*.c */*.h
 	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 .PHONY: module.tar.gz
-module.tar.gz: $(BIN_OUTPUT_PATH)/module.tar.gz
+module.tar.gz: $(BIN_OUTPUT_PATH)/module.tar.gz 
 
 $(BIN_OUTPUT_PATH)/module.tar.gz: $(BIN_OUTPUT_PATH)/raspberry-pi
-	tar czf $(BIN_OUTPUT_PATH)/module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi
+	tar czf $(BIN_OUTPUT_PATH)/module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
 
 .PHONY: update-rdk
 update-rdk:
