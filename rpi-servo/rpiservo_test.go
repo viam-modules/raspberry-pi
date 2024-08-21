@@ -3,7 +3,6 @@ package rpiservo
 import (
 	"context"
 	"testing"
-	"viamrpi/rpi"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
@@ -11,10 +10,10 @@ import (
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"viamrpi/rpi"
 )
 
 func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
-
 	// create board dependency
 	piReg, ok := resource.LookupRegistration(board.API, rpi.Model)
 	test.That(t, ok, test.ShouldBeTrue)

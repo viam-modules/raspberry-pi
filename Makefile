@@ -3,7 +3,7 @@ TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 UNAME_S ?= $(shell uname -s)
 
 .PHONY: build
-build: $(BIN_OUTPUT_PATH)/raspberry-pi main.go
+build: $(BIN_OUTPUT_PATH)/raspberry-pi
 
 $(BIN_OUTPUT_PATH)/raspberry-pi: *.go go.* */*.go */*.c */*.h
 	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
@@ -42,6 +42,5 @@ docker:
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
 
-.PHONY: clean
 clean:
-	rm -rf *.o
+	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
