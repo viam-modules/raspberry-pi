@@ -164,11 +164,13 @@ func TestServoInterrupt(t *testing.T) {
 	servoInterrupt := s.(*ServoDigitalInterrupt)
 
 	now := uint64(0)
-	for i := 0; i < 20; i++ {
+	i := 0
+	for i < 20 {
 		test.That(t, ServoTick(context.Background(), servoInterrupt, true, now), test.ShouldBeNil)
 		now += 1500 * 1000 // this is what we measure
 		test.That(t, ServoTick(context.Background(), servoInterrupt, false, now), test.ShouldBeNil)
 		now += 1000 * 1000 * 1000 // this is between measurements
+		i++
 	}
 
 	intVal, err := s.Value(context.Background(), nil)
@@ -187,11 +189,13 @@ func TestServoInterruptWithPP(t *testing.T) {
 	servoInterrupt := s.(*ServoDigitalInterrupt)
 
 	now := uint64(0)
-	for i := 0; i < 20; i++ {
+	i := 0
+	for i < 20 {
 		test.That(t, ServoTick(context.Background(), servoInterrupt, true, now), test.ShouldBeNil)
 		now += 1500 * 1000 // this is what we measure
 		test.That(t, ServoTick(context.Background(), servoInterrupt, false, now), test.ShouldBeNil)
 		now += 1000 * 1000 * 1000 // this is between measurements
+		i++
 	}
 
 	intVal, err := s.Value(context.Background(), nil)

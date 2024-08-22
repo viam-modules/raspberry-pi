@@ -176,6 +176,7 @@ func ServoTick(ctx context.Context, i *ServoDigitalInterrupt, high bool, now uin
 		return nil
 	}
 
+	//nolint:gosec
 	i.ra.Add(int(diff / 1000))
 	return nil
 }

@@ -68,7 +68,7 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 		piServo.holdPos = false
 		err := piServo.setServoPulseWidth(0)
 		if err != nil {
-			return fmt.Errorf("erroring setting pulse width to 0")
+			return errors.New("erroring setting pulse width to 0")
 		}
 	}
 	return nil

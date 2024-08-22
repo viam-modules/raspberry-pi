@@ -4,18 +4,17 @@ package rpi_test
 import (
 	"context"
 	"os"
-	"raspberry-pi/rpi"
 	"testing"
 	"time"
-
-	rpiservo "raspberry-pi/rpi-servo"
-	rpiutils "raspberry-pi/utils"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"raspberry-pi/rpi"
+	rpiservo "raspberry-pi/rpi-servo"
+	rpiutils "raspberry-pi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
