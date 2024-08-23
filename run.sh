@@ -1,6 +1,21 @@
 #!/bin/sh
 
-#Install pigpio packets 
-sudo apt-get install -qqy libpigpio-dev libpigpiod-if-dev pigpio
+# Function to check if a package is installed
+is_installed() {
+    dpkg -s "$1" > /dev/null 2>&1
+}
 
-exec ./bin/raspberry-pi $1
+# Install pigpio packages if not already installed
+for pkg in libpigpio-dev libpigpiod-if-dev pigpio; do
+    if ! is_installed "$pkg"; then
+        echo "Installing $pkg..."
+        sudo apt-get install -qqy "$pkg"
+    else
+        echo "$pkg is already installed."
+    fi
+done
+
+echo "Listing contents of .tar.gz files in the bin directory:"
+tar tf bin/*.tar.gz
+
+exec ./bin/raspberry-pi "$@"
