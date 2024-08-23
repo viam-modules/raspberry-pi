@@ -15,7 +15,5 @@ for pkg in libpigpio-dev libpigpiod-if-dev pigpio; do
     fi
 done
 
-echo "Listing contents of .tar.gz files in the bin directory:"
-tar tf bin/*.tar.gz
 
 exec ./bin/raspberry-pi "$@"
