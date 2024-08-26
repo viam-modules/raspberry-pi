@@ -1,0 +1,41 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.md'
+
+jobs:
+  build_and_test:
+    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    container: ghcr.io/viam-modules/raspberry-pi:arm64
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+
+      - name: Checkout PR branch
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify no uncommitted changes from make lint
+        run: |
+          git init
+          git add .
+          chown -R testbot:testbot .
+          sudo -u testbot bash -lc 'make lint'
+          if [ -n "$GEN_DIFF" ]; then
+              echo '"make lint" resulted in changes not in git' 1>&2
+              git status
+              exit 1
+          fi
+
+      - name: make build
+        run: |
+          sudo -u testbot bash -lc 'make build'

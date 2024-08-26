@@ -9,7 +9,7 @@ extern void pigpioInterruptCallback(int gpio, int level, uint32_t tick);
 
 // interruptCallback calls through to the go linked interrupt callback.
 void interruptCallback(int pi, unsigned gpio, unsigned level, uint32_t tick) {
-    if (level == 2) {
+    if (level == 2) {xwxw
         // watchdog
         return;
     }
@@ -25,11 +25,10 @@ int setupInterrupt(int pi, int gpio) {
     if (result != 0) {
         return result;
     }
+    // successful call returns a callback ID that can be used to cancel the callback
     result = callback(pi, gpio, EITHER_EDGE, interruptCallback);
     return result;
 }
-
-
 int setPullUp(int pi, int gpio) {
     int result = set_pull_up_down(pi, gpio, PI_PUD_UP);
     return result;

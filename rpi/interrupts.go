@@ -7,6 +7,7 @@ package rpi
 // #include <stdlib.h>
 // #include <pigpiod_if2.h>
 // #include "pi.h"
+// #cgo LDFLAGS: -lpigpiod_if2
 import "C"
 
 import (
@@ -14,38 +15,27 @@ import (
 	"fmt"
 	"math"
 
-	rpiutils "viamrpi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
-	"go.viam.com/rdk/logging"
+	rpiutils "raspberry-pi/utils"
 )
 
-// This is a helper function for digital interrupt reconfiguration. It finds the key in the map
-// whose value is the given interrupt, and returns that key and whether we successfully found it.
-func findInterruptName(
-	interrupt rpiutils.ReconfigurableDigitalInterrupt,
-	interrupts map[string]rpiutils.ReconfigurableDigitalInterrupt,
-) (string, bool) {
-	for key, value := range interrupts {
-		if value == interrupt {
-			return key, true
-		}
-	}
-	return "", false
+type rpiInterrupt struct {
+	interrupt  rpiutils.ReconfigurableDigitalInterrupt
+	callbackID C.uint // callback ID to close pi callback connection
 }
 
-// This is a very similar helper function, which does the same thing but for broadcom addresses.
-func findInterruptBcom(
-	interrupt rpiutils.ReconfigurableDigitalInterrupt,
-	interruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt,
-) (uint, bool) {
-	for key, value := range interruptsHW {
-		if value == interrupt {
-			return key, true
+// findInterruptByName finds an interrupt by its name, such as: "interrupt-1"
+func findInterruptByName(
+	name string,
+	interrupts map[uint]*rpiInterrupt,
+) (rpiutils.ReconfigurableDigitalInterrupt, bool) {
+	for _, rpiInterrupt := range interrupts {
+		if rpiInterrupt.interrupt.Name() == name {
+			return rpiInterrupt.interrupt, true
 		}
 	}
-	return 0, false
+	return nil, false
 }
 
 // reconfigureContext contains the context and state required for reconfiguring interrupts.
@@ -53,107 +43,45 @@ type reconfigureContext struct {
 	pi  *piPigpio
 	ctx context.Context
 
-	// We reuse the old interrupts when possible.
-	oldInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
-	oldInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
+	// Map of old interrupts to be cleaned up
+	oldInterrupts map[uint]*rpiInterrupt
 
-	// Like oldInterrupts and oldInterruptsHW, these two will have identical values, mapped to
-	// using different keys.
-	newInterrupts   map[string]rpiutils.ReconfigurableDigitalInterrupt
-	newInterruptsHW map[uint]rpiutils.ReconfigurableDigitalInterrupt
-
-	interruptsToClose map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
+	// New Interrupts to be created to replace the old ones
+	newInterrupts map[uint]*rpiInterrupt
 }
 
 // reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
 // It reuses existing interrupts when possible and creates new ones if necessary.
 func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
 	reconfigCtx := &reconfigureContext{
-		pi:                pi,
-		ctx:               ctx,
-		oldInterrupts:     pi.interrupts,
-		oldInterruptsHW:   pi.interruptsHW,
-		newInterrupts:     make(map[string]rpiutils.ReconfigurableDigitalInterrupt),
-		newInterruptsHW:   make(map[uint]rpiutils.ReconfigurableDigitalInterrupt),
-		interruptsToClose: initializeInterruptsToClose(pi.interrupts),
+		pi:            pi,
+		ctx:           ctx,
+		oldInterrupts: pi.interrupts,
+		newInterrupts: make(map[uint]*rpiInterrupt),
 	}
 
+	// teardown old interrupts
+	for _, interrupt := range reconfigCtx.oldInterrupts {
+		if result := C.teardownInterrupt(interrupt.callbackID); result != 0 {
+			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+		}
+	}
+
+	// Set new interrupts based on config
 	for _, newConfig := range cfg.DigitalInterrupts {
+		// check if pin is valid
 		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(newConfig.Pin)
 		if !ok {
 			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
 		}
 
-		if err := reconfigCtx.tryReuseOrCreateInterrupt(newConfig, bcom); err != nil {
+		// create new interrupt
+		if err := reconfigCtx.createNewInterrupt(newConfig, bcom); err != nil {
 			return err
 		}
 	}
 
-	if err := reconfigCtx.cleanupUnusedInterrupts(); err != nil {
-		return err
-	}
-
 	pi.interrupts = reconfigCtx.newInterrupts
-	pi.interruptsHW = reconfigCtx.newInterruptsHW
-	return nil
-}
-
-// type aliases for initializeInterruptsToClose function
-type InterruptMap map[string]rpiutils.ReconfigurableDigitalInterrupt
-type InterruptSet map[rpiutils.ReconfigurableDigitalInterrupt]struct{}
-
-// initializeInterruptsToClose initializes a map of interrupts to be closed by adding all old interrupts to it.
-func initializeInterruptsToClose(oldInterrupts InterruptMap) InterruptSet {
-	interruptsToClose := make(map[rpiutils.ReconfigurableDigitalInterrupt]struct{}, len(oldInterrupts))
-	for _, interrupt := range oldInterrupts {
-		interruptsToClose[interrupt] = struct{}{}
-	}
-	return interruptsToClose
-}
-
-// tryReuseOrCreateInterrupt attempts to reuse an existing interrupt or create a new one if no reusable interrupt is found.
-// It tries to reuse an interrupt by its hardware pin or name, and if both fail, it creates a new interrupt.
-func (ctx *reconfigureContext) tryReuseOrCreateInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
-	if oldInterrupt, ok := ctx.oldInterruptsHW[bcom]; ok {
-		return ctx.reuseInterrupt(oldInterrupt, newConfig.Name, bcom)
-	}
-
-	if oldInterrupt, ok := ctx.oldInterrupts[newConfig.Name]; ok {
-		return ctx.reuseInterrupt(oldInterrupt, newConfig.Name, bcom)
-	}
-
-	return ctx.createNewInterrupt(newConfig, bcom)
-}
-
-// reuseInterrupt reconfigures an existing interrupt for reuse and updates the necessary maps and configurations.
-// It removes the reused interrupt from the list of interrupts to be closed and updates the new interrupt maps.
-func (ctx *reconfigureContext) reuseInterrupt(interrupt rpiutils.ReconfigurableDigitalInterrupt, name string, bcom uint) error {
-	ctx.newInterrupts[name] = interrupt
-	ctx.newInterruptsHW[bcom] = interrupt
-	delete(ctx.interruptsToClose, interrupt)
-
-	if oldName, ok := findInterruptName(interrupt, ctx.oldInterrupts); ok {
-		delete(ctx.oldInterrupts, oldName)
-	} else {
-		ctx.pi.logger.CErrorf(ctx.ctx,
-			"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
-				"but couldn't find its old name!?", name, bcom)
-	}
-
-	if oldBcom, ok := findInterruptBcom(interrupt, ctx.oldInterruptsHW); ok {
-		delete(ctx.oldInterruptsHW, oldBcom)
-		if result := C.teardownInterrupt(ctx.pi.piID, C.int(oldBcom)); result != 0 {
-			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
-		}
-	} else {
-		ctx.pi.logger.CErrorf(ctx.ctx,
-			"Tried reconfiguring old interrupt to new name %s and broadcom address %s, "+
-				"but couldn't find its old bcom!?", name, bcom)
-	}
-
-	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
-		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
-	}
 	return nil
 }
 
@@ -163,37 +91,21 @@ func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInte
 	if err != nil {
 		return err
 	}
-	ctx.newInterrupts[newConfig.Name] = di
-	ctx.newInterruptsHW[bcom] = di
-	if result := C.setupInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
-		return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+
+	newInterrupt := &rpiInterrupt{
+		interrupt: di,
 	}
-	return nil
-}
 
-// createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
-// It adds the new interrupt to the new interrupt maps and sets up the interrupt in the hardware.
-func (ctx *reconfigureContext) cleanupUnusedInterrupts() error {
-	for interrupt := range ctx.interruptsToClose {
-		name, ok := findInterruptName(interrupt, ctx.oldInterrupts)
-		if !ok {
-			return errors.Errorf("found old interrupt %s without old name!?", interrupt)
-		}
+	ctx.newInterrupts[bcom] = newInterrupt
 
-		bcom, ok := findInterruptBcom(interrupt, ctx.oldInterruptsHW)
-		if !ok {
-			return errors.Errorf("found old interrupt %s without old bcom!?", interrupt)
-		}
-
-		if expectedBcom, ok := rpiutils.BroadcomPinFromHardwareLabel(name); ok && bcom == expectedBcom {
-			ctx.newInterrupts[name] = interrupt
-			ctx.newInterruptsHW[bcom] = interrupt
-		} else {
-			if result := C.teardownInterrupt(ctx.pi.piID, C.int(bcom)); result != 0 {
-				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
-			}
-		}
+	// returns callback ID on success >= 0
+	callbackID := C.setupInterrupt(ctx.pi.piID, C.int(bcom))
+	if int(callbackID) < 0 {
+		return rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
 	}
+
+	newInterrupt.callbackID = C.uint(callbackID)
+
 	return nil
 }
 
@@ -202,8 +114,8 @@ func (pi *piPigpio) DigitalInterruptNames() []string {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 	names := []string{}
-	for k := range pi.interrupts {
-		names = append(names, k)
+	for _, rpiInterrupt := range pi.interrupts {
+		names = append(names, rpiInterrupt.interrupt.Name())
 	}
 	return names
 }
@@ -215,12 +127,12 @@ func (pi *piPigpio) DigitalInterruptNames() []string {
 func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt, error) {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
-	d, ok := pi.interrupts[name]
+	d, ok := findInterruptByName(name, pi.interrupts)
 	if !ok {
 		var err error
 		if bcom, have := rpiutils.BroadcomPinFromHardwareLabel(name); have {
-			if d, ok := pi.interruptsHW[bcom]; ok {
-				return d, nil
+			if d, ok := pi.interrupts[bcom]; ok {
+				return d.interrupt, nil
 			}
 			d, err = rpiutils.CreateDigitalInterrupt(
 				rpiutils.DigitalInterruptConfig{
@@ -231,13 +143,16 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 			if err != nil {
 				return nil, err
 			}
-			if result := C.setupInterrupt(pi.piID, C.int(bcom)); result != 0 {
-				err := rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+			callbackID := C.setupInterrupt(pi.piID, C.int(bcom))
+			if callbackID < 0 {
+				err := rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
 				return nil, errors.Errorf("Unable to set up interrupt on pin %s: %s", name, err)
 			}
 
-			pi.interrupts[name] = d
-			pi.interruptsHW[bcom] = d
+			pi.interrupts[bcom] = &rpiInterrupt{
+				interrupt:  d,
+				callbackID: C.uint(callbackID),
+			}
 			return d, nil
 		}
 		return d, fmt.Errorf("interrupt %s does not exist", name)
@@ -259,33 +174,34 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 
 	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
-	instanceMu.RLock()
-	defer instanceMu.RUnlock()
-	for instance := range instances {
-		i := instance.interruptsHW[uint(gpio)]
-		if i == nil {
-			logging.Global().Infof("no DigitalInterrupt configured for gpio %d", gpio)
-			continue
+	boardInstanceMu.RLock()
+	defer boardInstanceMu.RUnlock()
+
+	// boardInstance has to be initialized before callback can be called
+	if boardInstance == nil {
+		return
+	}
+	interrupts := boardInstance.interrupts[uint(gpio)]
+	if interrupts == nil {
+		boardInstance.logger.Infof("no DigitalInterrupt configured for gpio %d", gpio)
+		return
+	}
+	high := true
+	if level == 0 {
+		high = false
+	}
+	switch di := interrupts.interrupt.(type) {
+	case *rpiutils.BasicDigitalInterrupt:
+		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)
+		if err != nil {
+			boardInstance.logger.Error(err)
 		}
-		high := true
-		if level == 0 {
-			high = false
+	case *rpiutils.ServoDigitalInterrupt:
+		err := rpiutils.ServoTick(boardInstance.cancelCtx, di, high, tick*1000)
+		if err != nil {
+			boardInstance.logger.Error(err)
 		}
-		// this should *not* block for long otherwise the lock
-		// will be held
-		switch di := i.(type) {
-		case *rpiutils.BasicDigitalInterrupt:
-			err := rpiutils.Tick(instance.cancelCtx, di, high, tick*1000)
-			if err != nil {
-				instance.logger.Error(err)
-			}
-		case *rpiutils.ServoDigitalInterrupt:
-			err := rpiutils.ServoTick(instance.cancelCtx, di, high, tick*1000)
-			if err != nil {
-				instance.logger.Error(err)
-			}
-		default:
-			instance.logger.Error("unknown digital interrupt type")
-		}
+	default:
+		boardInstance.logger.Error("unknown digital interrupt type")
 	}
 }

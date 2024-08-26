@@ -5,9 +5,8 @@ import (
 	"os"
 	"testing"
 	"time"
-	rpiutils "viamrpi/utils"
 
-	"go.viam.com/test"
+	rpiutils "raspberry-pi/utils"
 
 	picommon "go.viam.com/rdk/components/board/pi/common"
 	"go.viam.com/rdk/components/encoder"
@@ -17,6 +16,7 @@ import (
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/test"
 )
 
 func TestPiHardware(t *testing.T) {

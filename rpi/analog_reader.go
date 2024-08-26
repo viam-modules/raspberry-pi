@@ -5,17 +5,17 @@ package rpi
 */
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
+	"go.viam.com/rdk/components/board/genericlinux/buses"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
 )
 
 // Helper functions to configure analog readers and interrupts.
-func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) error {
+func (pi *piPigpio) reconfigureAnalogReaders(cfg *Config) error {
 	// No need to reconfigure the old analog readers; just throw them out and make new ones.
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
 	for _, ac := range cfg.AnalogReaders {
@@ -24,11 +24,26 @@ func (pi *piPigpio) reconfigureAnalogReaders(ctx context.Context, cfg *Config) e
 			return errors.Errorf("bad analog pin (%s)", ac.Pin)
 		}
 
-		bus := &piPigpioSPI{pi: pi, busSelect: ac.SPIBus}
+		chipSelect := ac.ChipSelect
+
+		// Use genericlinux implementation for SPI bus.
+		switch chipSelect {
+		case "24", "ce0", "io8", "0":
+			// HW pin 24 maps to chip select 0
+			chipSelect = "0"
+		case "26", "ce1", "io7", "1":
+			// HW pin 26 maps to chip select 1
+			chipSelect = "1"
+		default:
+			return errors.Errorf("bad chip select (%s), choose chip select 0 (pin 24) or 1 (pin 26)", chipSelect)
+		}
+
+		bus := buses.NewSpiBus(ac.SPIBus)
+
 		ar := &mcp3008helper.MCP3008AnalogReader{
 			Channel: channel,
 			Bus:     bus,
-			Chip:    ac.ChipSelect,
+			Chip:    chipSelect,
 		}
 
 		pi.analogReaders[ac.Name] = pinwrappers.SmoothAnalogReader(ar, board.AnalogReaderConfig{
