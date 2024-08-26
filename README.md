@@ -122,7 +122,7 @@ Furthermore, the way that daemon callback functions vary from the non-daemon pig
 ## Testing
 New tests have been written for servo and board. All old tests were preserved. For this module, we implement black box and white box testing. White box uses internal package functions (lowercase functions like newPigpio) and tests the behavior. It also tests any helper functions. Black box testing treats the package as an outside, only using exported functions to test their behavior. This is why we have a new `testing/` folder which holds these tests, which are almost identical to the pacakge tests, without using some private functions. 
 
-All tests require a functioning raspberry pi. 
+All tests require a functioning raspberry pi4. 
 
 **Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
 ```bash
@@ -142,7 +142,7 @@ The analog readers used SPI in order to transfer information. The SPI previously
 ## Starting and Stopping `pigpiod`
 The daemon is automatically started in the module on init and shut down on Close(). There are some tricky consequences to this:
 - the daemon has a startup period. I've noticed on a clean board that it starts within 1-50ms. Trying to use any C functions before then will result in connection errors
-- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopping and starting immidietly. 
+- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopping and starting immediately. 
 
 ## Other Considerations
 - I2C has been removed. It wasn't used for anything.
