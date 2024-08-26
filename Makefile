@@ -7,6 +7,7 @@ module: build
 	tar czf $(BIN_OUTPUT_PATH)/module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
 
 build:
+	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
 	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 update-rdk:
