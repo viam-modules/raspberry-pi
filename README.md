@@ -89,6 +89,9 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
 }
 ```
 
+## Building and Using
+Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspbery-pi` and a tar named `module.tar.gz` will appear in `bin` folder. 
+
 # Changes from rdk
 ## Library usage
 The module now relies on the **pigpio daemon** to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
@@ -117,30 +120,29 @@ Now, we simply have one map, `interrupts`, which **only maps broadcom pin (previ
 Furthermore, the way that daemon callback functions vary from the non-daemon pigpio library. Before, we used `gpioSetAlertFunc` to set up all interruot callbacks. It also used this function to unset callbacks, where a `NULL` function is passed as the function to initialize a callback cancellation. Within the daemon library, a callback is initialized with `callback`, which returns a callback ID. This ID is used to cancel the callback via a separate function `callback_cancel`, which will cancel said callback. There was no ID before, which means we modified the interrupt struct to track this callback ID. All we do now is to wrap the interrupt via a new `rpiStruct`, which holds the old `ReconfigurableDigitalInterrupt` as well as the callback ID. In the `pi.c` library, it takes a callback id to cancel the callbacks now. This is the biggest logical change in this new module.
 
 ## Testing
-New tests have been written for servo and board. All old tests were preserved. For this module, we implement black box and white box testing. White box uses internal package functions (lowercase functions like newPigpio) and tests the behavior. It also tests any helper functions. Black box testing treats the package as an outside, only using exported functions to test their behavior. This is why we have a new `testing/` folder which holds these tests, which are almost identical to the pacakge tests, without using some private functions.
+New tests have been written for servo and board. All old tests were preserved. For this module, we implement black box and white box testing. White box uses internal package functions (lowercase functions like newPigpio) and tests the behavior. It also tests any helper functions. Black box testing treats the package as an outside, only using exported functions to test their behavior. This is why we have a new `testing/` folder which holds these tests, which are almost identical to the pacakge tests, without using some private functions. 
 
-One error during testing relates to the way interrupts are started. When the interrupt is created, our `pi.c` sets a pull up on the pin (default behavior for each pin varies). Depending on whether you set the pin before or after the digital interrupt is created may change the edge detection. Make sure the interrupt is created before setting low or high to make sure the interrupt count is accurate.
+All tests require a functioning raspberry pi. 
 
 **Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
 ```bash
 CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc go test -c -o ./bin/ raspberry-pi/...
 # run test (-test.v for verbose)
-sudo ./bin/${test_package}.tests$
+sudo ./bin/${test_package}.test
 ```
 
 ## Servo
 Servo now uses PWM for more granular control. It essentially performs the same behavior as before, but uses PWM functions to mimic the servo functions within the `pigpio` library. It explains how to do it here: https://abyz.me.uk/rpi/pigpio/pdif2.html#set_servo_pulsewidth.
 
-Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate. As a consequence, some functions were reorganized to carry this functionality out. Olivia knows about this as well.
+Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate. As a consequence, some functions were reorganized to carry this functionality out.
 
 ## Analog Readers and SPI
-The analog readers used SPI in order to transfer information. The SPI previously used pigpio defined SPI functions. We wanted to use our genericlinux implementation, which the library now uses. We simply set up a `NewSPIBus` and everything works well. There are chip select mappings (within `rpi/analog_readers.go`) that map physical pins to chip select pins. Otherwise, behavior is the same. Alan knows about these changes.
+The analog readers used SPI in order to transfer information. The SPI previously used pigpio defined SPI functions. We wanted to use our [genericlinux](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) implementation, which the library now uses. We simply set up a `NewSPIBus` and everything works well. There are chip select mappings (within `rpi/analog_readers.go`) that map physical pins to chip select pins. Otherwise, behavior is the same.
 
 ## Starting and Stopping `pigpiod`
 The daemon is automatically started in the module on init and shut down on Close(). There are some tricky consequences to this:
 - the daemon has a startup period. I've noticed on a clean board that it starts within 1-50ms. Trying to use any C functions before then will result in connection errors
-- The daemon also has a stopping period. I did not have time (check with Susmita) to query to make sure the process is actually terminated before close. This causes error when you try to boot up a board again while it's closing, as it will error (program doesn't know whether pigpiod is actively running or in the process of shutting down). This is mostly a problem during testing, where boards are open and closed in rapid succession.
+- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopped and started immidietly. 
 
 ## Other Considerations
 - I2C has been removed. It wasn't used for anything.
-- I had some Cgo flag problems while compiling on a raspberry pi. These flags before any go commands may be required: `CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc`
