@@ -9,7 +9,7 @@ extern void pigpioInterruptCallback(int gpio, int level, uint32_t tick);
 
 // interruptCallback calls through to the go linked interrupt callback.
 void interruptCallback(int pi, unsigned gpio, unsigned level, uint32_t tick) {
-    if (level == 2) {xwxw
+    if (level == 2) {
         // watchdog
         return;
     }
@@ -45,8 +45,8 @@ int setPullNone(int pi, int gpio) {
     return result;
 }
 
-int teardownInterrupt(int pi, int gpio) {
-    int result = callback(pi, gpio, EITHER_EDGE, NULL);
+int teardownInterrupt(unsigned int callback_id) {
+    int result = callback_cancel(callback_id);
     // Do we need to unset the pullup resistors?
     return result;
 }
