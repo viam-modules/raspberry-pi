@@ -142,7 +142,7 @@ The analog readers used SPI in order to transfer information. The SPI previously
 ## Starting and Stopping `pigpiod`
 The daemon is automatically started in the module on init and shut down on Close(). There are some tricky consequences to this:
 - the daemon has a startup period. I've noticed on a clean board that it starts within 1-50ms. Trying to use any C functions before then will result in connection errors
-- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopped and started immidietly. 
+- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopping and starting immidietly. 
 
 ## Other Considerations
 - I2C has been removed. It wasn't used for anything.
