@@ -31,24 +31,19 @@ int setupInterrupt(int pi, int gpio) {
 
 
 int setPullUp(int pi, int gpio) {
-    result = set_pull_up_down(pi, gpio, PI_PUD_UP);
-    if (result != 0) {
-        return result;
-    }
+    int result = set_pull_up_down(pi, gpio, PI_PUD_UP);
+    return result;
+
 }
 
 int setPullDown(int pi, int gpio) {
-    result = set_pull_up_down(pi, gpio, PI_PUD_DOWN);
-    if (result != 0) {
-        return result;
-    }
+    int result = set_pull_up_down(pi, gpio, PI_PUD_DOWN);
+    return result;
 }
 
 int setPullNone(int pi, int gpio) {
-    result = set_pull_up_down(pi, gpio, PI_PUD_OFF);
-    if (result != 0) {
-        return result;
-    }
+    int result = set_pull_up_down(pi, gpio, PI_PUD_OFF);
+    return result;
 }
 
 int teardownInterrupt(int pi, int gpio) {

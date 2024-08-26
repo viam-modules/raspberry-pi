@@ -45,7 +45,7 @@ var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
 type Config struct {
 	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
 	DigitalInterrupts []rpiutils.DigitalInterruptConfig   `json:"digital_interrupts,omitempty"`
-	Pulls             []PullConfig                        `json:"configs ,omitempty"`
+	Pulls             []PullConfig                        `json:"pulls,omitempty"`
 }
 
 // PullConfig defines the config for pull up/pull down resistors.
