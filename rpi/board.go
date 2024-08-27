@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,7 +37,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -220,6 +221,8 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	pi.reconfigurePulls(ctx, cfg)
+
 	boardInstanceMu.Lock()
 	defer boardInstanceMu.Unlock()
 	boardInstance = pi
@@ -227,7 +230,7 @@ func (pi *piPigpio) Reconfigure(
 	return nil
 }
 
-func (pi *piPigpio) ReconfigurePulls(ctx context.Context, cfg *Config) {
+func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
 	for _, pullConf := range cfg.Pulls {
 		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
 		if !have {
