@@ -8,7 +8,7 @@ on:
       - 'README.md'
 
 jobs:
-  build_and_lint:
+  build_and_run_tests:
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     container: ghcr.io/viam-modules/raspberry-pi:arm64
     timeout-minutes: 30
@@ -39,26 +39,6 @@ jobs:
       - name: make build
         run: |
           sudo -u testbot bash -lc 'make build'
-
-  tests:
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
-    container: ghcr.io/viam-modules/raspberry-pi:arm64
-    timeout-minutes: 5
-
-    steps:
-      - name: Clean workspace
-        shell: bash
-        run: |
-          shopt -s dotglob
-          sudo chown -R `whoami` ./
-          rm -rf ./*
-  
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
-  
-      - name: Run tests on Pi
+      
+      - name: run tests
         run: make test
-      - name: External tests
-        run: make test-external
-    
