@@ -17,6 +17,10 @@ update-rdk:
 test:
 	go test ./...
 
+test-external:
+	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi tests
+	sudo $(BIN_OUTPUT_PATH)/test-pi -test.short -test.v
+
 tool-install: $(TOOL_BIN)/golangci-lint
 
 $(TOOL_BIN)/golangci-lint:
