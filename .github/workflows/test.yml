@@ -47,6 +47,7 @@ jobs:
 
     steps:
       - name: Clean workspace
+        shell: bash
         run: |
           shopt -s dotglob
           sudo chown -R `whoami` ./
