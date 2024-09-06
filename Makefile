@@ -15,11 +15,8 @@ update-rdk:
 	go mod tidy
 
 test:
-	go test ./...
-
-test-external:
-	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi tests
-	sudo $(BIN_OUTPUT_PATH)/test-pi -test.short -test.v
+	go test -c -o $(BIN_OUTPUT_PATH)/ raspberry-pi/...
+	sudo $(BIN_OUTPUT_PATH)/*.test -test.v
 
 tool-install: $(TOOL_BIN)/golangci-lint
 
