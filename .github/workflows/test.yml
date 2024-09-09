@@ -55,22 +55,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install Go
-        run: |
-          wget https://go.dev/dl/go1.23.0.linux-arm64.tar.gz
-          sudo tar -C /usr/local -xzf go1.23.0.linux-arm64.tar.gz
-          echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
-          echo "export GOPATH=$HOME/go" >> ~/.bashrc
-          echo "export PATH=$PATH:$GOPATH/bin" >> ~/.bashrc
-          source ~/.bashrc
-          go version  # Verify Go installation
-
-      # Build step
       - name: make build
         run: |
           go version  # Check Go version again in the build environment
           make build
       
-      # Test step
       - name: run tests
         run: make test
