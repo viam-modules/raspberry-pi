@@ -42,7 +42,6 @@ jobs:
 
   run_tests:
     runs-on: self-hosted  
-    container: ghcr.io/viam-modules/raspberry-pi:arm64
     timeout-minutes: 30
 
     steps:
