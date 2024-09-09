@@ -89,8 +89,8 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
 }
 ```
 
-## Building and Using
-Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make module` in `canon`. An executable named `raspbery-pi` and a tar named `module.tar.gz` will appear in `bin` folder. 
+## Building and Using Locally
+Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspbery-pi` will appear in `bin` folder. 
 
 # Changes from rdk
 ## Library usage
