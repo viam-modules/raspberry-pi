@@ -26,4 +26,8 @@ RUN useradd -s /bin/bash -m testbot && echo 'testbot ALL=(ALL) NOPASSWD:ALL' >> 
 # Fix for github and new security patches on git
 RUN git config --system --add safe.directory '*'
 
-CMD ["/bin/bash"]
+# Install pigpio
+RUN apt-get update && apt-get install -y pigpio
+
+# Start pigpiod when the container starts
+CMD ["pigpiod"] && ["/bin/bash"]

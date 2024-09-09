@@ -32,3 +32,6 @@ docker:
 
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
+
+clean:
+	rm -rf $(BIN_OUTPUT_PATH)
