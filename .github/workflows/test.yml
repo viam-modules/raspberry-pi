@@ -56,8 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: make build
-        run: |
-          sudo -u testbot bash -lc 'make build'
+        run: make build
       
       - name: run tests
         run: make test
