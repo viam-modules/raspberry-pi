@@ -39,6 +39,26 @@ jobs:
       - name: make build
         run: |
           sudo -u testbot bash -lc 'make build'
+
+  run_tests:
+    runs-on: self-hosted  
+    container: ghcr.io/viam-modules/raspberry-pi:arm64
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+
+      - name: Checkout PR branch
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make build
+        run: |
+          sudo -u testbot bash -lc 'make build'
       
       - name: run tests
         run: make test
