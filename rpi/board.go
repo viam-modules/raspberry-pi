@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,7 +37,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -116,18 +117,12 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	daemonAlreadyRunning, err := startPigpiod()
+	err := startPigpiod()
 	if err != nil {
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
-
-	if daemonAlreadyRunning {
-		logger.CInfo(ctx, "pigpiod is already running, skipping start")
-	} else {
-		// Wait for pigpiod to start up if it wasn't already running.
-		time.Sleep(daemonBootDelay)
-	}
+	logger.CInfo(ctx, "pigpio started")
 
 	piID, err := initializePigpio()
 	if err != nil {
