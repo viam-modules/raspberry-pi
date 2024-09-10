@@ -35,3 +35,4 @@ docker-upload:
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH)
+	
