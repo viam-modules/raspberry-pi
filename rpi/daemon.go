@@ -18,18 +18,22 @@ func startPigpiod(logger logging.Logger) error {
 	}
 
 	// pigpiod is not running, attempt to start it
-	startCmd := exec.Command("sudo", "pigpiod") // Using sudo to ensure necessary privileges
+	startCmd := exec.Command("sudo", "pigpiod")
 
 	if err := startCmd.Run(); err != nil {
 		return err
 	}
 
-	// Check again if pigpiod started successfully
+	// there are cases where we may execute sudo pigpiod but
+	// it failed to start. The follwoing check is there to ensure that
+	// sudo pigpio was executed successfully.
 	checkCmd = exec.Command("pgrep", "pigpiod")
 	if output, err := checkCmd.Output(); err != nil || len(output) == 0 {
+		logger.Warn("could not start pigpiod")
 		return err
 	}
 
+	logger.Info("pigpio started")
 	return nil
 }
 

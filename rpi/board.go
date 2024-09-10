@@ -122,7 +122,6 @@ func newPigpio(
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
-	logger.CInfo(ctx, "pigpio started")
 
 	piID, err := initializePigpio()
 	if err != nil {
