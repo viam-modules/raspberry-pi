@@ -99,7 +99,7 @@ The Pi board and the servo are now in module format. The directory structure is 
 - `utils`: Any utility functions that are either universal to the boards or shared between `rpi` and `rpi-servo`. Included are daemon errors, pin mappings, and digital interrupts
 - `testing`: External package exports. Tests the components how an outside package would use the components (w/o any internal functions).
 
-## Testing
+## Testing Locally
 All tests require a functioning raspberry pi4!
 
 **Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
