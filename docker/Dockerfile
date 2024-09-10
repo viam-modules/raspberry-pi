@@ -19,15 +19,11 @@ RUN curl http://archive.raspberrypi.org/debian/raspberrypi.gpg.key -o /etc/apt/t
 RUN --mount=type=cache,target=/var/cache/apt apt-get update
 
 RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get install -qqy libpigpio-dev libpigpiod-if-dev
+    apt-get install -qqy libpigpio-dev libpigpiod-if-dev pigpio
 
 RUN useradd -s /bin/bash -m testbot && echo 'testbot ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Fix for github and new security patches on git
 RUN git config --system --add safe.directory '*'
 
-# Install pigpio
-RUN apt-get update && apt-get install -y pigpio
-
-# Start pigpiod when the container starts
-CMD ["pigpiod"] && ["/bin/bash"]
+CMD ["/bin/bash"]
