@@ -1,6 +1,6 @@
 /*
     pi.c: This file is a bridge to setup interrupts for the Raspberry Pi GPIO pins
-    using the pigpiod library. It uses a callback function pigpioInterruptCallback 
+    using the pigpiod library. It uses a callback function pigpioInterruptCallback
     for interrupt handling, which is exported within rpi.go.
 */
 #include <pigpiod_if2.h>
@@ -25,8 +25,15 @@ int setupInterrupt(int pi, int gpio) {
     if (result != 0) {
         return result;
     }
+
     // successful call returns a callback ID that can be used to cancel the callback
     result = callback(pi, gpio, EITHER_EDGE, interruptCallback);
+
+    // set the debounce time
+    int res = set_glitch_filter(pi, gpio, 1000);
+    if (res != 0) {
+        return res;
+    }
     return result;
 }
 
