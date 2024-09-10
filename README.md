@@ -90,7 +90,7 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
 ```
 
 ## Building and Using Locally
-Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspbery-pi` will appear in `bin` folder. 
+Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspberry-pi` will appear in `bin` folder. 
 
 ## Structure
 The Pi board and the servo are now in module format. The directory structure is as follows:
