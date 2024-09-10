@@ -122,7 +122,7 @@ func newPigpio(
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
-
+	time.Sleep(daemonBootDelay)
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
