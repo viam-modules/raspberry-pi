@@ -27,6 +27,7 @@ lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
 	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml
 
+.PHONY: docker
 docker:
 	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64 .
 
