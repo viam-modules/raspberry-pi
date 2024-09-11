@@ -32,7 +32,6 @@ func startPigpiod(logger logging.Logger) error {
 		return err
 	}
 
-	logger.Info("pigpio started successfully")
 	return nil
 }
 
