@@ -1,7 +1,9 @@
 package rpi
 
 import (
+	"context"
 	"os/exec"
+	"time"
 
 	"go.viam.com/rdk/logging"
 )
@@ -9,31 +11,28 @@ import (
 // startPigpiod tries to start the pigpiod daemon.
 // It returns an error if the daemon fails to start.
 func startPigpiod(logger logging.Logger) error {
-	// Check if pigpiod is already running
-	checkCmd := exec.Command("pgrep", "pigpiod")
-	if output, err := checkCmd.Output(); err == nil && len(output) > 0 {
-		// pigpiod is already running, no need to start it
-		logger.Info("pigpio is already running")
-		return nil
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Kill any running instance of pigpiod.
+	// This is important because there are cases where pigpiod
+	// is running but is in a bad state. It's better to kill the existing
+	// process and restart.
+	killCmd := exec.CommandContext(ctx, "sudo", "killall", "pigpiod")
+	if err := killCmd.Run(); err != nil {
+		logger.Debug("No existing pigpiod instance running, proceeding to start pigpiod")
+	} else {
+		logger.Debug("Killed existing pigpiod instance")
 	}
 
-	// pigpiod is not running, attempt to start it
-	startCmd := exec.Command("sudo", "pigpiod")
-
-	if err := startCmd.Run(); err != nil {
+	// Start a fresh instance of pigpiod
+	startCmd := exec.CommandContext(ctx, "sudo", "pigpiod")
+	if _, err := startCmd.Output(); err != nil {
+		logger.Info("failed to start pigpiod")
 		return err
 	}
 
-	// there are cases where we may execute sudo pigpiod but
-	// it failed to start. The follwoing check is there to ensure that
-	// sudo pigpio was executed successfully.
-	checkCmd = exec.Command("pgrep", "pigpiod")
-	if output, err := checkCmd.Output(); err != nil || len(output) == 0 {
-		logger.Warn("could not start pigpiod")
-		return err
-	}
-
-	logger.Info("pigpio started")
+	logger.Info("pigpio started successfully")
 	return nil
 }
 
