@@ -3,6 +3,7 @@ package rpiservo
 import (
 	"context"
 	"testing"
+	"time"
 
 	"raspberry-pi/rpi"
 
@@ -83,6 +84,8 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestInitializationFunctions(t *testing.T) {
+
+	time.sleep(10 * time.Millisecond)
 	ctx := context.Background()
 
 	p := createDummyBoard(t, ctx)
