@@ -2,6 +2,7 @@ package rpi
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"time"
 
@@ -13,8 +14,8 @@ const startStopTimeout = 10 * time.Second
 
 // startPigpiod tries to start the pigpiod daemon.
 // It returns an error if the daemon fails to start.
-func startPigpiod(logger logging.Logger) error {
-	ctx, cancel := context.WithTimeout(context.Background(), CTX_TIMEOUT)
+func startPigpiod(ctx context.Context, logger logging.Logger) error {
+	ctx, cancel := context.WithTimeout(ctx, startStopTimeout)
 	defer cancel()
 
 	// check if pigpio is active
@@ -22,8 +23,7 @@ func startPigpiod(logger logging.Logger) error {
 	if err := statusCmd.Run(); err != nil {
 		startCmd := exec.CommandContext(ctx, "systemctl", "restart", "pigpiod")
 		if err := startCmd.Run(); err != nil {
-			logger.Debug("failed to restart pigpiod")
-			return err
+			return fmt.Errorf("failed to restart pigpiod: %w", err)
 		}
 	}
 	logger.Info("pigpiod is already running")
@@ -31,8 +31,8 @@ func startPigpiod(logger logging.Logger) error {
 }
 
 // stopPigpiod stops the pigpiod daemon.
-func stopPigpiod() error {
-	ctx, cancel := context.WithTimeout(context.Background(), CTX_TIMEOUT)
+func stopPigpiod(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, startStopTimeout)
 	defer cancel()
 
 	stopCmd := exec.CommandContext(ctx, "systemctl", "stop", "pigpiod")
