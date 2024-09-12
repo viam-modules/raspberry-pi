@@ -41,5 +41,8 @@ jobs:
           sudo update-alternatives --install /usr/bin/go go /usr/local/go/bin/go 10 \
           --slave /usr/bin/gofmt gofmt /usr/local/go/bin/gofmt
 
+      - name: build
+        run: make build
+
       - name: run tests
         run: make test
