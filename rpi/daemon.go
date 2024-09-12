@@ -9,7 +9,7 @@ import (
 	"go.viam.com/rdk/logging"
 )
 
-// This is a constant timeout for starting and stopping the pigpio daemon
+// This is a constant timeout for starting and stopping the pigpio daemon.
 const startStopTimeout = 10 * time.Second
 
 // startPigpiod tries to start the pigpiod daemon.

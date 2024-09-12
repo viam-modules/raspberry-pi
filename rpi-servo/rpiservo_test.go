@@ -2,8 +2,9 @@ package rpiservo
 
 import (
 	"context"
-	"raspberry-pi/rpi"
 	"testing"
+
+	"raspberry-pi/rpi"
 
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
@@ -11,7 +12,6 @@ import (
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	"raspberry-pi/rpi"
 )
 
 func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
