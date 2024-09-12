@@ -9,7 +9,7 @@ import (
 )
 
 // This is a constant timeout for starting and stopping the pigpio daemon
-var CTX_TIMEOUT = 10 * time.Second
+const startStopTimeout = 10 * time.Second
 
 // startPigpiod tries to start the pigpiod daemon.
 // It returns an error if the daemon fails to start.
