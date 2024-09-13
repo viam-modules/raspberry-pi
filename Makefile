@@ -1,6 +1,7 @@
 BIN_OUTPUT_PATH = bin
 TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 UNAME_S ?= $(shell uname -s)
+LDFLAGS = -ldflags "-extld=$(shell pwd)/etc/ld_wrapper.sh"
 
 module: build
 	rm -f $(BIN_OUTPUT_PATH)/module.tar.gz
@@ -8,7 +9,7 @@ module: build
 
 build:
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
-	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
+	go build $(LDFLAGS) -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
 
 update-rdk:
 	go get go.viam.com/rdk@latest
