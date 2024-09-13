@@ -15,7 +15,7 @@
     ],
     "build": {
       "build": "make module",
-      "path": "bin/module.tar.gz",
+      "path": "bin/raspberry-pi.tar.gz",
       "arch" : ["linux/arm64"]
     },
     "entrypoint": "bin/raspberry-pi"
