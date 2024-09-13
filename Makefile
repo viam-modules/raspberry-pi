@@ -15,7 +15,8 @@ update-rdk:
 	go mod tidy
 
 test:
-	go test ./...
+	go test -c -o $(BIN_OUTPUT_PATH)/ raspberry-pi/...
+	sudo $(BIN_OUTPUT_PATH)/*.test -test.v
 
 tool-install: $(TOOL_BIN)/golangci-lint
 
@@ -26,8 +27,13 @@ lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
 	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml
 
+.PHONY: docker
 docker:
 	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64 .
 
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
+
+clean:
+	rm -rf $(BIN_OUTPUT_PATH)
+	
