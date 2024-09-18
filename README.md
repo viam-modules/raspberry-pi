@@ -2,8 +2,6 @@
 
 This module implements the [`"rdk:component:board"` API](https://docs.viam.com/components/board/) and [`"rdk:component:servo"` API](https://docs.viam.com/components/servo/) to integrate the Raspberry Pi 4, 3 and Zero 2 W board or any servos connected to the board into your machine.
 
-This module replaces the `board:pi` and `servo:pi` components in RDK as a step into the modular future of Viam. Furthermore, this module handles the `PI_INIT_FAILED` issue.
-
 Two models are provided:
 * `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
@@ -20,8 +18,7 @@ Fill in the attributes as applicable to your board, according to the example bel
   "components": [
     {
       "name": "<your-pi-board-name>",
-      // change the model name back to "viam:raspberry-pi:rpi" once this module is public
-      "model": "viam-hardware-testing:raspberry-pi:rpi",
+      "model": "viam:raspberry-pi:rpi",
       "type": "board",
       "namespace": "rdk",
       "attributes": {
@@ -47,8 +44,8 @@ Fill in the attributes as applicable to your board, according to the example bel
   "modules": [
     {
       "type": "registry",
-      "name": "viam-hardware-testing_raspberry-pi",
-      "module_id": "viam-hardware-testing:raspberry-pi",
+      "name": "viam_raspberry-pi",
+      "module_id": "viam:raspberry-pi",
       "version": "0.0.1"
     }
   ],
@@ -62,8 +59,7 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
   "components": [
     {
       "name": "<your-servo-name>",
-      // change the model name back to "viam:raspberry-pi:rpi-servo" once this module is public
-      "model": "viam-hardware-testing:raspberry-pi:rpi-servo",
+      "model": "viam:raspberry-pi:rpi-servo",
       "type": "servo",
       "namespace": "rdk",
       "attributes": {
@@ -81,8 +77,8 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
   "modules": [
     {
       "type": "registry",
-      "name": "viam-hardware-testing_raspberry-pi",
-      "module_id": "viam-hardware-testing:raspberry-pi",
+      "name": "viam_raspberry-pi",
+      "module_id": "viam:raspberry-pi",
       "version": "0.0.1"
     }
   ],
