@@ -90,12 +90,6 @@ Fill in the attributes as applicable to your servo, according to the example bel
 }
 ```
 
-### `frequency_hz`
-The one new addition is the ability to change the servo frequency (`frequency: hz`). You should look at your part's documentation to determine the optimal operating frequency and operating rotation range.
-Otherwise, the config is the same as the [servo docs](https://docs.viam.com/components/servo/pi/). In the module, the servo now uses PWM for more granular control. It essentially performs the same behavior as before, but uses PWM functions to mimic the servo functions within the pigpio library. It explains how to do it here: https://abyz.me.uk/rpi/pigpio/pdif2.html#set_servo_pulsewidth.
-
-Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate.
-
 ## Local development
 
 ### Building 
