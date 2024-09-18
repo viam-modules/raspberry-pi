@@ -93,12 +93,25 @@ Servo now uses PWM for more granular control. It essentially performs the same b
 Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate.
 
 ## Building and Using Locally
-Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspberry-pi` will appear in `bin` folder. 
-To locally use the module, run `make module` in `canon`, copy over the `raspberry-pi-module.tar.gz` using the command below 
+### Building 
+Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. 
+`make module` will create raspberry-pi-module.tar.gz.
+```bash
+canon 
+make module
+```
+Then copy the tar.gz over to your pi 
 ```bash 
 scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
 ```
 Untar the tar.gz file and execute `run.sh`
+
+### Linting 
+Linting also needs to be done from within `canon` 
+```bash
+canon 
+make lint
+```
 
 ## Testing Locally
 All tests require a functioning raspberry pi4!
