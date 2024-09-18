@@ -2,6 +2,7 @@ package rpi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"time"
@@ -10,8 +11,10 @@ import (
 )
 
 // This is a constant timeout for starting and stopping the pigpio daemon.
-const startStopTimeout = 10 * time.Second
-const checkInterval = 50 * time.Millisecond
+const (
+	startStopTimeout = 10 * time.Second
+	checkInterval    = 50 * time.Millisecond
+)
 
 // startPigpiod tries to start the pigpiod daemon.
 // It returns an error if the daemon fails to start.
@@ -34,11 +37,11 @@ func startPigpiod(ctx context.Context, logger logging.Logger) error {
 		for {
 			select {
 			case <-ctx.Done():
-				return fmt.Errorf("timeout reached: pigpiod did not become active")
+				return errors.New("timeout reached: pigpiod did not become active")
 
 			case <-ticker.C:
 				if err := statusCmd.Run(); err == nil {
-					logger.Info("pigpiod is runing after restart")
+					logger.Info("pigpiod is running after restart")
 					return nil
 				}
 			}
