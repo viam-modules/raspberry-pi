@@ -93,13 +93,19 @@ scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
 ```
 Untar the tar.gz file and execute `run.sh`
 
-## Structure
-The Pi board and the servo are now in module format. The directory structure is as follows:
+## Testing Locally
+All tests require a functioning raspberry pi4!
+To test, run `make test` in `canon`. This will create binaries for each test file in /bin and run them. 
+
+## Development
+
+### Structure
+The directory structure is as follows:
 - `rpi`: Contains all files necessary to define `viam:raspberry-pi:rpi`. Files are organized by functionality.
 - `rpi-servo`: Contains all files necessary to define `viam:raspberry-pi:rpi-servo`. Files are organized by functionality
 - `utils`: Any utility functions that are either universal to the boards or shared between `rpi` and `rpi-servo`. Included are daemon errors, pin mappings, and digital interrupts
 - `testing`: External package exports. Tests the components how an outside package would use the components (w/o any internal functions).
 
-## Testing Locally
-All tests require a functioning raspberry pi4!
-To test, run `make test` in `canon`. This will create binaries for each test file in /bin and run them. 
+The module now relies on the pigpio daemon to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
+
+The daemon essentially supports all the same functionality as the traditional library. Instead of using pigpio.h C library, it uses the daemon library, which is mostly identical: pigpiod_if2.h. The primary difference is how the library is set up. Before, we used gpioInitialise() and gpioTerminate() to initialize and close the board connection. Now, we must start up the daemon with sudo pigpiod and connect to the daemon using the C functions pigpio_start and pigpio_stop. pigpio_start returns an ID that all the daemon library functions take in as the first argument so the daemon knows to use that connection to execute board functionality. Details can be found here: https://abyz.me.uk/rpi/pigpio/pdif2.html
