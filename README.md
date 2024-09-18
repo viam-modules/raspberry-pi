@@ -87,6 +87,11 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
 
 ## Building and Using Locally
 Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspberry-pi` will appear in `bin` folder. 
+To locally use the module, run `make module` in `canon`, copy over the `raspberry-pi-module.tar.gz` using the command below 
+```bash 
+scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
+```
+Untar the tar.gz file and execute `run.sh`
 
 ## Structure
 The Pi board and the servo are now in module format. The directory structure is as follows:
@@ -97,17 +102,4 @@ The Pi board and the servo are now in module format. The directory structure is 
 
 ## Testing Locally
 All tests require a functioning raspberry pi4!
-
-**Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
-```bash
-CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc go test -c -o ./bin/ raspberry-pi/...
-# run test (-test.v for verbose)
-sudo ./bin/${test_package}.test
-```
-
-## Starting and Stopping `pigpiod`
-The daemon is automatically started in the module on init and shut down on Close(). There are some tricky consequences to this:
-- the daemon has a startup period. On a clean board that it starts within 1-50ms. Trying to use any C functions before then will result in connection errors
-- The daemon stops almost immidiately when Close() is called. If the daemon is reading data (such as: GPIO) the module may encounter the following message ``` notify thread from pi 1 broke with read error 0 ``` This was only objserved during testing when the daemon was stopping and starting immediately. 
-
-TODO: update this readme to follow module template before publishing
+To test, run `make test` in `canon`. This will create binaries for each test file in /bin and run them. 
