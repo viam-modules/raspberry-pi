@@ -51,7 +51,10 @@ Fill in the attributes as applicable to your board, according to the example bel
   ],
 }
 ```
+### Analog Readers and SPI
+The analog readers used SPI in order to transfer information. The SPI previously used pigpio defined SPI functions. We use our [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) We simply set up a NewSPIBus and everything works well. There are chip select mappings (within rpi/analog_readers.go) that map physical pins to chip select pins. Otherwise, behavior is the same.
 
+## Configure your pi servo
 Similarly for the servo. The one new addition is the ability to change the servo frequency (`frequency: hz`). You should look at your part's documentation to determine the optimal operating frequency and operating rotation range.
 Otherwise, the config is the same as the [servo docs](https://docs.viam.com/components/servo/pi/).
 ```json
@@ -84,6 +87,10 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
   ],
 }
 ```
+### Servo frequency
+Servo now uses PWM for more granular control. It essentially performs the same behavior as before, but uses PWM functions to mimic the servo functions within the pigpio library. It explains how to do it here: https://abyz.me.uk/rpi/pigpio/pdif2.html#set_servo_pulsewidth.
+
+Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate.
 
 ## Building and Using Locally
 Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. Simply run `make build` in `canon`. An executable named `raspberry-pi` will appear in `bin` folder. 
