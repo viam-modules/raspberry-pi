@@ -227,11 +227,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 
 	pi.isClosed = true
 
-	if err := stopPigpiod(ctx); err != nil {
-		pi.logger.CError(ctx, "failed to stop pigpiod.")
-	}
-	pi.logger.CDebug(ctx, "successfully stopped pigpiod.")
-
+	pi.logger.CDebug(ctx, "successfully stopped raspberry-pi")
 	return err
 }
 
