@@ -13,7 +13,7 @@ import (
 // This is a constant timeout for starting and stopping the pigpio daemon.
 const (
 	startStopTimeout = 10 * time.Second
-	checkInterval    = 50 * time.Millisecond
+	checkInterval    = 1 * time.Second
 )
 
 // startPigpiod tries to start the pigpiod daemon.
