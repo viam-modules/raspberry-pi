@@ -103,11 +103,7 @@ Then copy the tar.gz over to your pi
 ```bash 
 scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
 ```
-Untar the tar.gz file in your pi and execute `run.sh`
-```bash 
-tar -xvzf raspberry-pi-module.tar.gz
-./run.sh
-```
+Now you can use it as a [local module](https://docs.viam.com/tutorials/configure/pet-photographer/#add-as-a-local-module)!
 
 ### Linting 
 Linting also needs to be done from within `canon` 
