@@ -1,6 +1,6 @@
 {
     "module_id": "viam:raspberry-pi",
-    "visibility": "private",
+    "visibility": "public",
     "url": "https://github.com/viam-modules/raspberry-pi",
     "description": "Viam Go module for raspberry pi board and servo",
     "models": [
