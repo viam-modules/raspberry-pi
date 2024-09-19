@@ -18,5 +18,5 @@
       "path": "bin/raspberry-pi-module.tar.gz",
       "arch" : ["linux/arm64"]
     },
-    "entrypoint": "bin/raspberry-pi"
+    "entrypoint": "run.sh"
 }
