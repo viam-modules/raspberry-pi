@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,11 +37,10 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
-var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
+var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
 
 var (
 	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
@@ -225,12 +226,6 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
-
-	if err := stopPigpiod(ctx); err != nil {
-		pi.logger.CError(ctx, "failed to stop pigpiod.")
-	}
-	pi.logger.CDebug(ctx, "successfully stopped pigpiod.")
-
 	return err
 }
 

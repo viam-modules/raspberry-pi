@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"raspberry-pi/rpi"
-
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"raspberry-pi/rpi"
 )
 
 func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
