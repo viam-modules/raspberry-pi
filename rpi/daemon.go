@@ -33,13 +33,14 @@ func startPigpiod(ctx context.Context, logger logging.Logger) error {
 			return fmt.Errorf("failed to restart pigpiod: %w", err)
 		}
 
-		// This loop waits 15ms for pigpiod to be active after restart.
+		// This loop waits one second for pigpiod to be active after restart.
 		for {
 			select {
 			case <-ctx.Done():
 				return errors.New("timeout reached: pigpiod did not become active")
 
 			case <-ticker.C:
+				statusCmd = exec.CommandContext(ctx, "systemctl", "is-active", "--quiet", "pigpiod")
 				if err := statusCmd.Run(); err == nil {
 					logger.Info("pigpiod is running after restart")
 					return nil
