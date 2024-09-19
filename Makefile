@@ -42,7 +42,7 @@ docker-upload:
 
 .PHONY: setup 
 setup: 
-	sudo apt-get install libpigpiod-if2-1 pigpio
+	sudo apt-get install -qqy libpigpio-dev libpigpiod-if-dev pigpio
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH)
