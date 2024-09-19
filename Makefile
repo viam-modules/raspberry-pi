@@ -40,6 +40,10 @@ docker:
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
 
+.PHONY: setup 
+setup: 
+	sudo apt-get install libpigpiod-if2-1 pigpio
+
 clean:
 	rm -rf $(BIN_OUTPUT_PATH)
 	

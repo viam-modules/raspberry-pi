@@ -14,7 +14,7 @@
       }
     ],
     "build": {
-      "build": "make module",
+      "build": "make setup module",
       "path": "bin/raspberry-pi-module.tar.gz",
       "arch" : ["linux/arm64"]
     },
