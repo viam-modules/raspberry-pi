@@ -2,7 +2,6 @@ package rpiservo
 
 import (
 	"context"
-	"raspberry-pi/rpi"
 	"testing"
 
 	"go.viam.com/rdk/components/board"
