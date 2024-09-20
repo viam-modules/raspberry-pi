@@ -63,13 +63,122 @@ The following attributes are available for `viam:raspberry-pi:rpi` board:
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 | `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
-| `digital_interrupts` | object | Optional | Any digital interrupts's {{< glossary_tooltip term_id="pin-number" text="pin number" >}} and name. See [configuration info](#digital_interrupts). |
+| `digital_interrupts` | object | Optional | Any digital interrupts's pin number" and name. See [configuration info](#digital_interrupts). |
 
-### Example configuration
+#### `analogs`
+
+An [analog-to-digital converter](https://www.electronics-tutorials.ws/combination/analogue-to-digital-converter.html) (ADC) takes a continuous voltage input (analog signal) and converts it to an discrete integer output (digital signal).
+
+ADCs are useful when building a robot, as they enable your board to read the analog signal output by most types of [sensors](https://docs.viam.com/components/sensor/) and other hardware components.
+
+To integrate an ADC into your machine, you must first physically connect the pins on your ADC to your board.
+
+Then, integrate `analogs` into the `attributes` of your board by following the **Config Builder** instructions or by adding the following to your board’s JSON configuration:
+
+```json
+// "attributes": { ... ,
+"analogs": [
+  {
+    "name": "<your-analog-reader-name>",
+    "pin": "<pin-number-on-adc>",
+    "spi_bus": "<your-spi-bus-index>",
+    "chip_select": "<chip-select-index>",
+    "average_over_ms": <int>,
+    "samples_per_sec": <int>
+  }
+]
+```
+
+The following properties are available for `analogs`:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `name` | string | **Required** | Your name for the analog reader. |
+| `pin` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC.
+| `chip_select` | string | **Required** | The chip select index of the board's connection pin, wired to the ADC. |
+| `spi_bus` | string | **Required** | The index of the SPI bus connecting the ADC and board. |
+| `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
+| `samples_per_sec` | int | Optional | Sampling rate of the analog input in samples per second. |
+
+Example:
 
 ```json
 {
-  <INSERT SAMPLE CONFIGURATION(S)>
+  "components": [
+    {
+      "model": "pi",
+      "name": "your-board",
+      "type": "board",
+      "attributes": {
+        "analogs": [
+          {
+            "name": "current",
+            "pin": "1",
+            "spi_bus": "1",
+            "chip_select": "0"
+          },
+          {
+            "name": "pressure",
+            "pin": "0",
+            "spi_bus": "1",
+            "chip_select": "0"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+#### `digital_interrupts`
+
+[Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
+
+- When an interrupt configured on your board processes a change in the state of the GPIO pin it is configured to monitor, it ticks to record the state change. You can stream these ticks with the board API’s [`StreamTicks()`](https://docs.viam.com/components/board/#streamticks), or get the current value of the digital interrupt with Value().
+- Calling [`GetGPIO()`](https://docs.viam.com/components/board/#getgpio) on a GPIO pin, which you can do without configuring interrupts, is useful when you want to know a pin’s value at specific points in your program, but is less precise and convenient than using an interrupt.
+
+Integrate `digital_interrupts` into your machine in the `attributes` of your board by following the **Config Builder** instructions, or by adding the following to your board’s JSON configuration:
+
+```json
+// "attributes": { ... ,
+"digital_interrupts": [
+  {
+    "name": "<your-digital-interrupt-name>",
+    "pin": "<pin-number>"
+  }
+]
+```
+
+The following properties are available for `digital_interrupts`:
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+|`name` | string | **Required** | Your name for the digital interrupt. |
+|`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
+|`type`| string | Optional | <ul><li>`basic`: Recommended. Tracks interrupt count. </li> <li>`servo`: For interrupts configured for a pin controlling a [servo](/components/servo/). Tracks pulse width value. </li></ul> |
+
+Example:
+
+```json
+{
+  "components": [
+    {
+      "model": "pi",
+      "name": "your-board",
+      "type": "board",
+      "attributes": {
+        "digital_interrupts": [
+          {
+            "name": "your-interrupt-1",
+            "pin": "15"
+          },
+          {
+            "name": "your-interrupt-2",
+            "pin": "16"
+          }
+        ]
+      }
+    }
+  ]
 }
 ```
 
@@ -114,20 +223,18 @@ Fill in the attributes as applicable to your servo, according to the example bel
 
 ### Attributes
 
-The following attributes are available for `<INSERT MODEL TRIPLET>` <INSERT API NAME>s:
 
-| Name    | Type   | Required?    | Description |
-| ------- | ------ | ------------ | ----------- |
-| `todo1` | string | **Required** | TODO        |
-| `todo2` | string | Optional     | TODO        |
+The following attributes are available for `viam:raspberry-pi:rpi-servo` servos:
 
-### Example configuration
-
-```json
-{
-  <INSERT SAMPLE CONFIGURATION(S)>
-}
-```
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `pin` | string | **Required** | The pin number of the pin the servo's control wire is wired to on the [board](/components/board/). |
+| `board` | string | **Required** | `name` of the [board](/components/board/) the servo is wired to. |
+| `min` | float | Optional | Sets a software limit on the minimum angle in degrees your servo can rotate to. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
+| `max` | float | Optional | Sets a software limit on the maximum angle in degrees your servo can rotate to. <br> Default = `180.0` <br> Range = [`0.0`, `180.0`] |
+| `starting_position_degs` | float | Optional | Starting position of the servo in degrees. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
+| `hold_position` | boolean | Optional | If `false`, power down a servo if it has tried and failed to go to a position for a duration of 500 milliseconds. <br> Default = `true` |
+| `max_rotation_deg` | int | Optional | The maximum angle that you know your servo can possibly rotate to, according to its hardware. Refer to your servo's data sheet for clarification. Must be greater than or equal to the value you set for `max`. <br> Default = `180` |
 
 ## Local development
 
