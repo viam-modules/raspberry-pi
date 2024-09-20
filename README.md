@@ -1,6 +1,6 @@
 # [`raspberry-pi` module](https://app.viam.com/module/viam/raspberry-pi)
 
-This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/)
+This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/#api) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/#api)
 
 Two models are provided in this module:
 * `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
@@ -12,7 +12,7 @@ Follow the [setup guide](https://docs.viam.com/installation/prepare/rpi-setup/) 
 
 ## Configure your `raspberry-pi` board
 
-Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `raspberry-pi`.
+Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https://app.viam.com), searching for `raspberry-pi`.
 
 Fill in the attributes as applicable to your board:
 
@@ -154,7 +154,7 @@ The following properties are available for `digital_interrupts`:
 | ---- | ---- | --------- | ----------- |
 |`name` | string | **Required** | Your name for the digital interrupt. |
 |`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
-|`type`| string | Optional | <ul><li>`basic`: Recommended. Tracks interrupt count. </li> <li>`servo`: For interrupts configured for a pin controlling a [servo](/components/servo/). Tracks pulse width value. </li></ul> |
+|`type`| string | Optional | <ul><li>`basic`: Recommended. Tracks interrupt count. </li> <li>`servo`: For interrupts configured for a pin controlling a [servo](https://docs.viam.com/components/servo/). Tracks pulse width value. </li></ul> |
 
 Example:
 
@@ -186,7 +186,7 @@ Example:
 This module uses Viam's [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) for SPI and I2C. 
 
 ## Configure your pi servo
-Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `rpi-servo`
+Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https://app.viam.com), searching for `rpi-servo`
 
 Fill in the attributes as applicable to your servo, according to the example below.
 
@@ -228,8 +228,8 @@ The following attributes are available for `viam:raspberry-pi:rpi-servo` servos:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
-| `pin` | string | **Required** | The pin number of the pin the servo's control wire is wired to on the [board](/components/board/). |
-| `board` | string | **Required** | `name` of the [board](/components/board/) the servo is wired to. |
+| `pin` | string | **Required** | The pin number of the pin the servo's control wire is wired to on the board. |
+| `board` | string | **Required** | `name` of the board the servo is wired to. |
 | `min` | float | Optional | Sets a software limit on the minimum angle in degrees your servo can rotate to. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
 | `max` | float | Optional | Sets a software limit on the maximum angle in degrees your servo can rotate to. <br> Default = `180.0` <br> Range = [`0.0`, `180.0`] |
 | `starting_position_degs` | float | Optional | Starting position of the servo in degrees. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
@@ -249,7 +249,7 @@ Then copy the tar.gz over to your pi
 ```bash 
 scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
 ```
-Now you can use it as a [local module](https://docs.viam.com/tutorials/configure/pet-photographer/#add-as-a-local-module)!
+Now you can use it as a [local module](https://docs.viam.com/how-tos/create-module/#test-your-module-locally)!
 
 ### Linting 
 Linting also needs to be done from within `canon` 
