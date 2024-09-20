@@ -6,11 +6,15 @@ Two models are provided in this module:
 * `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
 
+## Requirements
+
+Follow the [setup guide](https://docs.viam.com/installation/prepare/rpi-setup/) to prepare your Pi for running `viam-server` before configuring this board.
+
 ## Configure your `raspberry-pi` board
 
-Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `raspberry-pi`
+Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `raspberry-pi`.
 
-Fill in the attributes as applicable to your board, according to the example below. The configuration is the same as the [board docs](https://docs.viam.com/components/board/pi/).
+Fill in the attributes as applicable to your board:
 
 ```json
 {
@@ -51,13 +55,31 @@ Fill in the attributes as applicable to your board, according to the example bel
   ],
 }
 ```
+
+### Attributes
+
+The following attributes are available for `viam:raspberry-pi:rpi` board:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
+| `digital_interrupts` | object | Optional | Any digital interrupts's {{< glossary_tooltip term_id="pin-number" text="pin number" >}} and name. See [configuration info](#digital_interrupts). |
+
+### Example configuration
+
+```json
+{
+  <INSERT SAMPLE CONFIGURATION(S)>
+}
+```
+
 ### Additional Info for Dev
-We use our [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) for SPI and I2C. 
+This module uses Viam's [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) for SPI and I2C. 
 
 ## Configure your pi servo
 Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `rpi-servo`
 
-Fill in the attributes as applicable to your servo, according to the example below. The configuration is the same as the [servo docs](hhttps://docs.viam.com/components/servo/pi/).
+Fill in the attributes as applicable to your servo, according to the example below.
 
 ```json
 {
@@ -87,6 +109,23 @@ Fill in the attributes as applicable to your servo, according to the example bel
       "version": "0.0.1"
     }
   ],
+}
+```
+
+### Attributes
+
+The following attributes are available for `<INSERT MODEL TRIPLET>` <INSERT API NAME>s:
+
+| Name    | Type   | Required?    | Description |
+| ------- | ------ | ------------ | ----------- |
+| `todo1` | string | **Required** | TODO        |
+| `todo2` | string | Optional     | TODO        |
+
+### Example configuration
+
+```json
+{
+  <INSERT SAMPLE CONFIGURATION(S)>
 }
 ```
 
@@ -133,3 +172,9 @@ The directory structure is as follows:
 The module relies on the pigpio daemon to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
 
 The daemon essentially supports all the same functionality as the traditional library. Instead of using pigpio.h C library, it uses the daemon library, which is mostly identical: pigpiod_if2.h. Details can be found here: https://abyz.me.uk/rpi/pigpio/pdif2.html
+
+### Next steps
+
+To test your board or servo, click on the [**Test** panel](https://docs.viam.com/fleet/control) on your component's configuration page or on the **CONTROL** page.
+
+If you want to see how you can make an LED blink with your Raspberry Pi, see [Make an LED Blink With Buttons And With Code](https://docs.viam.com/tutorials/get-started/blink-an-led/).
