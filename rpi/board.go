@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
+	rpiutils "github.com/viam-modules/raspberry-pi/utils"
 
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"

@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	rpiservo "raspberry-pi/rpi-servo"
+
+	rpiutils "github.com/viam-modules/raspberry-pi/utils"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiservo "raspberry-pi/rpi-servo"
-	rpiutils "raspberry-pi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
