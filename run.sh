@@ -5,20 +5,15 @@ is_installed() {
     dpkg -s "$1" > /dev/null 2>&1
 }
 
-# Install pigpio packages if not already installed
-for pkg in libpigpiod-if2-1 pigpio; do
-    if ! is_installed "$pkg"; then
-        echo "Installing $pkg..."
-        sudo apt-get install -qqy "$pkg"
-    else
-        echo "$pkg is already installed."
-    fi
-done
+# install packages 
+apt-get install -qqy pigpio
+
+# enable pigpiod
+systemctl enable pigpiod
 
 # start the pigpiod service
 echo "Starting pigpiod service..."
-sudo systemctl start pigpiod
-sudo systemctl enable pigpiod
+systemctl start pigpiod
 
 sleep 1 
 
