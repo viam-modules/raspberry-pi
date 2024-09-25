@@ -1,10 +1,5 @@
 #!/bin/sh
 
-# Function to check if a package is installed
-is_installed() {
-    dpkg -s "$1" > /dev/null 2>&1
-}
-
 # install packages 
 apt-get install -qqy pigpio
 
