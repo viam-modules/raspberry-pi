@@ -21,7 +21,7 @@ func TestPiPigpio(t *testing.T) {
 	cfg := Config{
 		DigitalInterrupts: []rpiutils.DigitalInterruptConfig{
 			{Name: "i1", Pin: "11"}, // bcom 17
-			{Name: "servo-i", Pin: "22", Type: "servo"},
+			{Name: "servo-i", Pin: "22", Type: "basic"},
 		},
 	}
 	resourceConfig := resource.Config{

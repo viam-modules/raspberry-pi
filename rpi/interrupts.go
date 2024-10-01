@@ -196,11 +196,6 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 		if err != nil {
 			boardInstance.logger.Error(err)
 		}
-	case *rpiutils.ServoDigitalInterrupt:
-		err := rpiutils.ServoTick(boardInstance.cancelCtx, di, high, tick*1000)
-		if err != nil {
-			boardInstance.logger.Error(err)
-		}
 	default:
 		boardInstance.logger.Error("unknown digital interrupt type")
 	}
