@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/rdk/utils"
 )
 
 // DigitalInterruptConfig describes the configuration of digital interrupt for the board.
@@ -41,22 +40,9 @@ type ReconfigurableDigitalInterrupt interface {
 	Reconfigure(cfg DigitalInterruptConfig) error
 }
 
-// CreateDigitalInterrupt is a factory method for creating a specific DigitalInterrupt based
-// on the given config. If no type is specified, a BasicDigitalInterrupt is returned.
+// CreateDigitalInterrupt is a factory method for creating a BasicDigitalInterrupt type.
 func CreateDigitalInterrupt(cfg DigitalInterruptConfig) (ReconfigurableDigitalInterrupt, error) {
-	if cfg.Type == "" {
-		cfg.Type = "basic"
-	}
-
-	var i ReconfigurableDigitalInterrupt
-	switch cfg.Type {
-	case "basic":
-		i = &BasicDigitalInterrupt{}
-	case "servo":
-		i = &ServoDigitalInterrupt{ra: utils.NewRollingAverage(ServoRollingAverageWindow)}
-	default:
-		panic(errors.Errorf("unknown interrupt type (%s)", cfg.Type))
-	}
+	i := &BasicDigitalInterrupt{}
 
 	if err := i.Reconfigure(cfg); err != nil {
 		return nil, err
@@ -135,64 +121,6 @@ func (i *BasicDigitalInterrupt) Name() string {
 func (i *BasicDigitalInterrupt) Reconfigure(conf DigitalInterruptConfig) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	i.cfg = conf
-	return nil
-}
-
-// A ServoDigitalInterrupt is an interrupt associated with a servo in order to
-// track the amount of time that has passed between low signals (pulse width). Post processors
-// make meaning of these widths.
-type ServoDigitalInterrupt struct {
-	last uint64
-	ra   *utils.RollingAverage
-
-	mu  sync.RWMutex
-	cfg DigitalInterruptConfig
-}
-
-// Value will return the window averaged value followed by its post processed
-// result.
-func (i *ServoDigitalInterrupt) Value(ctx context.Context, extra map[string]interface{}) (int64, error) {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	v := int64(i.ra.Average())
-	return v, nil
-}
-
-// ServoTick records the time between two successive low signals (pulse width). How it is
-// interpreted is based off the consumer of Value.
-func ServoTick(ctx context.Context, i *ServoDigitalInterrupt, high bool, now uint64) error {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	diff := now - i.last
-	i.last = now
-
-	if i.last == 0 {
-		return nil
-	}
-
-	if high {
-		// this is time between signals, ignore
-		return nil
-	}
-
-	//nolint:gosec
-	i.ra.Add(int(diff / 1000))
-	return nil
-}
-
-// Name returns the name of the interrupt.
-func (i *ServoDigitalInterrupt) Name() string {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-	return i.cfg.Name
-}
-
-// Reconfigure reconfigures this digital interrupt.
-func (i *ServoDigitalInterrupt) Reconfigure(conf DigitalInterruptConfig) error {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	i.cfg = conf
 	return nil
 }
