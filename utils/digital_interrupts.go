@@ -40,8 +40,7 @@ type ReconfigurableDigitalInterrupt interface {
 	Reconfigure(cfg DigitalInterruptConfig) error
 }
 
-// CreateDigitalInterrupt is a factory method for creating a specific DigitalInterrupt based
-// on the given config. If no type is specified, a BasicDigitalInterrupt is returned.
+// CreateDigitalInterrupt is a factory method for creating a BasicDigitalInterrupt type.
 func CreateDigitalInterrupt(cfg DigitalInterruptConfig) (ReconfigurableDigitalInterrupt, error) {
 	i := &BasicDigitalInterrupt{}
 
