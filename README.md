@@ -154,7 +154,7 @@ The following properties are available for `digital_interrupts`:
 | ---- | ---- | --------- | ----------- |
 |`name` | string | **Required** | Your name for the digital interrupt. |
 |`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
-|`type`| string | Optional | <ul><li>`basic`: Recommended. Tracks interrupt count. </li> </ul> |
+|`type`| string | Optional | Default: `basic`: Tracks interrupt count. </li> </ul> |
 
 Example:
 
