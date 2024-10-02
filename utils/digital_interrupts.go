@@ -43,10 +43,6 @@ type ReconfigurableDigitalInterrupt interface {
 // CreateDigitalInterrupt is a factory method for creating a specific DigitalInterrupt based
 // on the given config. If no type is specified, a BasicDigitalInterrupt is returned.
 func CreateDigitalInterrupt(cfg DigitalInterruptConfig) (ReconfigurableDigitalInterrupt, error) {
-	if cfg.Type == "" {
-		cfg.Type = "basic"
-	}
-
 	i := &BasicDigitalInterrupt{}
 
 	if err := i.Reconfigure(cfg); err != nil {
