@@ -1,34 +1,31 @@
 #!/bin/sh
 
-DEBIAN_VERSION=$(grep VERSION_CODENAME /etc/os-release | cut -d '=' -f 2)
+# if libpigpio is installed then we install pigpio 
+# with the same version of libpigpio
+if ! dpkg -s pigpio >/dev/null 2>&1; then 
 
-echo "Detected Debian version: $DEBIAN_VERSION"
-
-# If Debian Bullseye, update specific versions of pigpio, libpigpio1, and libpigpio-dev
-if [ "$DEBIAN_VERSION" = "bullseye" ]; then
-    echo "Updating pigpio packages for Bullseye..."
-    apt-get update -qq
-    apt-get install -qqy pigpio=1.79-1+rpt1 libpigpio1=1.79-1+rpt1 libpigpio-dev=1.79-1+rpt1
-    if [ $? -ne 0 ]; then
-        echo "Package installation failed due to dependency issues." >&2
-        exit 1
+    # check if libpigpio is installed
+    if dpkg -s libpigpio-dev >/dev/nul 2>&1; then 
+        echo "libpigpio-dev is installed. Checking version"
+        
+        PIGPIO_VERSION=$(dpkg -s libpigpio-dev | grep '^Version:' | awk '{print $2}')
+        echo "found libpigpio version: $PIGPIO_VERSION"
+        apt-get instal pigpio="$PIGPIO_VERSION"
+    else
+        apt-get install pigpio
     fi
-else
-    echo "Not Bullseye, skipping specific package updates."
-    apt-get install -qqy pigpio
-    if [ $? -ne 0 ]; then
-        echo "Package installation failed." >&2
-        exit 1
-    fi
+else 
+    echo "pigpio is already installed"
 fi
 
-# Enable pigpiod service
-echo "Enabling and starting pigpiod service..."
+# enable pigpiod
 systemctl enable pigpiod
+
+# start the pigpiod service
+echo "Starting pigpiod service..."
 systemctl start pigpiod
 
-# Sleep for 1 second to allow the service to start
-sleep 1
+sleep 1 
 
 # Confirm pigpiod is running
 if systemctl status pigpiod | grep -q "active (running)"; then
@@ -40,5 +37,4 @@ fi
 
 echo "Installation and verification completed successfully!"
 
-# Continue running the main program
 exec ./bin/raspberry-pi "$@"
