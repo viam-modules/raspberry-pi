@@ -1,15 +1,24 @@
 BIN_OUTPUT_PATH = bin
 TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
-
+ARM64_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm64
+ARM32_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm32
 .PHONY: module
 module: build
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz
 	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
 
 .PHONY: build
-build:
-	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi
-	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi main.go
+build: build-arm64 build-arm32
+
+.PHONY: build-arm64
+build-arm64:
+	rm -f $(ARM64_OUTPUT)
+	GOARCH=arm64 go build -o $(ARM64_OUTPUT)
+
+.PHONY: build-arm32
+build-arm32:
+	rm -f $(ARM32_OUTPUT)
+	GOARCH=arm GOARM=7 go build -o $(ARM32_OUTPUT) main.go
 
 .PHONY: update-rdk
 update-rdk:
