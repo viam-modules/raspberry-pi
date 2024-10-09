@@ -18,7 +18,7 @@ build-arm64:
 .PHONY: build-arm32
 build-arm32:
 	rm -f $(ARM32_OUTPUT)
-	GOARCH=arm GOARM=7 go build -o $(ARM32_OUTPUT) main.go
+	GOARCH=arm GOARM=5 go build -o $(ARM32_OUTPUT) main.go
 
 .PHONY: update-rdk
 update-rdk:
@@ -45,9 +45,15 @@ lint: $(TOOL_BIN)/golangci-lint
 docker:
 	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64 .
 
+docker-32-bit:
+	cd docker && docker build --platform linux/arm -t ghcr.io/viam-modules/raspberry-pi:arm32 .
+
 .PHONY: docker-upload
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
+
+docker-upload-32:
+	docker push ghcr.io/viam-modules/raspberry-pi:arm32
 
 .PHONY: setup 
 setup: 
