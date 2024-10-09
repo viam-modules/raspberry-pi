@@ -1,22 +1,7 @@
 #!/bin/sh
 
-# if libpigpio is installed then we install pigpio 
-# with the same version of libpigpio
-if ! dpkg -s pigpio >/dev/null 2>&1; then 
-
-    # check if libpigpio is installed
-    if dpkg -s libpigpio-dev >/dev/null 2>&1; then 
-        echo "libpigpio-dev is installed. Checking version"
-        
-        PIGPIO_VERSION=$(dpkg -s libpigpio-dev | grep '^Version:' | awk '{print $2}')
-        echo "found libpigpio version: $PIGPIO_VERSION"
-        apt-get install pigpio="$PIGPIO_VERSION"
-    else
-        apt-get install pigpio
-    fi
-else 
-    echo "pigpio is already installed"
-fi
+apt-get install -qqy libpigpio1=1.79-1+rpt1 libpigpio-dev=1.79-1+rpt1 
+apt-get install pigpio
 
 # enable pigpiod
 systemctl enable pigpiod
