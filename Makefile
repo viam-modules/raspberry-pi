@@ -13,7 +13,7 @@ build: build-arm64 build-arm32
 .PHONY: build-arm64
 build-arm64:
 	rm -f $(ARM64_OUTPUT)
-	GOARCH=arm64 go build -o $(ARM64_OUTPUT)
+	GOARCH=arm64 go build -o $(ARM64_OUTPUT) main.go
 
 .PHONY: build-arm32
 build-arm32:
