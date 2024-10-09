@@ -1,6 +1,6 @@
 FROM debian:bullseye
 
-ARG GO_VERSION=1.23.0
+ARG GO_VERSION=1.23.2
 
 # Backports repo
 RUN echo "deb http://deb.debian.org/debian $(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)-backports main" > /etc/apt/sources.list.d/backports.list
@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get install -qqy \
     git build-essential make curl gpg wget sudo nano file procps bash
 
-RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-arm64.tar.gz | tar -xzv -C /usr/local && \
+RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-$(if [ `dpkg --print-architecture` = arm64 ]; then echo arm64; else echo armv6l; fi).tar.gz | tar -xzv -C /usr/local && \
     update-alternatives --install /usr/bin/go go /usr/local/go/bin/go 10 \
     --slave /usr/bin/gofmt gofmt /usr/local/go/bin/gofmt
 
