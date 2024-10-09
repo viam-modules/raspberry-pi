@@ -5,12 +5,12 @@
 if ! dpkg -s pigpio >/dev/null 2>&1; then 
 
     # check if libpigpio is installed
-    if dpkg -s libpigpio-dev >/dev/nul 2>&1; then 
+    if dpkg -s libpigpio-dev >/dev/null 2>&1; then 
         echo "libpigpio-dev is installed. Checking version"
         
         PIGPIO_VERSION=$(dpkg -s libpigpio-dev | grep '^Version:' | awk '{print $2}')
         echo "found libpigpio version: $PIGPIO_VERSION"
-        apt-get instal pigpio="$PIGPIO_VERSION"
+        apt-get install pigpio="$PIGPIO_VERSION"
     else
         apt-get install pigpio
     fi
