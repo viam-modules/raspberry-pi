@@ -2,6 +2,8 @@ BIN_OUTPUT_PATH = bin
 TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 ARM64_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm64
 ARM32_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm32
+DOCKER_ARCH ?= arm64
+
 .PHONY: module
 module: build
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz
@@ -43,7 +45,7 @@ lint: $(TOOL_BIN)/golangci-lint
 
 .PHONY: docker
 docker:
-	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t ghcr.io/viam-modules/raspberry-pi:arm64 .
+	cd docker && docker buildx build --load --no-cache --platform linux/$(DOCKER_ARCH) -t ghcr.io/viam-modules/raspberry-pi:$(DOCKER_ARCH) .
 
 .PHONY: docker-upload
 docker-upload:
@@ -55,4 +57,3 @@ setup:
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH)
-	
