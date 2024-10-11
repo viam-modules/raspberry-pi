@@ -32,17 +32,11 @@ jobs:
 
   test_32_bit: 
       runs-on: buildjet-4vcpu-ubuntu-2204-arm
-      container: ghcr.io/viam-modules/raspberry-pi:arm64
+      container: ghcr.io/viamrobotics/rdk-devenv:armhf-cache
       timeout-minutes: 30
   
       steps:
         - uses: actions/checkout@v3
-  
-        - name: Install dependencies for ARM32
-          run: |
-            sudo dpkg --add-architecture armhf
-            sudo apt-get update
-            sudo apt-get install gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
   
         - name: Verify no uncommitted changes from make lint
           run: |
