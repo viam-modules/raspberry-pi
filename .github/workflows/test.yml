@@ -57,7 +57,7 @@ jobs:
   
         - name: Build for ARM32
           run: |
-            sudo -u testbot bash -lc 'make build-armhf'
+            sudo -u testbot bash -lc 'make build-arm64'
   
   test_on_pi:
     # The following steps are run on an external runner "rpibull"
@@ -66,7 +66,7 @@ jobs:
 
     strategy:
       matrix:
-        architecture: [arm64, armhf, rpibull]  # Run tests for both 32-bit and 64-bit binaries
+        architecture: [arm64, armhf]  # Run tests for both 32-bit and 64-bit binaries
   
     steps:
       - uses: actions/checkout@v3
@@ -82,9 +82,9 @@ jobs:
       - name: Build for ${{ matrix.architecture }}
         run: |
           if [ "${{ matrix.architecture }}" = "armhf" ]; then
-            make build-armhf
+            make build-arm32
           else
-            make build
+            make build-arm64
           fi
 
       - name: Run tests for ${{ matrix.architecture }}
