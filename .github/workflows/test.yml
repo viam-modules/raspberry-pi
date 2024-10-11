@@ -26,9 +26,9 @@ jobs:
               exit 1
           fi
 
-      - name: make build
+      - name: make build-arm64
         run: |
-          sudo -u testbot bash -lc 'make build'
+          sudo -u testbot bash -lc 'make build-arm64'
 
   test_32_bit: 
       runs-on: buildjet-4vcpu-ubuntu-2204-arm
@@ -57,7 +57,7 @@ jobs:
   
         - name: Build for ARM32
           run: |
-            sudo -u testbot bash -lc 'make build-arm64'
+            sudo -u testbot bash -lc 'make build-arm32'
   
   test_on_pi:
     # The following steps are run on an external runner "rpibull"
@@ -70,15 +70,6 @@ jobs:
   
     steps:
       - uses: actions/checkout@v3
-
-      - name: Prepare the environment
-        run: |
-          if [ "${{ matrix.architecture }}" = "armhf" ]; then
-            sudo dpkg --add-architecture armhf
-            sudo apt-get update
-            sudo apt-get install gcc-arm-linux-gnueabihf libc6:armhf
-          fi
-  
       - name: Build for ${{ matrix.architecture }}
         run: |
           if [ "${{ matrix.architecture }}" = "armhf" ]; then

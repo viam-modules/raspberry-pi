@@ -10,7 +10,7 @@ module: build
 	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
 
 .PHONY: build
-build: build-arm64 build-arm32
+build: build-arm64
 
 .PHONY: build-arm64
 build-arm64:
