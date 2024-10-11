@@ -32,7 +32,7 @@ jobs:
 
   test_32_bit: 
       runs-on: buildjet-4vcpu-ubuntu-2204-arm
-      container: ghcr.io/viamrobotics/rdk-devenv:armhf-cache
+      container: ghcr.io/viam-modules/raspberry-pi:arm32
       timeout-minutes: 30
   
       steps:

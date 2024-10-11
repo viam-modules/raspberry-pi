@@ -20,7 +20,7 @@ build-arm64:
 .PHONY: build-arm32
 build-arm32:
 	rm -f $(ARM32_OUTPUT)
-	GOARCH=arm GOARM=5 go build -o $(ARM32_OUTPUT) main.go
+	GOARCH=arm GOARM=7 go build -o $(ARM32_OUTPUT) main.go
 
 .PHONY: update-rdk
 update-rdk:
