@@ -1,20 +1,10 @@
 # This file provides project-level configuration for the canon dev environment utility. https://github.com/viamrobotics/canon
 pi:
     default: true
-    arch: arm64
     image_arm64: ghcr.io/viam-modules/raspberry-pi:arm64
+    image_arm: ghcr.io/viam-modules/raspberry-pi:arm
     minimum_date: 2024-08-21T00:00:00.0Z
     update_interval: 168h0m0s
     user: testbot
     group: testbot
     persistent: true
-
-pi-32:
-    arch: arm
-    image_arm: ghcr.io/viam-modules/raspberry-pi:arm32
-    minimum_date: 2024-08-21T00:00:00.0Z
-    update_interval: 168h0m0s
-    user: testbot
-    group: testbot
-    persistent: true
-    

@@ -4,13 +4,17 @@ ARM64_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm64
 ARM32_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm32
 DOCKER_ARCH ?= arm64
 
+IMAGE_NAME = ghcr.io/viam-modules/raspberry-pi
+ARM32_TAG = $(IMAGE_NAME):arm
+ARM64_TAG = $(IMAGE_NAME):arm64
+
 .PHONY: module
 module: build
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz
 	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
 
-.PHONY: build
-build: build-arm64
+.PHONY: build-all
+build-all: build-arm64 build-arm32
 
 .PHONY: build-arm64
 build-arm64:
@@ -43,19 +47,32 @@ lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
 	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml
 
-.PHONY: docker
-docker:
-	cd docker && docker buildx build --load --no-cache --platform linux/$(DOCKER_ARCH) -t ghcr.io/viam-modules/raspberry-pi:$(DOCKER_ARCH) .
+.PHONY: docker-all
+docker-all: docker-build-64 docker-build-32
 
-docker-32-bit:
-	DOCKER_ARCH=arm make docker
+.PHONY: docker-build-64
+docker-build-64: 
+	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t $(ARM64_TAG) --build-arg ARCH=arm64 .
 
-.PHONY: docker-upload
-docker-upload:
-	docker push ghcr.io/viam-modules/raspberry-pi:arm64
+.PHONY: docker-build-32
+docker-build-32: 
+	cd docker && docker buildx build --load --no-cache --platform linux/arm -t $(ARM32_TAG) --build-arg ARCH=arm .
 
-docker-upload-32:
-	docker push ghcr.io/viam-modules/raspberry-pi:arm
+.PHONY: docker-upload-all
+docker-upload-all: docker-push-arm32 docker-push-arm64 docker-manifest
+
+.PHONY: docker-push-arm32
+docker-push-arm32:
+	docker push $(ARM32_TAG)
+
+.PHONY: docker-push-arm64
+docker-push-arm64:
+	docker push $(ARM64_TAG)
+
+.PHONY: docker-manifest
+docker-manifest:
+	docker manifest create --amend $(IMAGE_NAME):latest $(ARM32_TAG) $(ARM64_TAG)
+	docker manifest push $(IMAGE_NAME):latest
 
 .PHONY: setup 
 setup: 
