@@ -31,8 +31,10 @@ update-rdk:
 
 .PHONY: test
 test:
-	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) ./
-	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) -test.v
+	# go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH)/ ./...
+	for test in $$(ls $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH)/*.test) ; do \
+	sudo $$test -test.v || exit $?; \
+	done
 
 .PHONY: tool-install
 tool-install: $(TOOL_BIN)/golangci-lint

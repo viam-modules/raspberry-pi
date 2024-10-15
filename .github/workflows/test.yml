@@ -24,7 +24,11 @@ jobs:
       - name: Unbork NodeJS for 32-bit
         if: matrix.architecture == 'armhf'
         run: |
-          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=2 --overwrite
+          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1 --overwrite
+          ls -lh /__e/node20/
+          ls -lh /__e/node20/bin
+          /__e/node20/bin/node --version
+
 
       - uses: actions/checkout@v3
 
