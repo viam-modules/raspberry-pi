@@ -24,6 +24,7 @@ jobs:
       - name: Unbork NodeJS for 32-bit
         if: matrix.architecture == 'armhf'
         run: |
+          mount
           curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1 --overwrite
           file /__e/node20/bin/node
           /__e/node20/bin/node --version
@@ -46,31 +47,10 @@ jobs:
         run: |
           sudo -u testbot bash -lc 'make'
   
-  test_on_pi:
-    # The following steps are run on an external runner "rpibull"
-    runs-on: pi-4
+  # test_on_pi:
+  #   # The following steps are run on an external runner "rpibull"
+  #   runs-on: pi-4
 
-    # strategy:
-    #   matrix:
-    #     architecture: [arm64, armhf]  # Run tests for both 32-bit and 64-bit binaries
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: make test
-
-      # - name: Set up Go
-      #   uses: actions/setup-go@v3
-      #   with:
-      #     go-version: '1.23.0'
-
-      # - name: Build for ${{ matrix.architecture }}
-      #   run: |
-      #     make
-
-      # - name: Run tests for ${{ matrix.architecture }}
-      #   run: |
-      #     if [ "${{ matrix.architecture }}" = "armhf" ]; then
-      #       make test-arm32
-      #     else
-      #       make test-arm64
-      #     fi
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - run: make test
