@@ -19,7 +19,7 @@ jobs:
       - name: Unbork NodeJS for 32-bit
         if: matrix.architecture == 'armhf'
         run: |
-          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1
+          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1 --overwrite
 
       - uses: actions/checkout@v3
 
@@ -49,13 +49,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.23.0'
-
       - run: make test
+
+      # - name: Set up Go
+      #   uses: actions/setup-go@v3
+      #   with:
+      #     go-version: '1.23.0'
 
       # - name: Build for ${{ matrix.architecture }}
       #   run: |
