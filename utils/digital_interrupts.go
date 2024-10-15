@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/rdk/utils"
 )
 
 // PinConfig describes the configuration of a pin for the board
@@ -76,10 +75,9 @@ type ReconfigurableDigitalInterrupt interface {
 // CreateDigitalInterrupt is a factory method for creating a specific DigitalInterrupt based
 // on the given config. If no type is specified, an error is returned.
 func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, error) {
-	var i ReconfigurableDigitalInterrupt
+	i := &BasicDigitalInterrupt{}
 	switch cfg.Type {
 	case PinInterrupt:
-		i = &BasicDigitalInterrupt{}
 	default:
 		return nil, fmt.Errorf("expected pin %v to be configured as %v, got %v instead", cfg.Name, PinInterrupt, cfg.Type)
 	}
@@ -161,64 +159,6 @@ func (i *BasicDigitalInterrupt) Name() string {
 func (i *BasicDigitalInterrupt) Reconfigure(conf PinConfig) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	i.cfg = conf
-	return nil
-}
-
-// A ServoDigitalInterrupt is an interrupt associated with a servo in order to
-// track the amount of time that has passed between low signals (pulse width). Post processors
-// make meaning of these widths.
-type ServoDigitalInterrupt struct {
-	last uint64
-	ra   *utils.RollingAverage
-
-	mu  sync.RWMutex
-	cfg DigitalInterruptConfig
-}
-
-// Value will return the window averaged value followed by its post processed
-// result.
-func (i *ServoDigitalInterrupt) Value(ctx context.Context, extra map[string]interface{}) (int64, error) {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	v := int64(i.ra.Average())
-	return v, nil
-}
-
-// ServoTick records the time between two successive low signals (pulse width). How it is
-// interpreted is based off the consumer of Value.
-func ServoTick(ctx context.Context, i *ServoDigitalInterrupt, high bool, now uint64) error {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	diff := now - i.last
-	i.last = now
-
-	if i.last == 0 {
-		return nil
-	}
-
-	if high {
-		// this is time between signals, ignore
-		return nil
-	}
-
-	//nolint:gosec
-	i.ra.Add(int(diff / 1000))
-	return nil
-}
-
-// Name returns the name of the interrupt.
-func (i *ServoDigitalInterrupt) Name() string {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-	return i.cfg.Name
-}
-
-// Reconfigure reconfigures this digital interrupt.
-func (i *ServoDigitalInterrupt) Reconfigure(conf DigitalInterruptConfig) error {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	i.cfg = conf
 	return nil
 }

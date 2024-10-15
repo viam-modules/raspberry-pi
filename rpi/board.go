@@ -40,7 +40,7 @@ import (
 )
 
 // Model represents a raspberry pi board model.
-var Model = resource.NewModel("viam-hardware-testing", "raspberry-pi", "rpi")
+var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
 
 var (
 	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
@@ -126,19 +126,12 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	daemonAlreadyRunning, err := startPigpiod()
+	err := startPigpiod(ctx, logger)
 	if err != nil {
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
 	}
-
-	if daemonAlreadyRunning {
-		logger.CInfo(ctx, "pigpiod is already running, skipping start")
-	} else {
-		// Wait for pigpiod to start up if it wasn't already running.
-		time.Sleep(daemonBootDelay)
-	}
-
+	time.Sleep(daemonBootDelay)
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
@@ -276,12 +269,6 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 	pi.logger.CDebug(ctx, "Pi GPIO terminated properly.")
 
 	pi.isClosed = true
-
-	if err := stopPigpiod(); err != nil {
-		pi.logger.CError(ctx, "failed to stop pigpiod.")
-	}
-	pi.logger.CDebug(ctx, "successfully stopped pigpiod.")
-
 	return err
 }
 

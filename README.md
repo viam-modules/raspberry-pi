@@ -1,18 +1,20 @@
-# `raspberry-pi`
+# [`raspberry-pi` module](https://app.viam.com/module/viam/raspberry-pi)
 
-This module implements the [`"rdk:component:board"` API](https://docs.viam.com/components/board/) and [`"rdk:component:servo"` API](https://docs.viam.com/components/servo/) to integrate the Raspberry Pi 4, 3 and Zero 2 W board or any servos connected to the board into your machine.
+This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/#api) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/#api)
 
-This module replaces the `board:pi` and `servo:pi` components in RDK as a step into the modular future of Viam. Furthermore, this module handles the `PI_INIT_FAILED` issue.
-
-Two models are provided:
+Two models are provided in this module:
 * `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
 
-## Configure your board
+## Requirements
 
-Navigate to the **CONFIGURE** tab of your machine's page in [the Viam app](https://app.viam.com), searching for `raspberry-pi` and selecting one of the above models.
+Follow the [setup guide](https://docs.viam.com/installation/prepare/rpi-setup/) to prepare your Pi for running `viam-server` before configuring this board.
 
-Fill in the attributes as applicable to your board, according to the example below. The configuration is the same as the [board docs](https://docs.viam.com/components/board/pi/).
+## Configure your `raspberry-pi` board
+
+Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https://app.viam.com), searching for `raspberry-pi`.
+
+Fill in the attributes as applicable to your board:
 
 ```json
 {
@@ -20,8 +22,7 @@ Fill in the attributes as applicable to your board, according to the example bel
   "components": [
     {
       "name": "<your-pi-board-name>",
-      // change the model name back to "viam:raspberry-pi:rpi" once this module is public
-      "model": "viam-hardware-testing:raspberry-pi:rpi",
+      "model": "viam:raspberry-pi:rpi",
       "type": "board",
       "namespace": "rdk",
       "attributes": {
@@ -47,23 +48,154 @@ Fill in the attributes as applicable to your board, according to the example bel
   "modules": [
     {
       "type": "registry",
-      "name": "viam-hardware-testing_raspberry-pi",
-      "module_id": "viam-hardware-testing:raspberry-pi",
+      "name": "viam_raspberry-pi",
+      "module_id": "viam:raspberry-pi",
       "version": "0.0.1"
     }
   ],
 }
 ```
 
-Similarly for the servo. The one new addition is the ability to change the servo frequency (`frequency: hz`). You should look at your part's documentation to determine the optimal operating frequency and operating rotation range.
-Otherwise, the config is the same as the [servo docs](https://docs.viam.com/components/servo/pi/).
+### Attributes
+
+The following attributes are available for `viam:raspberry-pi:rpi` board:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
+| `digital_interrupts` | object | Optional | Any digital interrupts's pin number" and name. See [configuration info](#digital_interrupts). |
+
+#### `analogs`
+
+An [analog-to-digital converter](https://www.electronics-tutorials.ws/combination/analogue-to-digital-converter.html) (ADC) takes a continuous voltage input (analog signal) and converts it to an discrete integer output (digital signal).
+
+ADCs are useful when building a robot, as they enable your board to read the analog signal output by most types of [sensors](https://docs.viam.com/components/sensor/) and other hardware components.
+
+To integrate an ADC into your machine, you must first physically connect the pins on your ADC to your board.
+
+Then, integrate `analogs` into the `attributes` of your board by following the **Config Builder** instructions or by adding the following to your board’s JSON configuration:
+
+```json
+// "attributes": { ... ,
+"analogs": [
+  {
+    "name": "<your-analog-reader-name>",
+    "pin": "<pin-number-on-adc>",
+    "spi_bus": "<your-spi-bus-index>",
+    "chip_select": "<chip-select-index>",
+    "average_over_ms": <int>,
+    "samples_per_sec": <int>
+  }
+]
+```
+
+The following properties are available for `analogs`:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `name` | string | **Required** | Your name for the analog reader. |
+| `pin` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC.
+| `chip_select` | string | **Required** | The chip select index of the board's connection pin, wired to the ADC. |
+| `spi_bus` | string | **Required** | The index of the SPI bus connecting the ADC and board. |
+| `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
+| `samples_per_sec` | int | Optional | Sampling rate of the analog input in samples per second. |
+
+Example:
+
+```json
+{
+  "components": [
+    {
+      "model": "pi",
+      "name": "your-board",
+      "type": "board",
+      "attributes": {
+        "analogs": [
+          {
+            "name": "current",
+            "pin": "1",
+            "spi_bus": "1",
+            "chip_select": "0"
+          },
+          {
+            "name": "pressure",
+            "pin": "0",
+            "spi_bus": "1",
+            "chip_select": "0"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+#### `digital_interrupts`
+
+[Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
+
+- When an interrupt configured on your board processes a change in the state of the GPIO pin it is configured to monitor, it ticks to record the state change. You can stream these ticks with the board API’s [`StreamTicks()`](https://docs.viam.com/components/board/#streamticks), or get the current value of the digital interrupt with Value().
+- Calling [`GetGPIO()`](https://docs.viam.com/components/board/#getgpio) on a GPIO pin, which you can do without configuring interrupts, is useful when you want to know a pin’s value at specific points in your program, but is less precise and convenient than using an interrupt.
+
+Integrate `digital_interrupts` into your machine in the `attributes` of your board by following the **Config Builder** instructions, or by adding the following to your board’s JSON configuration:
+
+```json
+// "attributes": { ... ,
+"digital_interrupts": [
+  {
+    "name": "<your-digital-interrupt-name>",
+    "pin": "<pin-number>"
+  }
+]
+```
+
+The following properties are available for `digital_interrupts`:
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+|`name` | string | **Required** | Your name for the digital interrupt. |
+|`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
+|`type`| string | Optional | Default: `basic`: Tracks interrupt count. </li> </ul> |
+
+Example:
+
+```json
+{
+  "components": [
+    {
+      "model": "pi",
+      "name": "your-board",
+      "type": "board",
+      "attributes": {
+        "digital_interrupts": [
+          {
+            "name": "your-interrupt-1",
+            "pin": "15"
+          },
+          {
+            "name": "your-interrupt-2",
+            "pin": "16"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+### Additional Info for Dev
+This module uses Viam's [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) for SPI and I2C. 
+
+## Configure your pi servo
+Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https://app.viam.com), searching for `rpi-servo`
+
+Fill in the attributes as applicable to your servo, according to the example below.
+
 ```json
 {
   "components": [
     {
       "name": "<your-servo-name>",
-      // change the model name back to "viam:raspberry-pi:rpi-servo" once this module is public
-      "model": "viam-hardware-testing:raspberry-pi:rpi-servo",
+      "model": "viam:raspberry-pi:rpi-servo",
       "type": "servo",
       "namespace": "rdk",
       "attributes": {
@@ -81,66 +213,76 @@ Otherwise, the config is the same as the [servo docs](https://docs.viam.com/comp
   "modules": [
     {
       "type": "registry",
-      "name": "viam-hardware-testing_raspberry-pi",
-      "module_id": "viam-hardware-testing:raspberry-pi",
+      "name": "viam_raspberry-pi",
+      "module_id": "viam:raspberry-pi",
       "version": "0.0.1"
     }
   ],
 }
 ```
 
-# Changes from rdk
-## Library usage
-The module now relies on the **pigpio daemon** to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
+### Attributes
 
-The daemon essentially supports all the same functionality as the traditional library. Instead of using `pigpio.h` C library, it uses the daemon library, which is mostly identical: `pigpiod_if2.h`. The primary difference is how the library is set up. Before, we used `gpioInitialise()` and `gpioTerminate()` to initialize and close the board connection. Now, we must start up the daemon with `sudo pigpiod` and connect to the daemon using the C functions `pigpio_start` and `pigpio_stop`. `pigpio_start` returns an ID that all the daemon library functions take in as the first argument so the daemon knows to use that connection to execute board functionality. Details can be found here: https://abyz.me.uk/rpi/pigpio/pdif2.html
 
-A lot of the work was a simple conversion from the old C library to the new daemon library, which is relatively straightforward, with one notable exception (see callback functions). Some new daemon-specific errors were added to `utils/errors.go`. The errors are mostly related to connecting to the daemon. All other error codes related to GPIO operation remain the same. 
+The following attributes are available for `viam:raspberry-pi:rpi-servo` servos:
 
-## Struct changes
-The `piPigpio` struct must now track the daemon connection ID returned by `pigpio_start`. This `C.int` id is used for most other function calls. This same change is added to the `piPigpioServo` struct, which opens up its own connection to the daemon rather than using the board's. This was just a design choice to preserve simplicity. It is also possible to grab the ID from its dependent board's struct. One thing to note, the pi-servo's dependency is a **soft dependency rather than a hard one.** `Validate` expects there to be a board dependency, but the servo could hypothetically operate independently of its board.
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `pin` | string | **Required** | The pin number of the pin the servo's control wire is wired to on the board. |
+| `board` | string | **Required** | `name` of the board the servo is wired to. |
+| `min` | float | Optional | Sets a software limit on the minimum angle in degrees your servo can rotate to. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
+| `max` | float | Optional | Sets a software limit on the maximum angle in degrees your servo can rotate to. <br> Default = `180.0` <br> Range = [`0.0`, `180.0`] |
+| `starting_position_degs` | float | Optional | Starting position of the servo in degrees. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
+| `hold_position` | boolean | Optional | If `false`, power down a servo if it has tried and failed to go to a position for a duration of 500 milliseconds. <br> Default = `true` |
+| `max_rotation_deg` | int | Optional | The maximum angle that you know your servo can possibly rotate to, according to its hardware. Refer to your servo's data sheet for clarification. Must be greater than or equal to the value you set for `max`. <br> Default = `180` |
+| `frequency_hz` | int | Optional | Servo refresh rate control value. Use this value to control the servo at more granular frequencies. Refer to your servo's data sheet for optimal operating frequency and operating rotation range. Default: `50` |
 
-## Structure
-The Pi board and the servo are now in module format. The directory structure is as follows:
+## Local development
+
+### Building 
+Module needs to be built from within `canon`. As of August 2024 this module is being built only in `bullseye` and supports `bullseye` and `bookworm` versions of Debian. 
+`make module` will create raspberry-pi-module.tar.gz.
+```bash
+canon 
+make module
+```
+Then copy the tar.gz over to your pi 
+```bash 
+scp /path-to/raspberry-pi-module.tar.gz your_rpi@pi.local:~
+```
+Now you can use it as a [local module](https://docs.viam.com/how-tos/create-module/#test-your-module-locally)!
+
+### Linting 
+Linting also needs to be done from within `canon` 
+```bash
+canon 
+make lint
+```
+### Testing 
+> [!NOTE]
+>All tests require a functioning raspberry pi4!
+
+Run the following in a pi
+```bash
+make test
+```
+This will create binaries for each test file in /bin and run them.
+
+## For Devs
+### Module Structure
+The directory structure is as follows:
 - `rpi`: Contains all files necessary to define `viam:raspberry-pi:rpi`. Files are organized by functionality.
 - `rpi-servo`: Contains all files necessary to define `viam:raspberry-pi:rpi-servo`. Files are organized by functionality
 - `utils`: Any utility functions that are either universal to the boards or shared between `rpi` and `rpi-servo`. Included are daemon errors, pin mappings, and digital interrupts
 - `testing`: External package exports. Tests the components how an outside package would use the components (w/o any internal functions).
 
-## Digital Interrupts
-The old code used two maps to track the digital interrupts: `interrupts` and `interruptsHW`. `interrupts` mapped user-defined interrupt names to interrupt struct, while `interruptsHW` mapped broadcom pin to interrupt struct. The data contained in the maps were the same, just with different map keys.
+### pigpiod
+The module relies on the pigpio daemon to carry out GPIO functionality. The daemon accepts socket and pipe connections over the local network. Although many things can be configured, from DMA allocation mode to socket port to sample rate, we use the default settings, which match with the traditional pigpio library's defaults. More info can be seen here: https://abyz.me.uk/rpi/pigpio/pigpiod.html.
 
-The implementation tried to preserve interrupt names and interrupts when possible. Essentially, the logic was to preserve interrupts if a name changed and the interrupt stayed the same, or if the name stayed the same but the interrupt changed. It made almost no optimization improvements the way it was handled, as it was a relatively convoluted mess of linear searches `O(n)` through the map values, making sure to update the two interrupt config variables accurately. I realized all of this was very unecessary, as the calls to cancel and start interrupt callbacks (via `pigpio`) were not optimized in any marginal way.
- 
-Now, we simply have one map, `interrupts`, which **only maps broadcom pin (previously `interruptsHW`) to the interrupt struct**. When reconfiguring the interrupts, all interrupts callbacks are canceled and reinitialized following the new set of interrupts. Essentially, the map is wiped and completely recreated. Although it may seem inefficient (it's not really, since you can only configure so many interrupts), the behavior is identical to the rdk version with less convoluted code. 
+The daemon essentially supports all the same functionality as the traditional library. Instead of using pigpio.h C library, it uses the daemon library, which is mostly identical: pigpiod_if2.h. Details can be found here: https://abyz.me.uk/rpi/pigpio/pdif2.html
 
-Furthermore, the way that daemon callback functions vary from the non-daemon pigpio library. Before, we used `gpioSetAlertFunc` to set up all interruot callbacks. It also used this function to unset callbacks, where a `NULL` function is passed as the function to initialize a callback cancellation. Within the daemon library, a callback is initialized with `callback`, which returns a callback ID. This ID is used to cancel the callback via a separate function `callback_cancel`, which will cancel said callback. There was no ID before, which means we modified the interrupt struct to track this callback ID. All we do now is to wrap the interrupt via a new `rpiStruct`, which holds the old `ReconfigurableDigitalInterrupt` as well as the callback ID. In the `pi.c` library, it takes a callback id to cancel the callbacks now. This is the biggest logical change in this new module.
+### Next steps
 
-## Testing
-New tests have been written for servo and board. All old tests were preserved. For this module, we implement black box and white box testing. White box uses internal package functions (lowercase functions like newPigpio) and tests the behavior. It also tests any helper functions. Black box testing treats the package as an outside, only using exported functions to test their behavior. This is why we have a new `testing/` folder which holds these tests, which are almost identical to the pacakge tests, without using some private functions.
+To test your board or servo, click on the [**Test** panel](https://docs.viam.com/fleet/control) on your component's configuration page or on the **CONTROL** page.
 
-One error during testing relates to the way interrupts are started. When the interrupt is created, our `pi.c` sets a pull up on the pin (default behavior for each pin varies). Depending on whether you set the pin before or after the digital interrupt is created may change the edge detection. Make sure the interrupt is created before setting low or high to make sure the interrupt count is accurate.
-
-**Make sure when testing that the testing packages are built as a binary and executed as root (sudo).** Otherwise, some test cases will be skipped without warning (may need verbose flags). Those commands can be seen here:
-```bash
-CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc go test -c -o ./bin/ raspberry-pi/...
-# run test (-test.v for verbose)
-sudo ./bin/${test_package}.tests$
-```
-
-## Servo
-Servo now uses PWM for more granular control. It essentially performs the same behavior as before, but uses PWM functions to mimic the servo functions within the `pigpio` library. It explains how to do it here: https://abyz.me.uk/rpi/pigpio/pdif2.html#set_servo_pulsewidth.
-
-Before, we only had servo control at 50Hz. We can now control at more granular frequencies (following the chart in the link above) using PWM, allowing the user to enter a `frequency_hz` parameter in order to control the servo refresh rate. As a consequence, some functions were reorganized to carry this functionality out. Olivia knows about this as well.
-
-## Analog Readers and SPI
-The analog readers used SPI in order to transfer information. The SPI previously used pigpio defined SPI functions. We wanted to use our genericlinux implementation, which the library now uses. We simply set up a `NewSPIBus` and everything works well. There are chip select mappings (within `rpi/analog_readers.go`) that map physical pins to chip select pins. Otherwise, behavior is the same. Alan knows about these changes.
-
-## Starting and Stopping `pigpiod`
-The daemon is automatically started in the module on init and shut down on Close(). There are some tricky consequences to this:
-- the daemon has a startup period. I've noticed on a clean board that it starts within 1-50ms. Trying to use any C functions before then will result in connection errors
-- The daemon also has a stopping period. I did not have time (check with Susmita) to query to make sure the process is actually terminated before close. This causes error when you try to boot up a board again while it's closing, as it will error (program doesn't know whether pigpiod is actively running or in the process of shutting down). This is mostly a problem during testing, where boards are open and closed in rapid succession.
-
-## Other Considerations
-- I2C has been removed. It wasn't used for anything.
-- I had some Cgo flag problems while compiling on a raspberry pi. These flags before any go commands may be required: `CGO_LDFLAGS='-lpigpiod_if2' CGO_ENABLED=1 GOARCH=arm64 CC=aarch64-linux-gnu-gcc`
+If you want to see how you can make an LED blink with your Raspberry Pi, see [Make an LED Blink With Buttons And With Code](https://docs.viam.com/tutorials/get-started/blink-an-led/).

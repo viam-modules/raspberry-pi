@@ -1,19 +1,25 @@
 #!/bin/sh
 
-# Function to check if a package is installed
-is_installed() {
-    dpkg -s "$1" > /dev/null 2>&1
-}
+# install packages 
+apt-get install -qqy pigpio
 
-# Install pigpio packages if not already installed
-for pkg in libpigpio-dev libpigpiod-if-dev pigpio; do
-    if ! is_installed "$pkg"; then
-        echo "Installing $pkg..."
-        sudo apt-get install -qqy "$pkg"
-    else
-        echo "$pkg is already installed."
-    fi
-done
+# enable pigpiod
+systemctl enable pigpiod
 
+# start the pigpiod service
+echo "Starting pigpiod service..."
+systemctl start pigpiod
+
+sleep 1 
+
+# Confirm pigpiod is running
+if systemctl status pigpiod | grep -q "active (running)"; then
+    echo "pigpiod is running successfully."
+else
+    echo "pigpiod failed to start." >&2
+    exit 1
+fi
+
+echo "Installation and verification completed successfully!"
 
 exec ./bin/raspberry-pi "$@"

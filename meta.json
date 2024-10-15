@@ -1,22 +1,22 @@
 {
-    "module_id": "viam-hardware-testing:raspberry-pi",
-    "visibility": "private",
+    "module_id": "viam:raspberry-pi",
+    "visibility": "public",
     "url": "https://github.com/viam-modules/raspberry-pi",
     "description": "Viam Go module for raspberry pi board and servo",
     "models": [
       {
         "api": "rdk:component:board",
-        "model": "viam-hardware-testing:raspberry-pi:rpi"
+        "model": "viam:raspberry-pi:rpi"
       },
       {
         "api": "rdk:component:servo",
-        "model": "viam-hardware-testing:raspberry-pi:pi-servo"
+        "model": "viam:raspberry-pi:pi-servo"
       }
     ],
     "build": {
-      "build": "make module",
-      "path": "bin/module.tar.gz",
+      "build": "make setup module",
+      "path": "bin/raspberry-pi-module.tar.gz",
       "arch" : ["linux/arm64"]
     },
-    "entrypoint": "bin/raspberry-pi"
+    "entrypoint": "run.sh"
 }
