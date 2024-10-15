@@ -31,7 +31,7 @@ update-rdk:
 
 .PHONY: test
 test:
-	# go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH)/ ./...
+	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH)/ ./...
 	for test in $$(ls $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH)/*.test) ; do \
 	sudo $$test -test.v || exit $?; \
 	done

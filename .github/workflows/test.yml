@@ -17,7 +17,7 @@ jobs:
       image: ghcr.io/viam-modules/raspberry-pi:arm64
       volumes:
         # override /__e/node20 on 32-bit because it is 64-bit
-        - /tmp:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
+        - /tmp/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
     timeout-minutes: 30
 
     steps:
@@ -25,10 +25,8 @@ jobs:
         if: matrix.architecture == 'armhf'
         run: |
           curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1 --overwrite
-          ls -lh /__e/node20/
-          ls -lh /__e/node20/bin
+          file /__e/node20/bin/node
           /__e/node20/bin/node --version
-
 
       - uses: actions/checkout@v3
 
