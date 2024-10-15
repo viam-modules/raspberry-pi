@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Unbork NodeJS for 32-bit
-        if: ${{ matrix.arch == "armhf" }}
+        if: matrix.architecture == 'armhf'
         run: |
           curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1
 
