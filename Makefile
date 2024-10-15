@@ -48,14 +48,14 @@ docker:
 	cd docker && docker buildx build --load --no-cache --platform linux/$(DOCKER_ARCH) -t ghcr.io/viam-modules/raspberry-pi:$(DOCKER_ARCH) .
 
 docker-32-bit:
-	cd docker && docker build --platform linux/arm -t ghcr.io/viam-modules/raspberry-pi:arm32 .
+	DOCKER_ARCH=arm make docker
 
 .PHONY: docker-upload
 docker-upload:
 	docker push ghcr.io/viam-modules/raspberry-pi:arm64
 
 docker-upload-32:
-	docker push ghcr.io/viam-modules/raspberry-pi:arm32
+	docker push ghcr.io/viam-modules/raspberry-pi:arm
 
 .PHONY: setup 
 setup: 
