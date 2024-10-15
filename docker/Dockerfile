@@ -14,7 +14,7 @@ RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-$(if [ `dpkg --print-archite
     update-alternatives --install /usr/bin/go go /usr/local/go/bin/go 10 \
     --slave /usr/bin/gofmt gofmt /usr/local/go/bin/gofmt
 
-#Raspberry Pi repo
+# Raspberry Pi repo
 RUN curl http://archive.raspberrypi.org/debian/raspberrypi.gpg.key -o /etc/apt/trusted.gpg.d/raspberrypi.asc && echo "deb http://archive.raspberrypi.com/debian $(grep VERSION_CODENAME /etc/os-release | cut -d= -f2) main" > /etc/apt/sources.list.d/raspi.list
 RUN --mount=type=cache,target=/var/cache/apt apt-get update
 
@@ -26,9 +26,13 @@ RUN useradd -s /bin/bash -m testbot && echo 'testbot ALL=(ALL) NOPASSWD:ALL' >> 
 # Fix for github and new security patches on git
 RUN git config --system --add safe.directory '*'
 
+# Install Node.js
 ARG NODE_VERSION=20.x
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION} nodistro main" > /etc/apt/sources.list.d/nodesource.list
 RUN --mount=type=cache,target=/var/cache/apt apt update && apt install -qqy nodejs
+
+# Verify Node.js installation
+RUN node --version
 
 CMD ["/bin/bash"]
