@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        architecture: [arm] #SMURF arm64
+        architecture: [arm, arm64]
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     container:
       image: ghcr.io/viam-modules/raspberry-pi:${{ matrix.architecture }}
@@ -26,8 +26,6 @@ jobs:
         run: |
           curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJ -C /__e/node20 --strip-components=1 --overwrite
           file /__e/node20/bin/node
-          ls -lh /__e/node20/bin/node /lib/ld-linux-armhf.so.3
-          ldd /__e/node20/bin/node
           /__e/node20/bin/node --version
           echo "Node Installed"
 
