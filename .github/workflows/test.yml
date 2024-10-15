@@ -9,9 +9,9 @@ on:
 jobs:
   build_and_lint:
     strategy:
+      fail-fast: false
       matrix:
         architecture: [arm64, armhf]
-        fail-fast: false
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     container:
       image: ghcr.io/viam-modules/raspberry-pi:arm64
