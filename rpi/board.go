@@ -214,7 +214,7 @@ func (pi *piPigpio) Reconfigure(
 func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
 	for _, pullConf := range cfg.Pins {
 		// skip pins that do not have a pull state set
-		if pullConf.PullState == PullDefault {
+		if pullConf.PullState == rpiutils.PullDefault {
 			continue
 		}
 		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
@@ -223,15 +223,15 @@ func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
 			continue
 		}
 		switch pullConf.PullState {
-		case PullNone:
+		case rpiutils.PullNone:
 			if result := C.setPullNone(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
-		case PullUp:
+		case rpiutils.PullUp:
 			if result := C.setPullUp(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
-		case PullDown:
+		case rpiutils.PullDown:
 			if result := C.setPullDown(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
