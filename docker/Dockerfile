@@ -28,11 +28,15 @@ RUN git config --system --add safe.directory '*'
 
 # Install Node.js
 ARG NODE_VERSION=20.x
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION} nodistro main" > /etc/apt/sources.list.d/nodesource.list
-RUN --mount=type=cache,target=/var/cache/apt apt update && apt install -qqy nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
 
-# Verify Node.js installation
+# Ensure that /__e/node20/bin exists and create a symlink for nodejs
+RUN mkdir -p /__e/node20/bin && \
+    ln -s $(which node) /__e/node20/bin/node || \
+    ln -s $(which nodejs) /__e/node20/bin/node
+
+# Verify installations
 RUN node --version
+RUN go version
 
 CMD ["/bin/bash"]
