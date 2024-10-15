@@ -11,13 +11,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        architecture: [arm64, armhf]
+        architecture: [arm] #SMURF arm64
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     container:
-      image: ghcr.io/viam-modules/raspberry-pi:arm64
+      image: ghcr.io/viam-modules/raspberry-pi:${{ matrix.architecture }}
       volumes:
         # override /__e/node20 on 32-bit because it is 64-bit
-        - /home/runner/actions-runner/_work/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
+        - /tmp/node20:/__e${{matrix.architecture != 'arm' && '-armhf' || ''}}/node20
     timeout-minutes: 30
 
     steps:
