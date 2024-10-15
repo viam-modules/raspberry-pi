@@ -1,48 +1,38 @@
 BIN_OUTPUT_PATH = bin
 TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
-ARM64_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm64
-ARM32_OUTPUT = $(BIN_OUTPUT_PATH)/raspberry-pi/arm32
+
+DPKG_ARCH ?= $(shell dpkg --print-architecture)
+ifeq ($(DPKG_ARCH),armhf)
+DOCKER_ARCH ?= arm
+else ifeq ($(GOARCH),arm64)
 DOCKER_ARCH ?= arm64
+else
+DOCKER_ARCH ?= unknown
+endif
+
+OUTPUT_PATH = $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH)
 
 IMAGE_NAME = ghcr.io/viam-modules/raspberry-pi
-ARM32_TAG = $(IMAGE_NAME):arm
-ARM64_TAG = $(IMAGE_NAME):arm64
 
 .PHONY: module
-module: build
+module: build-$(DOCKER_ARCH)
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz
-	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi run.sh meta.json
+	cp $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) $(BIN_OUTPUT_PATH)/raspberry-pi
+	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) run.sh meta.json
 
-.PHONY: build-all
-build-all: build-arm64 build-arm32
-
-.PHONY: build-arm64
-build-arm64:
-	rm -f $(ARM64_OUTPUT)
-	GOARCH=arm64 go build -o $(ARM64_OUTPUT) main.go
-
-.PHONY: build-arm32
-build-arm32:
-	rm -f $(ARM32_OUTPUT)
-	GOARCH=arm GOARM=7 go build -o $(ARM32_OUTPUT) main.go
+.PHONY: build-$(DOCKER_ARCH)
+build-$(DOCKER_ARCH):
+	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) main.go
 
 .PHONY: update-rdk
 update-rdk:
 	go get go.viam.com/rdk@latest
 	go mod tidy
 
-.PHONY: test-all 
-test-all: test-arm64 test-arm32
-
-.PHONY: test-arm64
-test-arm64:
-	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm64 ./raspberry-pi/...
-	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm64 -test.v
-
-.PHONY: test-arm32
-test-arm32:
-	GOARCH=arm GOARM=7 go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm32 ./raspberry-pi/...
-	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm32 -test.v
+.PHONY: test
+test:
+	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) ./raspberry-pi/...
+	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) -test.v
 
 .PHONY: tool-install
 tool-install: $(TOOL_BIN)/golangci-lint
@@ -58,33 +48,37 @@ lint: $(TOOL_BIN)/golangci-lint
 .PHONY: docker-all
 docker-all: docker-build-64 docker-build-32
 
+.PHONY: docker-build
+docker-build:
+	cd docker && docker buildx build --load --no-cache --platform linux/$(DOCKER_ARCH) -t $(IMAGE_NAME):$(DOCKER_ARCH) .
+
 .PHONY: docker-build-64
 docker-build-64: 
-	cd docker && docker buildx build --load --no-cache --platform linux/arm64 -t $(ARM64_TAG) --build-arg ARCH=arm64 .
+	DOCKER_ARCH=arm64 make docker-build
 
 .PHONY: docker-build-32
 docker-build-32: 
-	cd docker && docker buildx build --load --no-cache --platform linux/arm -t $(ARM32_TAG) --build-arg ARCH=arm .
+	DOCKER_ARCH=arm make docker-build
 
 .PHONY: docker-upload-all
 docker-upload-all: docker-push-arm32 docker-push-arm64 docker-manifest
 
 .PHONY: docker-push-arm32
 docker-push-arm32:
-	docker push $(ARM32_TAG)
+	docker push $(IMAGE_NAME):arm
 
 .PHONY: docker-push-arm64
 docker-push-arm64:
-	docker push $(ARM64_TAG)
+	docker push $(IMAGE_NAME):arm64
 
 .PHONY: docker-manifest
 docker-manifest:
-	docker manifest create --amend $(IMAGE_NAME):latest $(ARM32_TAG) $(ARM64_TAG)
+	docker manifest create --amend $(IMAGE_NAME):latest $(IMAGE_NAME):arm $(IMAGE_NAME):arm64
 	docker manifest push $(IMAGE_NAME):latest
 
 .PHONY: setup 
 setup: 
-	sudo apt-get install -qqy libpigpio-dev libpigpiod-if-dev pigpio
+	sudo apt-get install -qqy pigpio
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH)

@@ -19,24 +19,14 @@ RUN curl http://archive.raspberrypi.org/debian/raspberrypi.gpg.key -o /etc/apt/t
 RUN --mount=type=cache,target=/var/cache/apt apt-get update
 
 RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get install -qqy libpigpio-dev libpigpiod-if-dev pigpio
+    apt-get install -qqy pigpio
 
 RUN useradd -s /bin/bash -m testbot && echo 'testbot ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Fix for github and new security patches on git
 RUN git config --system --add safe.directory '*'
 
-# Install Node.js
-ARG NODE_VERSION=20.x
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
-
-# Ensure that /__e/node20/bin exists and create a symlink for nodejs
-RUN mkdir -p /__e/node20/bin && \
-    ln -s $(which node) /__e/node20/bin/node || \
-    ln -s $(which nodejs) /__e/node20/bin/node
-
 # Verify installations
-RUN node --version
 RUN go version
 
 CMD ["/bin/bash"]

@@ -8,12 +8,21 @@ on:
 
 jobs:
   build_and_lint:
+    strategy:
+      matrix:
+        architecture: [arm64, armhf]
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     container: ghcr.io/viam-modules/raspberry-pi:arm64
     timeout-minutes: 30
 
     steps:
+      - name: Unbork NodeJS for 32-bit
+        if: matrix.arch == armhf
+        run: |
+          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1
+
       - uses: actions/checkout@v3
+
       - name: Verify no uncommitted changes from make lint
         run: |
           git init
@@ -26,41 +35,17 @@ jobs:
               exit 1
           fi
 
-      - name: make build-arm64
+      - name: make build
         run: |
-          sudo -u testbot bash -lc 'make build-arm64'
-
-  test_32_bit: 
-      runs-on: buildjet-4vcpu-ubuntu-2204-arm
-      container: ghcr.io/viam-modules/raspberry-pi:arm
-      timeout-minutes: 30
-  
-      steps:
-        - uses: actions/checkout@v3
-  
-        - name: Verify no uncommitted changes from make lint
-          run: |
-            git init
-            git add .
-            chown -R testbot:testbot .
-            sudo -u testbot bash -lc 'make lint'
-            if [ -n "$GEN_DIFF" ]; then
-                echo '"make lint" resulted in changes not in git' 1>&2
-                git status
-                exit 1
-            fi
-  
-        - name: Build for ARM32
-          run: |
-            sudo -u testbot bash -lc 'make build-arm32'
+          sudo -u testbot bash -lc 'make'
   
   test_on_pi:
     # The following steps are run on an external runner "rpibull"
     runs-on: pi-4
 
-    strategy:
-      matrix:
-        architecture: [arm64, armhf]  # Run tests for both 32-bit and 64-bit binaries
+    # strategy:
+    #   matrix:
+    #     architecture: [arm64, armhf]  # Run tests for both 32-bit and 64-bit binaries
 
     steps:
       - uses: actions/checkout@v3
@@ -68,20 +53,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18.0'
+          go-version: '1.23.0'
 
-      - name: Build for ${{ matrix.architecture }}
-        run: |
-          if [ "${{ matrix.architecture }}" = "armhf" ]; then
-            make build-arm32
-          else
-            make build-arm64
-          fi
+      - run: make test
 
-      - name: Run tests for ${{ matrix.architecture }}
-        run: |
-          if [ "${{ matrix.architecture }}" = "armhf" ]; then
-            make test-arm32
-          else
-            make test-arm64
-          fi
+      # - name: Build for ${{ matrix.architecture }}
+      #   run: |
+      #     make
+
+      # - name: Run tests for ${{ matrix.architecture }}
+      #   run: |
+      #     if [ "${{ matrix.architecture }}" = "armhf" ]; then
+      #       make test-arm32
+      #     else
+      #       make test-arm64
+      #     fi
