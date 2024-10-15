@@ -4,7 +4,7 @@ TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 DPKG_ARCH ?= $(shell dpkg --print-architecture)
 ifeq ($(DPKG_ARCH),armhf)
 DOCKER_ARCH ?= arm
-else ifeq ($(GOARCH),arm64)
+else ifeq ($(DPKG_ARCH),arm64)
 DOCKER_ARCH ?= arm64
 else
 DOCKER_ARCH ?= unknown
@@ -31,7 +31,7 @@ update-rdk:
 
 .PHONY: test
 test:
-	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) ./raspberry-pi/...
+	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) ./
 	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-$(DOCKER_ARCH) -test.v
 
 .PHONY: tool-install
