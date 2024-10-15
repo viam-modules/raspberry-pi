@@ -17,7 +17,7 @@ jobs:
       image: ghcr.io/viam-modules/raspberry-pi:arm64
       volumes:
         # override /__e/node20 on 32-bit because it is 64-bit
-        - /tmp/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
+        - /home/runner/actions-runner/_work/_temp/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
     timeout-minutes: 30
 
     steps:
