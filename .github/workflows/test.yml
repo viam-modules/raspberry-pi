@@ -17,17 +17,18 @@ jobs:
       image: ghcr.io/viam-modules/raspberry-pi:arm64
       volumes:
         # override /__e/node20 on 32-bit because it is 64-bit
-        - /home/runner/actions-runner/_work/_temp/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
+        - /home/runner/actions-runner/_work/node20:/__e${{matrix.architecture != 'armhf' && '-armhf' || ''}}/node20
     timeout-minutes: 30
 
     steps:
       - name: Unbork NodeJS for 32-bit
         if: matrix.architecture == 'armhf'
         run: |
-          mount
-          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJv -C /__e/node20 --strip-components=1 --overwrite
+          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJ -C /__e/node20 --strip-components=1 --overwrite
           file /__e/node20/bin/node
+          ls -lh /__e/node20/bin/node
           /__e/node20/bin/node --version
+          echo "Node Installed"
 
       - uses: actions/checkout@v3
 
