@@ -31,10 +31,18 @@ update-rdk:
 	go get go.viam.com/rdk@latest
 	go mod tidy
 
-.PHONY: test
-test:
-	go test -c -o $(BIN_OUTPUT_PATH)/ raspberry-pi/...
-	sudo $(BIN_OUTPUT_PATH)/*.test -test.v
+.PHONY: test-all 
+test-all: test-arm64 test-arm32
+
+.PHONY: test-arm64
+test-arm64:
+	go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm64 ./raspberry-pi/...
+	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm64 -test.v
+
+.PHONY: test-arm32
+test-arm32:
+	GOARCH=arm GOARM=7 go test -c -o $(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm32 ./raspberry-pi/...
+	$(BIN_OUTPUT_PATH)/raspberry-pi-tests-arm32 -test.v
 
 .PHONY: tool-install
 tool-install: $(TOOL_BIN)/golangci-lint

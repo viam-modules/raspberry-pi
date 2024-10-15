@@ -56,15 +56,20 @@ jobs:
   
   test_on_pi:
     # The following steps are run on an external runner "rpibull"
-    runs-on: pi-4
-    timeout-minutes: 30
+    runs-on: rpibull
 
     strategy:
       matrix:
         architecture: [arm64, armhf]  # Run tests for both 32-bit and 64-bit binaries
-  
+
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+
       - name: Build for ${{ matrix.architecture }}
         run: |
           if [ "${{ matrix.architecture }}" = "armhf" ]; then
@@ -74,4 +79,9 @@ jobs:
           fi
 
       - name: Run tests for ${{ matrix.architecture }}
-        run: make test
+        run: |
+          if [ "${{ matrix.architecture }}" = "armhf" ]; then
+            make test-arm32
+          else
+            make test-arm64
+          fi
