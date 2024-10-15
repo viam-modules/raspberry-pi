@@ -3,6 +3,7 @@ package rpiutils
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -12,15 +13,46 @@ import (
 	"go.viam.com/rdk/utils"
 )
 
-// DigitalInterruptConfig describes the configuration of digital interrupt for the board.
-type DigitalInterruptConfig struct {
-	Name string `json:"name"`
-	Pin  string `json:"pin"`
-	Type string `json:"type,omitempty"` // e.g. basic, servo
+// PinConfig describes the configuration of a pin for the board
+type PinConfig struct {
+	Name       string  `json:"name"`
+	Pin        string  `json:"pin"`
+	Type       PinType `json:"type,omitempty"`        // e.g. gpio, interrupt
+	DebounceMS int     `json:"debounce_ms,omitempty"` // only used with interrupts
+	PullState  Pull    `json:"pull,omitempty"`
+}
+
+// PinType defines the pin types we support.
+type PinType string
+
+// PinGPIO represents GPIO pins.
+const PinGPIO PinType = "gpio"
+
+// PinInterrupt represents interrupt pins
+const PinInterrupt PinType = "interrupt"
+
+// Pull defines the pins pull state(pull up vs pull down)
+type Pull string
+
+const PullUp Pull = "up"
+const PullDown Pull = "down"
+const PullNone Pull = "none"
+const PullDefault Pull = ""
+
+func (pull Pull) Validate() error {
+	switch pull {
+	case PullDefault:
+	case PullUp:
+	case PullDown:
+	case PullNone:
+	default:
+		return fmt.Errorf("invalid pull configuration %v, supported pull config attributes are up, down, and none", pull)
+	}
+	return nil
 }
 
 // Validate ensures all parts of the config are valid.
-func (config *DigitalInterruptConfig) Validate(path string) error {
+func (config *PinConfig) Validate(path string) error {
 	if config.Name == "" {
 		return resource.NewConfigValidationFieldRequiredError(path, "name")
 	}
@@ -38,24 +70,18 @@ const ServoRollingAverageWindow = 10
 // reconfiguration within the same type.
 type ReconfigurableDigitalInterrupt interface {
 	board.DigitalInterrupt
-	Reconfigure(cfg DigitalInterruptConfig) error
+	Reconfigure(cfg PinConfig) error
 }
 
 // CreateDigitalInterrupt is a factory method for creating a specific DigitalInterrupt based
-// on the given config. If no type is specified, a BasicDigitalInterrupt is returned.
-func CreateDigitalInterrupt(cfg DigitalInterruptConfig) (ReconfigurableDigitalInterrupt, error) {
-	if cfg.Type == "" {
-		cfg.Type = "basic"
-	}
-
+// on the given config. If no type is specified, an error is returned.
+func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, error) {
 	var i ReconfigurableDigitalInterrupt
 	switch cfg.Type {
-	case "basic":
+	case PinInterrupt:
 		i = &BasicDigitalInterrupt{}
-	case "servo":
-		i = &ServoDigitalInterrupt{ra: utils.NewRollingAverage(ServoRollingAverageWindow)}
 	default:
-		panic(errors.Errorf("unknown interrupt type (%s)", cfg.Type))
+		return nil, fmt.Errorf("expected pin %v to be configured as %v, got %v instead", cfg.Name, PinInterrupt, cfg.Type)
 	}
 
 	if err := i.Reconfigure(cfg); err != nil {
@@ -72,7 +98,7 @@ type BasicDigitalInterrupt struct {
 	callbacks []chan board.Tick
 
 	mu  sync.RWMutex
-	cfg DigitalInterruptConfig
+	cfg PinConfig
 }
 
 // Value returns the amount of ticks that have occurred.
@@ -132,7 +158,7 @@ func (i *BasicDigitalInterrupt) Name() string {
 }
 
 // Reconfigure reconfigures this digital interrupt.
-func (i *BasicDigitalInterrupt) Reconfigure(conf DigitalInterruptConfig) error {
+func (i *BasicDigitalInterrupt) Reconfigure(conf PinConfig) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.cfg = conf

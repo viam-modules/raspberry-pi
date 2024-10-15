@@ -49,15 +49,8 @@ var (
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
-	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
-	DigitalInterrupts []rpiutils.DigitalInterruptConfig   `json:"digital_interrupts,omitempty"`
-	Pulls             []PullConfig                        `json:"pulls,omitempty"`
-}
-
-// PullConfig defines the config for pull up/pull down resistors.
-type PullConfig struct {
-	Pin  string `json:"pin"`
-	Pull string `json:"pull"`
+	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
+	Pins          []rpiutils.PinConfig                `json:"pins,omitempty"`
 }
 
 // init registers a pi board based on pigpio.
@@ -77,21 +70,16 @@ func (conf *Config) Validate(path string) ([]string, error) {
 			return nil, err
 		}
 	}
-	for idx, c := range conf.DigitalInterrupts {
-		if err := c.Validate(fmt.Sprintf("%s.%s.%d", path, "digital_interrupts", idx)); err != nil {
-			return nil, err
-		}
-	}
 
-	for _, c := range conf.Pulls {
+	for _, c := range conf.Pins {
 		if c.Pin == "" {
 			return nil, resource.NewConfigValidationFieldRequiredError(path, "pin")
 		}
-		if c.Pull == "" {
-			return nil, resource.NewConfigValidationFieldRequiredError(path, "pull")
+		if c.Name == "" {
+			return nil, resource.NewConfigValidationFieldRequiredError(path, "name")
 		}
-		if !(c.Pull == "up" || c.Pull == "down" || c.Pull == "none") {
-			return nil, fmt.Errorf("supported pull config attributes are up, down, and none")
+		if err := c.PullState.Validate(); err != nil {
+			return nil, err
 		}
 	}
 	return nil, nil
@@ -231,22 +219,26 @@ func (pi *piPigpio) Reconfigure(
 }
 
 func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
-	for _, pullConf := range cfg.Pulls {
-		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
-		if !have {
-			pi.logger.Errorf("no gpio pin found for %s", pullConf.Pull)
+	for _, pullConf := range cfg.Pins {
+		// skip pins that do not have a pull state set
+		if pullConf.PullState == PullDefault {
 			continue
 		}
-		switch pullConf.Pull {
-		case "none":
+		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
+		if !have {
+			pi.logger.Errorf("no gpio pin found for %s", pullConf.Name)
+			continue
+		}
+		switch pullConf.PullState {
+		case PullNone:
 			if result := C.setPullNone(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
-		case "up":
+		case PullUp:
 			if result := C.setPullUp(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
-		case "down":
+		case PullDown:
 			if result := C.setPullDown(pi.piID, C.int(gpioNum)); result != 0 {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
