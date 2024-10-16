@@ -12,7 +12,7 @@ import (
 	"go.viam.com/rdk/resource"
 )
 
-// PinConfig describes the configuration of a pin for the board
+// PinConfig describes the configuration of a pin for the board.
 type PinConfig struct {
 	Name       string  `json:"name"`
 	Pin        string  `json:"pin"`
@@ -27,17 +27,24 @@ type PinType string
 // PinGPIO represents GPIO pins.
 const PinGPIO PinType = "gpio"
 
-// PinInterrupt represents interrupt pins
+// PinInterrupt represents interrupt pins.
 const PinInterrupt PinType = "interrupt"
 
-// Pull defines the pins pull state(pull up vs pull down)
+// Pull defines the pins pull state(pull up vs pull down).
 type Pull string
 
-const PullUp Pull = "up"
-const PullDown Pull = "down"
-const PullNone Pull = "none"
-const PullDefault Pull = ""
+const (
+	// PullUp is for pull ups.
+	PullUp Pull = "up"
+	// PullDown is for pull downs.
+	PullDown Pull = "down"
+	// PullNone is for no pulls.
+	PullNone Pull = "none"
+	// PullDefault is for if no pull was set.
+	PullDefault Pull = ""
+)
 
+// Validate validates that the pull is a valid message.
 func (pull Pull) Validate() error {
 	switch pull {
 	case PullDefault:
@@ -76,6 +83,7 @@ type ReconfigurableDigitalInterrupt interface {
 // on the given config. If no type is specified, an error is returned.
 func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, error) {
 	i := &BasicDigitalInterrupt{}
+	//nolint:exhaustive
 	switch cfg.Type {
 	case PinInterrupt:
 	default:
