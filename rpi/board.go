@@ -201,7 +201,9 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	pi.reconfigurePulls(ctx, cfg)
+	if err := pi.reconfigurePulls(ctx, cfg); err != nil {
+		return err
+	}
 
 	boardInstanceMu.Lock()
 	defer boardInstanceMu.Unlock()
@@ -210,7 +212,7 @@ func (pi *piPigpio) Reconfigure(
 	return nil
 }
 
-func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
+func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) error {
 	for _, pullConf := range cfg.Pins {
 		// skip pins that do not have a pull state set
 		if pullConf.PullState == rpiutils.PullDefault {
@@ -218,8 +220,7 @@ func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
 		}
 		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
 		if !have {
-			pi.logger.Errorf("no gpio pin found for %s", pullConf.Name)
-			continue
+			return fmt.Errorf("error configuring pull: no gpio pin found for %s", pullConf.Name)
 		}
 		switch pullConf.PullState {
 		case rpiutils.PullNone:
@@ -235,10 +236,11 @@ func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) {
 				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
 			}
 		default:
-			pi.logger.Error("unexpected pull")
+			return fmt.Errorf("error configuring gpio pin %v pull: unexpected pull method %v", pullConf.Name, pullConf.PullState)
 		}
 
 	}
+	return nil
 }
 
 // Close attempts to close all parts of the board cleanly.
