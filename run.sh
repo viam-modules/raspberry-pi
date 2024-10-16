@@ -22,4 +22,16 @@ fi
 
 echo "Installation and verification completed successfully!"
 
-exec ./bin/raspberry-pi "$@"
+# Determine architecture and execute the correct binary
+ARCH=$(uname -m)
+
+if [ "$ARCH" = "aarch64" ]; then
+    # 64-bit ARM architecture
+    exec ./bin/raspberry-pi/arm64 "$@"
+elif [ "$ARCH" = "armv7l" ] || [ "$ARCH" = "armv6l" ]; then
+    # 32-bit ARM architecture
+    exec ./bin/raspberry-pi/arm32 "$@"
+else
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+fi
