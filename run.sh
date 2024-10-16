@@ -28,10 +28,7 @@ ARCH=$(uname -m)
 if [ "$ARCH" = "aarch64" ]; then
     # 64-bit ARM architecture
     exec ./bin/raspberry-pi-arm64 "$@"
-elif [[ "$ARCH" =~ armv[0-9]+l ]]; then then
+else
     # 32-bit ARM architecture
     exec ./bin/raspberry-pi-arm "$@"
-else
-    echo "Unsupported architecture: $ARCH" >&2
-    exit 1
 fi
