@@ -24,11 +24,12 @@ type PinConfig struct {
 // PinType defines the pin types we support.
 type PinType string
 
-// PinGPIO represents GPIO pins.
-const PinGPIO PinType = "gpio"
-
-// PinInterrupt represents interrupt pins.
-const PinInterrupt PinType = "interrupt"
+const (
+	// PinGPIO represents GPIO pins.
+	PinGPIO PinType = "gpio"
+	// PinInterrupt represents interrupt pins.
+	PinInterrupt PinType = "interrupt"
+)
 
 // Pull defines the pins pull state(pull up vs pull down).
 type Pull string
