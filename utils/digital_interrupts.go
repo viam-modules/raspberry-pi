@@ -48,10 +48,7 @@ const (
 // Validate validates that the pull is a valid message.
 func (pull Pull) Validate() error {
 	switch pull {
-	case PullDefault:
-	case PullUp:
-	case PullDown:
-	case PullNone:
+	case PullDefault, PullUp, PullDow, PullNone:
 	default:
 		return fmt.Errorf("invalid pull configuration %v, supported pull config attributes are up, down, and none", pull)
 	}
