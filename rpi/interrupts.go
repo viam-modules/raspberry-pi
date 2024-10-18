@@ -68,7 +68,10 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 	}
 
 	// Set new interrupts based on config
-	for _, newConfig := range cfg.DigitalInterrupts {
+	for _, newConfig := range cfg.Pins {
+		if newConfig.Type != rpiutils.PinInterrupt {
+			continue
+		}
 		// check if pin is valid
 		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(newConfig.Pin)
 		if !ok {
@@ -86,7 +89,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) erro
 }
 
 // createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
-func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.DigitalInterruptConfig, bcom uint) error {
+func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.PinConfig, bcom uint) error {
 	di, err := rpiutils.CreateDigitalInterrupt(newConfig)
 	if err != nil {
 		return err
@@ -135,10 +138,10 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 				return d.interrupt, nil
 			}
 			d, err = rpiutils.CreateDigitalInterrupt(
-				rpiutils.DigitalInterruptConfig{
+				rpiutils.PinConfig{
 					Name: name,
 					Pin:  name,
-					Type: "basic",
+					Type: rpiutils.PinInterrupt,
 				})
 			if err != nil {
 				return nil, err

@@ -27,8 +27,8 @@ func TestPiPigpio(t *testing.T) {
 	logger := logging.NewTestLogger(t)
 
 	cfg := rpi.Config{
-		DigitalInterrupts: []rpiutils.DigitalInterruptConfig{
-			{Name: "i1", Pin: "11"}, // bcom 17
+		Pins: []rpiutils.PinConfig{
+			{Name: "i1", Pin: "11", Type: "interrupt"}, // bcom 17
 		},
 	}
 
