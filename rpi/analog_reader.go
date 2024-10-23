@@ -19,9 +19,9 @@ func (pi *piPigpio) reconfigureAnalogReaders(cfg *Config) error {
 	// No need to reconfigure the old analog readers; just throw them out and make new ones.
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
 	for _, ac := range cfg.AnalogReaders {
-		channel, err := strconv.Atoi(ac.Pin)
+		channel, err := strconv.Atoi(ac.Channel)
 		if err != nil {
-			return errors.Errorf("bad analog pin (%s)", ac.Pin)
+			return errors.Errorf("bad analog pin (%s)", ac.Channel)
 		}
 
 		chipSelect := ac.ChipSelect
