@@ -172,6 +172,16 @@ Example:
       "attributes": {
         "pins": [
           {
+            "name": "your-gpio-1",
+            "pin": "13",
+            "type": "gpio"
+          },
+          {
+            "name": "your-gpio-2",
+            "pin": "14",
+            "pull": "down"
+          },
+          {
             "name": "your-interrupt-1",
             "pin": "15",
             "type": "interrupt"
