@@ -156,7 +156,7 @@ The following properties are available for `pins`:
 | ---- | ---- | --------- | ----------- |
 |`name` | string | **Required** | Your name for the digital interrupt. |
 |`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
-|`type`| string | **Required** | Whether the pin should be an `interrupt` or `gpio` pin |
+|`type`| string | Optional | Whether the pin should be an `interrupt` or `gpio` pin. Default: `"gpio"` |
 |`pull`| string | Optional | Define whether the pins should be pull up or pull down. Omitting this uses your Pi's default configuration |
 |`debounce_ms`| string | Optional | define a signal debounce for your interrupts to help prevent false triggers. </li> </ul> |
 
