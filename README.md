@@ -36,10 +36,11 @@ Fill in the attributes as applicable to your board:
             "samples_per_sec": <int>
           }
         ],
-        "digital_interrupts": [
+        "pins": [
           {
-            "name": "<your-digital-interrupt-name>",
-            "pin": "<pin-number>"
+            "name": "<your-pin-name>",
+            "pin": "<pin-number>",
+            "type": "<gpio/interrupt>"
           }
         ]
       },
@@ -50,7 +51,7 @@ Fill in the attributes as applicable to your board:
       "type": "registry",
       "name": "viam_raspberry-pi",
       "module_id": "viam:raspberry-pi",
-      "version": "0.0.1"
+      "version": "latest"
     }
   ],
 }
@@ -63,7 +64,7 @@ The following attributes are available for `viam:raspberry-pi:rpi` board:
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 | `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
-| `digital_interrupts` | object | Optional | Any digital interrupts's pin number" and name. See [configuration info](#digital_interrupts). |
+| `pins` | object | Optional | Any pin's pin number and name. Used to configure gpios and interrupts. See [configuration info](#pins). |
 
 #### `analogs`
 
@@ -130,31 +131,34 @@ Example:
 }
 ```
 
-#### `digital_interrupts`
+#### `pins`
 
-[Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
+Pins can be configured as GPIO pins and interrupts. [Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
 
 - When an interrupt configured on your board processes a change in the state of the GPIO pin it is configured to monitor, it ticks to record the state change. You can stream these ticks with the board API’s [`StreamTicks()`](https://docs.viam.com/components/board/#streamticks), or get the current value of the digital interrupt with Value().
 - Calling [`GetGPIO()`](https://docs.viam.com/components/board/#getgpio) on a GPIO pin, which you can do without configuring interrupts, is useful when you want to know a pin’s value at specific points in your program, but is less precise and convenient than using an interrupt.
 
-Integrate `digital_interrupts` into your machine in the `attributes` of your board by following the **Config Builder** instructions, or by adding the following to your board’s JSON configuration:
+Integrate `pins` into your machine in the `attributes` of your board by following the **Config Builder** instructions, or by adding the following to your board’s JSON configuration:
 
 ```json
 // "attributes": { ... ,
-"digital_interrupts": [
+"pins": [
   {
     "name": "<your-digital-interrupt-name>",
-    "pin": "<pin-number>"
+    "pin": "<pin-number>",
+    "type": "<gpio/interrupt>"
   }
 ]
 ```
 
-The following properties are available for `digital_interrupts`:
+The following properties are available for `pins`:
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 |`name` | string | **Required** | Your name for the digital interrupt. |
 |`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
-|`type`| string | Optional | Default: `basic`: Tracks interrupt count. </li> </ul> |
+|`type`| string | Optional | Whether the pin should be an `interrupt` or `gpio` pin. Default: `"gpio"` |
+|`pull`| string | Optional | Define whether the pins should be pull up or pull down. Omitting this uses your Pi's default configuration |
+|`debounce_ms`| string | Optional | define a signal debounce for your interrupts to help prevent false triggers. </li> </ul> |
 
 Example:
 
@@ -166,14 +170,27 @@ Example:
       "name": "your-board",
       "type": "board",
       "attributes": {
-        "digital_interrupts": [
+        "pins": [
+          {
+            "name": "your-gpio-1",
+            "pin": "13",
+            "type": "gpio"
+          },
+          {
+            "name": "your-gpio-2",
+            "pin": "14",
+            "pull": "down"
+          },
           {
             "name": "your-interrupt-1",
-            "pin": "15"
+            "pin": "15",
+            "type": "interrupt"
           },
           {
             "name": "your-interrupt-2",
-            "pin": "16"
+            "pin": "16",
+            "type": "interrupt",
+            "pull": "down"
           }
         ]
       }

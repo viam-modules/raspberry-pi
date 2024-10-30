@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,7 +37,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -48,8 +49,8 @@ var (
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
-	AnalogReaders     []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
-	DigitalInterrupts []rpiutils.DigitalInterruptConfig   `json:"digital_interrupts,omitempty"`
+	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
+	Pins          []rpiutils.PinConfig                `json:"pins,omitempty"`
 }
 
 // init registers a pi board based on pigpio.
@@ -69,8 +70,9 @@ func (conf *Config) Validate(path string) ([]string, error) {
 			return nil, err
 		}
 	}
-	for idx, c := range conf.DigitalInterrupts {
-		if err := c.Validate(fmt.Sprintf("%s.%s.%d", path, "digital_interrupts", idx)); err != nil {
+
+	for _, c := range conf.Pins {
+		if err := c.Validate(path); err != nil {
 			return nil, err
 		}
 	}
@@ -95,6 +97,8 @@ type piPigpio struct {
 	isClosed   bool
 
 	piID C.int // id to communicate with pigpio daemon
+
+	pulls map[int]string // mapping of gpio pin to pull up/down
 
 	activeBackgroundWorkers sync.WaitGroup
 }
@@ -192,10 +196,45 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	if err := pi.reconfigurePulls(ctx, cfg); err != nil {
+		return err
+	}
+
 	boardInstanceMu.Lock()
 	defer boardInstanceMu.Unlock()
 	boardInstance = pi
 
+	return nil
+}
+
+func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) error {
+	for _, pullConf := range cfg.Pins {
+		// skip pins that do not have a pull state set
+		if pullConf.PullState == rpiutils.PullDefault {
+			continue
+		}
+		gpioNum, have := rpiutils.BroadcomPinFromHardwareLabel(pullConf.Pin)
+		if !have {
+			return fmt.Errorf("error configuring pull: no gpio pin found for %s", pullConf.Name)
+		}
+		switch pullConf.PullState {
+		case rpiutils.PullNone:
+			if result := C.setPullNone(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		case rpiutils.PullUp:
+			if result := C.setPullUp(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		case rpiutils.PullDown:
+			if result := C.setPullDown(pi.piID, C.int(gpioNum)); result != 0 {
+				pi.logger.Error(rpiutils.ConvertErrorCodeToMessage(int(result), "error"))
+			}
+		default:
+			return fmt.Errorf("error configuring gpio pin %v pull: unexpected pull method %v", pullConf.Name, pullConf.PullState)
+		}
+
+	}
 	return nil
 }
 

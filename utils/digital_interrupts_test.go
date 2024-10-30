@@ -15,8 +15,9 @@ func nowNanosecondsTest() uint64 {
 }
 
 func TestBasicDigitalInterrupt1(t *testing.T) {
-	config := DigitalInterruptConfig{
+	config := PinConfig{
 		Name: "i1",
+		Type: "interrupt",
 	}
 
 	i, err := CreateDigitalInterrupt(config)
@@ -68,8 +69,9 @@ func TestBasicDigitalInterrupt1(t *testing.T) {
 }
 
 func TestRemoveCallbackDigitalInterrupt(t *testing.T) {
-	config := DigitalInterruptConfig{
+	config := PinConfig{
 		Name: "d1",
+		Type: "interrupt",
 	}
 	i, err := CreateDigitalInterrupt(config)
 	test.That(t, err, test.ShouldBeNil)
