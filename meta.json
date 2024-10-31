@@ -2,7 +2,7 @@
     "module_id": "viam:raspberry-pi",
     "visibility": "public",
     "url": "https://github.com/viam-modules/raspberry-pi",
-    "description": "Supports Raspberry Pi 4, 3, 2, 1,  Zero W and Zero 2 W and all Raspberry Pi servos.",
+    "description": "Supports Raspberry Pi 4, 3, 2, 1, Zero W and Zero 2 W and all Raspberry Pi servos.",
     "models": [
       {
         "api": "rdk:component:board",
