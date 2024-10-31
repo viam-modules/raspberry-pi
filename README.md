@@ -95,7 +95,7 @@ The following properties are available for `analogs`:
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 | `name` | string | **Required** | Your name for the analog reader. |
-| `pin` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC.
+| `channel` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC.
 | `chip_select` | string | **Required** | The chip select index of the board's connection pin, wired to the ADC. |
 | `spi_bus` | string | **Required** | The index of the SPI bus connecting the ADC and board. |
 | `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
@@ -114,13 +114,13 @@ Example:
         "analogs": [
           {
             "name": "current",
-            "pin": "1",
+            "channel": "1",
             "spi_bus": "1",
             "chip_select": "0"
           },
           {
             "name": "pressure",
-            "pin": "0",
+            "channel": "0",
             "spi_bus": "1",
             "chip_select": "0"
           }
