@@ -182,6 +182,7 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	}
 	lastTick = rawTick
 
+	// tick is the time since the hardware was started in microseconds.
 	tick := (uint64(tickRollovers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
 	// global lock to prevent multiple pins from interacting with the board
