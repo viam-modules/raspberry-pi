@@ -193,12 +193,12 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	if boardInstance == nil {
 		return
 	}
-	interrupts := boardInstance.interrupts[uint(gpio)]
-	if interrupts == nil {
+	interrupt := boardInstance.interrupts[uint(gpio)]
+	if interrupt == nil {
 		boardInstance.logger.Infof("no DigitalInterrupt configured for gpio %d", gpio)
 		return
 	}
-	if interrupts.debounceMicroSeconds != 0 && tick-interrupts.lastTicks < interrupts.debounceMicroSeconds {
+	if interrupt.debounceMicroSeconds != 0 && tick-interrupt.lastTicks < interrupt.debounceMicroSeconds {
 		// we have not passed the debounce time, ignore this interrupt
 		return
 	}
@@ -206,7 +206,7 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	if level == 0 {
 		high = false
 	}
-	switch di := interrupts.interrupt.(type) {
+	switch di := interrupt.interrupt.(type) {
 	case *rpiutils.BasicDigitalInterrupt:
 		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)
 		if err != nil {
@@ -216,5 +216,5 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 		boardInstance.logger.Error("unknown digital interrupt type")
 	}
 	// store the current ticks for debouncing
-	interrupts.lastTicks = tick
+	interrupt.lastTicks = tick
 }
