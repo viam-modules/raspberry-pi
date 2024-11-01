@@ -4,7 +4,6 @@ package rpi_test
 import (
 	"context"
 	"os"
-	"raspberry-pi/rpi"
 	"testing"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-
+	"raspberry-pi/rpi"
 	rpiservo "raspberry-pi/rpi-servo"
 	rpiutils "raspberry-pi/utils"
 )
