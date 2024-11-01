@@ -21,8 +21,10 @@ import (
 )
 
 type rpiInterrupt struct {
-	interrupt  rpiutils.ReconfigurableDigitalInterrupt
-	callbackID C.uint // callback ID to close pi callback connection
+	interrupt            rpiutils.ReconfigurableDigitalInterrupt
+	callbackID           C.uint // callback ID to close pi callback connection
+	lastTicks            uint64
+	debounceMicroSeconds uint64
 }
 
 // findInterruptByName finds an interrupt by its name, such as: "interrupt-1"
@@ -96,7 +98,8 @@ func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.PinConfig, 
 	}
 
 	newInterrupt := &rpiInterrupt{
-		interrupt: di,
+		interrupt:            di,
+		debounceMicroSeconds: uint64(newConfig.DebounceMS) * 1000,
 	}
 
 	ctx.newInterrupts[bcom] = newInterrupt
@@ -164,19 +167,24 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 }
 
 var (
-	lastTick      = uint32(0)
-	tickRollevers = 0
+	lastTick = uint32(0)
+	// the interrupt callback returns the time since boot in microseconds, but will wrap every ~72 minutes
+	// we use the tickRollovers global variable to track each time this has occurred, and update the ticks for every active interrupt
+	// we assume that uint64 will be large enough for us to not worry about the ticks overflowing further
+	tickRollovers = 0
 )
 
 //export pigpioInterruptCallback
 func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	if rawTick < lastTick {
-		tickRollevers++
+		tickRollovers++
 	}
 	lastTick = rawTick
 
-	tick := (uint64(tickRollevers) * uint64(math.MaxUint32)) + uint64(rawTick)
+	// tick is the time since the hardware was started in microseconds.
+	tick := (uint64(tickRollovers) * uint64(math.MaxUint32)) + uint64(rawTick)
 
+	// global lock to prevent multiple pins from interacting with the board
 	boardInstanceMu.RLock()
 	defer boardInstanceMu.RUnlock()
 
@@ -184,16 +192,20 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	if boardInstance == nil {
 		return
 	}
-	interrupts := boardInstance.interrupts[uint(gpio)]
-	if interrupts == nil {
+	interrupt := boardInstance.interrupts[uint(gpio)]
+	if interrupt == nil {
 		boardInstance.logger.Infof("no DigitalInterrupt configured for gpio %d", gpio)
+		return
+	}
+	if interrupt.debounceMicroSeconds != 0 && tick-interrupt.lastTicks < interrupt.debounceMicroSeconds {
+		// we have not passed the debounce time, ignore this interrupt
 		return
 	}
 	high := true
 	if level == 0 {
 		high = false
 	}
-	switch di := interrupts.interrupt.(type) {
+	switch di := interrupt.interrupt.(type) {
 	case *rpiutils.BasicDigitalInterrupt:
 		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)
 		if err != nil {
@@ -202,4 +214,6 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 	default:
 		boardInstance.logger.Error("unknown digital interrupt type")
 	}
+	// store the current ticks for debouncing
+	interrupt.lastTicks = tick
 }
