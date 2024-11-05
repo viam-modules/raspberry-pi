@@ -14,10 +14,11 @@ import (
 	"context"
 	"fmt"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -153,6 +154,7 @@ func (pi *piPigpio) SetGPIOBcom(bcom int, high bool) error {
 			if res != 0 {
 				return errors.Errorf("pwm set fail %d", res)
 			}
+			pin.pwmEnabled = false
 		}
 		res := C.set_mode(pi.piID, C.uint(pin.pin), C.PI_OUTPUT)
 		if res != 0 {
