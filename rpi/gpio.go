@@ -14,11 +14,10 @@ import (
 	"context"
 	"fmt"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -36,6 +35,7 @@ type rpiGPIO struct {
 	name          string
 	pin           uint
 	configuration GPIOConfig
+	pwmEnabled    bool
 }
 
 // GPIOPinByName returns a GPIOPin by name.
@@ -124,13 +124,6 @@ func (pi *piPigpio) GetGPIOBcom(bcom int) (bool, error) {
 	}
 	// configure the pin to be an input if it is not already an input
 	if pin.configuration != GPIOInput {
-		// first if the pin was configured for pwm, we should turn off the pwm
-		if pin.configuration == GPIOPWM {
-			res := C.set_PWM_dutycycle(pi.piID, C.uint(pin.pin), C.uint(0))
-			if res != 0 {
-				return false, errors.Errorf("pwm set fail %d", res)
-			}
-		}
 		res := C.set_mode(pi.piID, C.uint(pin.pin), C.PI_INPUT)
 		if res != 0 {
 			return false, rpiutils.ConvertErrorCodeToMessage(int(res), "failed to set mode")
@@ -155,7 +148,7 @@ func (pi *piPigpio) SetGPIOBcom(bcom int, high bool) error {
 	// configure the pin to be an output if it is not already an output
 	if pin.configuration != GPIOOutput {
 		// first if the pin was configured for pwm, we should turn off the pwm
-		if pin.configuration == GPIOPWM {
+		if pin.pwmEnabled {
 			res := C.set_PWM_dutycycle(pi.piID, C.uint(pin.pin), C.uint(0))
 			if res != 0 {
 				return errors.Errorf("pwm set fail %d", res)
@@ -182,7 +175,7 @@ func (pi *piPigpio) pwmBcom(bcom int) (float64, error) {
 	if !ok {
 		return 0, fmt.Errorf("error getting GPIO pin, pin %v not found", bcom)
 	}
-	if pin.configuration != GPIOPWM {
+	if !pin.pwmEnabled {
 		pi.logger.Debugf("pin %v is currently not configured as pwm", bcom)
 		return 0, nil
 	}
@@ -205,6 +198,7 @@ func (pi *piPigpio) SetPWMBcom(bcom int, dutyCyclePct float64) error {
 		return errors.Errorf("pwm set fail %d", res)
 	}
 	pin.configuration = GPIOPWM
+	pin.pwmEnabled = true
 	return nil
 }
 

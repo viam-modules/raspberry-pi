@@ -180,7 +180,7 @@ func (pi *piPigpio) Reconfigure(
 	if err != nil {
 		return err
 	}
-
+	// make sure every pin has a name. We already know every pin has a pin
 	for _, c := range cfg.Pins {
 		if c.Name == "" {
 			c.Name = c.Pin
