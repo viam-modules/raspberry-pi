@@ -181,6 +181,12 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	for _, c := range cfg.Pins {
+		if c.Name == "" {
+			c.Name = c.Pin
+		}
+	}
+
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 

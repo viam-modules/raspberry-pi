@@ -60,9 +60,6 @@ func (config *PinConfig) Validate(path string) error {
 	if config.Pin == "" {
 		return resource.NewConfigValidationFieldRequiredError(path, "pin")
 	}
-	if config.Name == "" {
-		config.Name = config.Pin
-	}
 	if err := config.PullState.Validate(); err != nil {
 		return err
 	}

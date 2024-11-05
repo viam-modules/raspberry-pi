@@ -22,6 +22,7 @@ func TestPiPigpio(t *testing.T) {
 		Pins: []rpiutils.PinConfig{
 			{Name: "i1", Pin: "11", Type: "interrupt"}, // bcom 17
 			{Name: "servo-i", Pin: "22", Type: "interrupt"},
+			{Name: "blue", Pin: "33", Type: "gpio"},
 		},
 	}
 	resourceConfig := resource.Config{
@@ -94,6 +95,39 @@ func TestPiPigpio(t *testing.T) {
 		vI, err = pin.PWMFreq(ctx, nil)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, vI, test.ShouldEqual, 8000)
+	})
+
+	t.Run("gpio pins respect names and can use hardware name", func(t *testing.T) {
+		// blue, pin33, and io13 are all the same pin
+		pinBlue, err := p.GPIOPinByName("blue")
+		test.That(t, err, test.ShouldBeNil)
+		pin33, err := p.GPIOPinByName("33")
+		test.That(t, err, test.ShouldBeNil)
+		pinIO13, err := p.GPIOPinByName("io13")
+		test.That(t, err, test.ShouldBeNil)
+		// pin 35 is a different pin
+		diffPin, err := p.GPIOPinByName("35")
+		test.That(t, err, test.ShouldBeNil)
+
+		// try to set high
+		err = pinBlue.Set(ctx, true, nil)
+		test.That(t, err, test.ShouldBeNil)
+
+		v, err := pinBlue.Get(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, v, test.ShouldEqual, true)
+
+		v, err = pin33.Get(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, v, test.ShouldEqual, true)
+
+		v, err = pinIO13.Get(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, v, test.ShouldEqual, true)
+
+		v, err = diffPin.Get(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, v, test.ShouldEqual, false)
 	})
 
 	// interrupt is configured on pi board creation
