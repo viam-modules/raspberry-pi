@@ -14,10 +14,11 @@ import (
 	"context"
 	"fmt"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -25,10 +26,10 @@ type GPIOConfig int
 
 const (
 	GPIODefault   GPIOConfig = iota // GPIODefault is the default pin state, before we have modified the pin
-	GPIOInput                       // GPIOInput is the default pin state, before we have modified the pin
-	GPIOOutput                      // GPIOOutput is the default pin state, before we have modified the pin
-	GPIOPWM                         // GPIOPWM is the default pin state, before we have modified the pin
-	GPIOInterrupt                   // GPIOInterrupt is the default pin state, before we have modified the pin
+	GPIOInput                       // GPIOInput is when a pin is configured as a digital input
+	GPIOOutput                      // GPIOOutput is when the pin is configured as a digital output
+	GPIOPWM                         // GPIOPWM is when the pin is configured as pwm
+	GPIOInterrupt                   // GPIOInterrupt is the pin is configured as an interrupt
 )
 
 type rpiGPIO struct {
@@ -46,7 +47,6 @@ func (pi *piPigpio) GPIOPinByName(pin string) (board.GPIOPin, error) {
 
 	// check if we have already configured the pin
 	for _, configuredPin := range pi.gpioPins {
-		pi.logger.Warn("check pin: ", configuredPin.name)
 		if configuredPin.name == pin {
 			return gpioPin{pi, int(configuredPin.pin)}, nil
 		}
@@ -108,7 +108,6 @@ func (pi *piPigpio) reconfigureGPIOs(ctx context.Context, cfg *Config) error {
 		}
 		pin := &rpiGPIO{name: newConfig.Name, pin: bcom}
 		pi.gpioPins[int(bcom)] = pin
-		pi.logger.Warn("yo pin: ", pin.name)
 	}
 	return nil
 }
