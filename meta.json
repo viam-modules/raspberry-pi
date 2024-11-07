@@ -10,7 +10,7 @@
       },
       {
         "api": "rdk:component:servo",
-        "model": "viam:raspberry-pi:pi-servo"
+        "model": "viam:raspberry-pi:rpi-servo"
       }
     ],
     "build": {
