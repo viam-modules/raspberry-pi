@@ -51,7 +51,7 @@ Fill in the attributes as applicable to your board:
       "type": "registry",
       "name": "viam_raspberry-pi",
       "module_id": "viam:raspberry-pi",
-      "version": "latest"
+      "version": "^1"
     }
   ],
 }
