@@ -57,9 +57,6 @@ func (pull Pull) Validate() error {
 
 // Validate ensures all parts of the config are valid.
 func (config *PinConfig) Validate(path string) error {
-	if config.Name == "" {
-		return resource.NewConfigValidationFieldRequiredError(path, "name")
-	}
 	if config.Pin == "" {
 		return resource.NewConfigValidationFieldRequiredError(path, "pin")
 	}

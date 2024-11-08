@@ -86,8 +86,7 @@ type piPigpio struct {
 	mu            sync.Mutex
 	cancelCtx     context.Context
 	cancelFunc    context.CancelFunc
-	duty          int // added for mutex
-	gpioConfigSet map[int]bool
+	gpioPins      map[int]*rpiGPIO
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
@@ -181,11 +180,21 @@ func (pi *piPigpio) Reconfigure(
 	if err != nil {
 		return err
 	}
+	// make sure every pin has a name. We already know every pin has a pin
+	for _, c := range cfg.Pins {
+		if c.Name == "" {
+			c.Name = c.Pin
+		}
+	}
 
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 
 	if err := pi.reconfigureAnalogReaders(cfg); err != nil {
+		return err
+	}
+
+	if err := pi.reconfigureGPIOs(ctx, cfg); err != nil {
 		return err
 	}
 
