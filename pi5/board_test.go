@@ -4,8 +4,9 @@ package pi5
 
 import (
 	"context"
-	rpiutils "raspberry-pi/utils"
 	"testing"
+
+	rpiutils "raspberry-pi/utils"
 
 	"go.viam.com/rdk/components/board/genericlinux"
 	"go.viam.com/rdk/logging"
@@ -46,5 +47,6 @@ func TestNewBoard(t *testing.T) {
 	// Cast from board.Board to pinctrlpi5 is required to access board's vars
 	p5 := newB.(*pinctrlpi5)
 	test.That(t, p5.boardPinCtrl.Cfg.ChipSize, test.ShouldEqual, 0x30000)
-	test.That(t, p5.boardPinCtrl.PhysAddr, test.ShouldEqual, 0x1f000d0000)
+	testVal := uint64(0x1f000d0000)
+	test.That(t, p5.boardPinCtrl.PhysAddr, test.ShouldEqual, testVal)
 }
