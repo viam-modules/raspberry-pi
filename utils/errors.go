@@ -1,7 +1,11 @@
 // Package rpiutils contains implementations to convert error codes to human readable format.
 package rpiutils
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 // PiGPIOErrorMap maps the error codes to the human readable error names. This can be found at the pigpio C interface.
 var PiGPIOErrorMap = map[int]string{
@@ -178,4 +182,8 @@ func ConvertErrorCodeToMessage(errorCode int, message string) error {
 		return errors.Errorf("%s: %s", message, errorMessage)
 	}
 	return errors.Errorf("%s: %d", message, errorCode)
+}
+
+func WrongModelErr(wrongModel string) error {
+	return fmt.Errorf("incorrect Raspberry Pi model detected, check that model %v is correct", wrongModel)
 }
