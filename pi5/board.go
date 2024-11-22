@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -23,6 +21,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model for rpi5.

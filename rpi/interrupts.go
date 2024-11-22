@@ -54,7 +54,7 @@ type reconfigureContext struct {
 
 // reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
 // It reuses existing interrupts when possible and creates new ones if necessary.
-func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *Config) error {
+func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *rpiutils.Config) error {
 	reconfigCtx := &reconfigureContext{
 		pi:            pi,
 		ctx:           ctx,

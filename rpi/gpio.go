@@ -14,11 +14,10 @@ import (
 	"context"
 	"fmt"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -96,7 +95,7 @@ func (gp gpioPin) SetPWMFreq(ctx context.Context, freqHz uint, extra map[string]
 	return gp.pi.SetPWMFreqBcom(gp.bcom, freqHz)
 }
 
-func (pi *piPigpio) reconfigureGPIOs(ctx context.Context, cfg *Config) error {
+func (pi *piPigpio) reconfigureGPIOs(ctx context.Context, cfg *rpiutils.Config) error {
 	// Set new pins based on config
 	pi.gpioPins = map[int]*rpiGPIO{}
 	for _, newConfig := range cfg.Pins {

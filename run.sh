@@ -1,5 +1,10 @@
 #!/bin/sh
 
+
+WHATPI=$(awk '{print $3}' /proc/device-tree/model)
+if [ "$WHATPI" = "5" ]; then
+    exec ./bin/raspberry-pi-arm64 "$@" "pi5-detected"
+fi
 # install packages 
 apt-get install -qqy pigpio
 

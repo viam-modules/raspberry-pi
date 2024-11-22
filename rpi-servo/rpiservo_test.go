@@ -2,7 +2,6 @@ package rpiservo
 
 import (
 	"context"
-	"raspberry-pi/rpi"
 	"testing"
 
 	"go.viam.com/rdk/components/board"
@@ -11,11 +10,13 @@ import (
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	"raspberry-pi/rpi"
+	rpiutils "raspberry-pi/utils"
 )
 
 func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
 	// create board dependency
-	piReg, ok := resource.LookupRegistration(board.API, rpi.Model)
+	piReg, ok := resource.LookupRegistration(board.API, rpi.ModelPi4)
 	test.That(t, ok, test.ShouldBeTrue)
 	test.That(t, piReg, test.ShouldNotBeNil)
 
@@ -24,7 +25,7 @@ func createDummyBoard(t *testing.T, ctx context.Context) board.Board {
 		nil,
 		resource.Config{
 			Name:                "rpi",
-			ConvertedAttributes: &rpi.Config{},
+			ConvertedAttributes: &rpiutils.Config{},
 		},
 		logging.NewTestLogger(t),
 	)
@@ -269,7 +270,7 @@ func TestServoFunctions(t *testing.T) {
 		test.That(t, parsedConf, test.ShouldNotBeNil)
 		test.That(t, parsedConf.Pin, test.ShouldEqual, "100")
 
-		badConf := &rpi.Config{}
+		badConf := &rpiutils.Config{}
 		parsedConf, err = parseConfig(
 			resource.Config{ConvertedAttributes: badConf},
 		)

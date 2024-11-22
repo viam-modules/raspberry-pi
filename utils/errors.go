@@ -184,6 +184,7 @@ func ConvertErrorCodeToMessage(errorCode int, message string) error {
 	return errors.Errorf("%s: %d", message, errorCode)
 }
 
+// WrongModelErr informs the user when the model they configured for their pi is not correct
 func WrongModelErr(wrongModel string) error {
 	return fmt.Errorf("incorrect Raspberry Pi model detected, check that model %v is correct", wrongModel)
 }

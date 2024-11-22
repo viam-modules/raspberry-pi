@@ -23,13 +23,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
-	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
 	"go.viam.com/rdk/grpc"
 	"go.viam.com/rdk/logging"
@@ -39,49 +39,65 @@ import (
 )
 
 // Model represents a raspberry pi board model.
-var Model = resource.NewModel("viam", "raspberry-pi", "rpi")
+var (
+	ModelPi4   = resource.NewModel("viam", "raspberry-pi", "rpi4")   // Raspberry Pi 4 model
+	ModelPi3   = resource.NewModel("viam", "raspberry-pi", "rpi3")   // Raspberry Pi 3 model
+	ModelPi2   = resource.NewModel("viam", "raspberry-pi", "rpi2")   // Raspberry Pi 2 model
+	ModelPi1   = resource.NewModel("viam", "raspberry-pi", "rpi1")   // Raspberry Pi 1 model
+	ModelPi0_2 = resource.NewModel("viam", "raspberry-pi", "rpi0_2") // Raspberry Pi 0_2 model
+	ModelPi0   = resource.NewModel("viam", "raspberry-pi", "rpi0")   // Raspberry Pi 0 model
+)
 
 var (
 	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
 	boardInstanceMu sync.RWMutex // mutex to protect boardInstance
 )
 
-// A Config describes the configuration of a board and all of its connected parts.
-type Config struct {
-	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
-	Pins          []rpiutils.PinConfig                `json:"pins,omitempty"`
-}
-
 // init registers a pi board based on pigpio.
 func init() {
 	resource.RegisterComponent(
 		board.API,
-		Model,
-		resource.Registration[board.Board, *Config]{
+		ModelPi4,
+		resource.Registration[board.Board, *rpiutils.Config]{
 			Constructor: newPigpio,
 		})
-}
-
-// Validate ensures all parts of the config are valid.
-func (conf *Config) Validate(path string) ([]string, error) {
-	for idx, c := range conf.AnalogReaders {
-		if err := c.Validate(fmt.Sprintf("%s.%s.%d", path, "analogs", idx)); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, c := range conf.Pins {
-		if err := c.Validate(path); err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
+	resource.RegisterComponent(
+		board.API,
+		ModelPi3,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
+	resource.RegisterComponent(
+		board.API,
+		ModelPi2,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
+	resource.RegisterComponent(
+		board.API,
+		ModelPi1,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
+	resource.RegisterComponent(
+		board.API,
+		ModelPi0_2,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
+	resource.RegisterComponent(
+		board.API,
+		ModelPi0,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
 }
 
 // piPigpio is an implementation of a board.Board of a Raspberry Pi
 // accessed via pigpio.
 type piPigpio struct {
 	resource.Named
+	model string
 
 	mu            sync.Mutex
 	cancelCtx     context.Context
@@ -118,7 +134,16 @@ func newPigpio(
 	conf resource.Config,
 	logger logging.Logger,
 ) (board.Board, error) {
-	err := startPigpiod(ctx, logger)
+	piModel, err := os.ReadFile("/proc/device-tree/model")
+	if err != nil {
+		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
+	}
+	isPi5 := strings.Contains(string(piModel), "5")
+	if isPi5 {
+		return nil, rpiutils.WrongModelErr(conf.Name)
+	}
+
+	err = startPigpiod(ctx, logger)
 	if err != nil {
 		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
 		return nil, err
@@ -138,6 +163,7 @@ func newPigpio(
 		cancelCtx:  cancelCtx,
 		cancelFunc: cancelFunc,
 		piID:       piID,
+		model:      conf.Model.Name,
 	}
 
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
@@ -176,7 +202,7 @@ func (pi *piPigpio) Reconfigure(
 	_ resource.Dependencies,
 	conf resource.Config,
 ) error {
-	cfg, err := resource.NativeConfig[*Config](conf)
+	cfg, err := resource.NativeConfig[*rpiutils.Config](conf)
 	if err != nil {
 		return err
 	}
@@ -215,7 +241,7 @@ func (pi *piPigpio) Reconfigure(
 	return nil
 }
 
-func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *Config) error {
+func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *rpiutils.Config) error {
 	for _, pullConf := range cfg.Pins {
 		// skip pins that do not have a pull state set
 		if pullConf.PullState == rpiutils.PullDefault {

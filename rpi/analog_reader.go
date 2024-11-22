@@ -12,10 +12,11 @@ import (
 	"go.viam.com/rdk/components/board/genericlinux/buses"
 	"go.viam.com/rdk/components/board/mcp3008helper"
 	"go.viam.com/rdk/components/board/pinwrappers"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Helper functions to configure analog readers and interrupts.
-func (pi *piPigpio) reconfigureAnalogReaders(cfg *Config) error {
+func (pi *piPigpio) reconfigureAnalogReaders(cfg *rpiutils.Config) error {
 	// No need to reconfigure the old analog readers; just throw them out and make new ones.
 	pi.analogReaders = map[string]*pinwrappers.AnalogSmoother{}
 	for _, ac := range cfg.AnalogReaders {
