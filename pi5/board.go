@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -21,7 +23,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model for rpi5.
@@ -102,7 +103,8 @@ func newBoard(
 		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
 	}
 	isPi5 := strings.Contains(string(piModel), "5")
-	if !isPi5 {
+	// ensure that we are a pi5 when not running tests
+	if !isPi5 && !testingMode {
 		return nil, rpiutils.WrongModelErr(conf.Name)
 	}
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
@@ -126,7 +128,7 @@ func newBoard(
 		ChipSize: 0x30000, UseAlias: true, UseGPIOMem: true,
 	}
 	if testingMode {
-		pinctrlCfg.TestPath = "./mock-device-tree"
+		pinctrlCfg.TestPath = "./pi5/mock-device-tree"
 	}
 
 	// Note that this must be called before configuring the pull up/down configuration uses the
