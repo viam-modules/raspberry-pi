@@ -5,7 +5,11 @@ import (
 	"fmt"
 
 	"go.viam.com/rdk/components/board/mcp3008helper"
+	"go.viam.com/rdk/resource"
 )
+
+// RaspiFamily is the model family for the Raspberry Pi module.
+var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {

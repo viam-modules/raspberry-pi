@@ -40,12 +40,12 @@ import (
 
 // Model represents a raspberry pi board model.
 var (
-	ModelPi4   = resource.NewModel("viam", "raspberry-pi", "rpi4")   // Raspberry Pi 4 model
-	ModelPi3   = resource.NewModel("viam", "raspberry-pi", "rpi3")   // Raspberry Pi 3 model
-	ModelPi2   = resource.NewModel("viam", "raspberry-pi", "rpi2")   // Raspberry Pi 2 model
-	ModelPi1   = resource.NewModel("viam", "raspberry-pi", "rpi1")   // Raspberry Pi 1 model
-	ModelPi0_2 = resource.NewModel("viam", "raspberry-pi", "rpi0_2") // Raspberry Pi 0_2 model
-	ModelPi0   = resource.NewModel("viam", "raspberry-pi", "rpi0")   // Raspberry Pi 0 model
+	ModelPi4   = rpiutils.RaspiFamily.WithModel("rpi4")   // Raspberry Pi 4 model
+	ModelPi3   = rpiutils.RaspiFamily.WithModel("rpi3")   // Raspberry Pi 3 model
+	ModelPi2   = rpiutils.RaspiFamily.WithModel("rpi2")   // Raspberry Pi 2 model
+	ModelPi1   = rpiutils.RaspiFamily.WithModel("rpi1")   // Raspberry Pi 1 model
+	ModelPi0_2 = rpiutils.RaspiFamily.WithModel("rpi0_2") // Raspberry Pi 0_2 model
+	ModelPi0   = rpiutils.RaspiFamily.WithModel("rpi0")   // Raspberry Pi 0 model
 )
 
 var (

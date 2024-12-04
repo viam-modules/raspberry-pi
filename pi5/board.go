@@ -24,8 +24,8 @@ import (
 	rpiutils "raspberry-pi/utils"
 )
 
-// Model for rpi5.
-var Model = resource.NewModel("viam", "raspberry-pi", "rpi5")
+// Model is the model for a Raspberry Pi 5.
+var Model = rpiutils.RaspiFamily.WithModel("rpi5")
 
 // pins are stored in /dev/gpiomem in order of gpio nums, so we must convert from pin name (physical num) to GPIO number.
 var pinNameToGPIONum = map[string]int{
