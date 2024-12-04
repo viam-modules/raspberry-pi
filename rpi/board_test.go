@@ -18,7 +18,7 @@ func TestPiPigpio(t *testing.T) {
 	ctx := context.Background()
 	logger := logging.NewTestLogger(t)
 
-	cfg := Config{
+	cfg := rpiutils.Config{
 		Pins: []rpiutils.PinConfig{
 			{Name: "i1", Pin: "11", Type: "interrupt"}, // bcom 17
 			{Name: "servo-i", Pin: "22", Type: "interrupt"},

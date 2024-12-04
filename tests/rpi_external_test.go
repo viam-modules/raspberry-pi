@@ -18,14 +18,14 @@ import (
 )
 
 func TestPiPigpio(t *testing.T) {
-	piReg, ok := resource.LookupRegistration(board.API, rpi.Model)
+	piReg, ok := resource.LookupRegistration(board.API, rpi.ModelPi4)
 	test.That(t, ok, test.ShouldBeTrue)
 	test.That(t, piReg, test.ShouldNotBeNil)
 
 	ctx := context.Background()
 	logger := logging.NewTestLogger(t)
 
-	cfg := rpi.Config{
+	cfg := rpiutils.Config{
 		Pins: []rpiutils.PinConfig{
 			{Name: "i1", Pin: "11", Type: "interrupt"}, // bcom 17
 		},
