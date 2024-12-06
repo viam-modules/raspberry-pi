@@ -63,6 +63,9 @@ linters-settings:
   gofumpt:
     lang-version: "1.21"
     extra-rules: true
+  gosec:
+    excludes:
+      - G115
   govet:
     enable-all: true
     disable:
