@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -21,43 +23,10 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
 var Model = rpiutils.RaspiFamily.WithModel("rpi5")
-
-// pins are stored in /dev/gpiomem in order of gpio nums, so we must convert from pin name (physical num) to GPIO number.
-var pinNameToGPIONum = map[string]int{
-	"3":  2,
-	"5":  3,
-	"7":  4,
-	"8":  14,
-	"10": 15,
-	"11": 17,
-	"12": 18,
-	"13": 27,
-	"15": 22,
-	"16": 23,
-	"18": 24,
-	"19": 10,
-	"21": 9,
-	"22": 25,
-	"23": 11,
-	"24": 8,
-	"26": 7,
-	"27": 0,
-	"28": 1,
-	"29": 5,
-	"31": 6,
-	"32": 12,
-	"33": 13,
-	"35": 19,
-	"36": 16,
-	"37": 26,
-	"38": 20,
-	"40": 21,
-}
 
 // register values for configuring pull up/pull down in mem.
 const (
@@ -88,6 +57,27 @@ func init() {
 		})
 }
 
+type pinctrlpi5 struct {
+	resource.Named
+	mu sync.Mutex
+
+	gpioMappings map[string]gl.GPIOBoardMapping
+	logger       logging.Logger
+
+	gpios            map[uint]*pinctrl.GPIOPin
+	interrupts       map[uint]*pinctrl.DigitalInterrupt
+	userDefinedNames map[string]uint // user defined pin names that map to a line/boardcom
+	pinConfigs       []rpiutils.PinConfig
+
+	boardPinCtrl pinctrl.Pinctrl
+
+	cancelCtx               context.Context
+	cancelFunc              func()
+	activeBackgroundWorkers sync.WaitGroup
+
+	pulls map[int]byte // mapping of gpio pin to pull up/down
+}
+
 // newBoard is the constructor for a Board.
 func newBoard(
 	ctx context.Context,
@@ -116,8 +106,8 @@ func newBoard(
 		cancelCtx:    cancelCtx,
 		cancelFunc:   cancelFunc,
 
-		gpios:      map[string]*pinctrl.GPIOPin{},
-		interrupts: map[string]*pinctrl.DigitalInterrupt{},
+		gpios:      map[uint]*pinctrl.GPIOPin{},
+		interrupts: map[uint]*pinctrl.DigitalInterrupt{},
 
 		pulls: map[int]byte{},
 	}
@@ -139,7 +129,8 @@ func newBoard(
 
 	// Initialize the GPIO pins
 	for newName, mapping := range gpioMappings {
-		b.gpios[newName] = b.boardPinCtrl.CreateGpioPin(mapping)
+		bcom, _ := rpiutils.BroadcomPinFromHardwareLabel(newName)
+		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(mapping)
 	}
 
 	if err := b.Reconfigure(ctx, nil, conf); err != nil {
@@ -159,19 +150,108 @@ func (b *pinctrlpi5) Reconfigure(
 		return err
 	}
 
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	// make sure every pin has a name. We already know every pin has a pin
+	for _, c := range newConf.Pins {
+		if c.Name == "" {
+			c.Name = c.Pin
+		}
+	}
+
+	if err := b.addUserDefinedNames(newConf); err != nil {
+		return err
+	}
 
 	if err := b.reconfigurePullUpPullDowns(newConf); err != nil {
 		return err
 	}
+	if err := b.reconfigureInterrupts(newConf); err != nil {
+		return err
+	}
+	b.pinConfigs = newConf.Pins
+
 	return nil
 }
 
+// reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
+// It reuses existing interrupts when possible and creates new ones if necessary.
+func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
+	// look at previous interrupt config, and see if we removed any
+	for _, oldConfig := range b.pinConfigs {
+		if oldConfig.Type != rpiutils.PinInterrupt {
+			continue
+		}
+		sameInterrupt := false
+		for _, newConfig := range newConf.Pins {
+			if newConfig.Type != rpiutils.PinInterrupt {
+				continue
+			}
+			// check if we still have this interrupt
+			if oldConfig.Name == newConfig.Name && oldConfig.Pin == newConfig.Pin {
+				sameInterrupt = true
+				break
+			}
+		}
+		// if we still have the interrupt, don't modify it
+		if sameInterrupt {
+			continue
+		}
+		// we no longer want this interrupt, so we will remove it and add back the pin's gpio functionality
+		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(oldConfig.Pin)
+		if !ok {
+			return errors.Errorf("cannot find GPIO for unknown pin: %s", oldConfig.Name)
+		}
+		// this actually removes the interrupt
+		interrupt, ok := b.interrupts[bcom]
+		if ok {
+			if err := interrupt.Close(); err != nil {
+				return err
+			}
+			delete(b.interrupts, bcom)
+		}
+
+		// add back the gpio pin to make it available to the user
+		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(b.gpioMappings[oldConfig.Pin])
+
+	}
+	// add any new interrupts. DigitalInterruptByName will create the interrupt only if we are not already managing it.
+	for _, newConfig := range newConf.Pins {
+		if newConfig.Type != rpiutils.PinInterrupt {
+			continue
+		}
+		if _, err := b.DigitalInterruptByName(newConfig.Name); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *pinctrlpi5) addUserDefinedNames(newConf *rpiutils.Config) error {
+	nameToPin := map[string]uint{}
+	for _, pinConf := range newConf.Pins {
+		// check if the pin name matches a name we handle by default
+		_, alreadyDefined := rpiutils.BroadcomPinFromHardwareLabel(pinConf.Name)
+		if alreadyDefined {
+			continue
+		}
+		// ensure the configured pin is a real pin
+		pin, ok := b.gpioMappings[pinConf.Pin]
+		if !ok {
+			return fmt.Errorf("pin %v could not be found", pinConf.Pin)
+		}
+		// add the new name to our list of names to track
+		nameToPin[pinConf.Name] = uint(pin.GPIO)
+	}
+	b.userDefinedNames = nameToPin
+	return nil
+}
 func (b *pinctrlpi5) reconfigurePullUpPullDowns(newConf *rpiutils.Config) error {
 	for _, pullConf := range newConf.Pins {
-		gpioNum := pinNameToGPIONum[pullConf.Pin]
-
+		pin, ok := b.gpioMappings[pullConf.Pin]
+		if !ok {
+			return fmt.Errorf("pin %v could not be found", pullConf.Pin)
+		}
+		gpioNum := pin.GPIO
 		switch pullConf.PullState {
 		case rpiutils.PullDefault: // skip pins that do not have a pull state set
 			continue
@@ -206,25 +286,6 @@ func (b *pinctrlpi5) setPulls() {
 	}
 }
 
-type pinctrlpi5 struct {
-	resource.Named
-	mu sync.Mutex
-
-	gpioMappings map[string]gl.GPIOBoardMapping
-	logger       logging.Logger
-
-	gpios      map[string]*pinctrl.GPIOPin
-	interrupts map[string]*pinctrl.DigitalInterrupt
-
-	boardPinCtrl pinctrl.Pinctrl
-
-	cancelCtx               context.Context
-	cancelFunc              func()
-	activeBackgroundWorkers sync.WaitGroup
-
-	pulls map[int]byte // mapping of gpio pin to pull up/down
-}
-
 // AnalogByName returns the analog pin by the given name if it exists.
 func (b *pinctrlpi5) AnalogByName(name string) (board.Analog, error) {
 	return nil, errors.New("analogs not supported")
@@ -234,15 +295,24 @@ func (b *pinctrlpi5) AnalogByName(name string) (board.Analog, error) {
 func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	// first check if the pinName is a user defined name
+	bcom, ok := b.userDefinedNames[name]
+	if !ok {
+		// if the name is not a user defined name, then check if its a known pin
+		bcom, ok = rpiutils.BroadcomPinFromHardwareLabel(name)
+		if !ok {
+			return nil, errors.Errorf("cannot find GPIO for unknown pin: %s", name)
+		}
+	}
 
-	interrupt, ok := b.interrupts[name]
+	interrupt, ok := b.interrupts[bcom]
 	if ok {
 		return interrupt, nil
 	}
 
 	// Otherwise, the name is not something we recognize yet. If it appears to be a GPIO pin, we'll
 	// remove its GPIO capabilities and turn it into a digital interrupt.
-	gpio, ok := b.gpios[name]
+	gpio, ok := b.gpios[bcom]
 	if !ok {
 		return nil, fmt.Errorf("can't find GPIO (%s)", name)
 	}
@@ -250,21 +320,31 @@ func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt
 		return nil, err
 	}
 
-	mapping, ok := b.gpioMappings[name]
-	if !ok {
-		return nil, fmt.Errorf("can't create digital interrupt on unknown pin %s", name)
+	hardwareName := ""
+	var pinMapping gl.GPIOBoardMapping
+	// roll back and find which pinmapping is used for the ioPin
+	for newName, mapping := range b.gpioMappings {
+		if mapping.GPIO == int(bcom) {
+			hardwareName = newName
+			pinMapping = mapping
+		}
 	}
+
+	// mapping, ok := b.gpioMappings[name]
+	// if !ok {
+	// 	return nil, fmt.Errorf("can't create digital interrupt on unknown pin %s", name)
+	// }
 	defaultInterruptConfig := board.DigitalInterruptConfig{
-		Name: name,
-		Pin:  name,
+		Name: hardwareName,
+		Pin:  hardwareName,
 	}
-	interrupt, err := b.boardPinCtrl.NewDigitalInterrupt(defaultInterruptConfig, mapping, nil)
+	interrupt, err := b.boardPinCtrl.NewDigitalInterrupt(defaultInterruptConfig, pinMapping, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	delete(b.gpios, name)
-	b.interrupts[name] = interrupt
+	delete(b.gpios, bcom)
+	b.interrupts[bcom] = interrupt
 	return interrupt, nil
 }
 
@@ -274,26 +354,30 @@ func (b *pinctrlpi5) AnalogNames() []string {
 }
 
 // DigitalInterruptNames returns the names of all known digital interrupts.
+// Unimplemented because we do not have an api to communicate this over
 func (b *pinctrlpi5) DigitalInterruptNames() []string {
-	if b.interrupts == nil {
-		return nil
-	}
-
-	names := []string{}
-	for name := range b.interrupts {
-		names = append(names, name)
-	}
-	return names
+	return nil
 }
 
 // GPIOPinByName returns a GPIOPin by name.
 func (b *pinctrlpi5) GPIOPinByName(pinName string) (board.GPIOPin, error) {
-	if pin, ok := b.gpios[pinName]; ok {
+	// first check if the pinName is a user defined name
+	bcom, ok := b.userDefinedNames[pinName]
+	if !ok {
+		// if the name is not a user defined name, then check if its a known pin
+		bcom, ok = rpiutils.BroadcomPinFromHardwareLabel(pinName)
+		if !ok {
+			return nil, errors.Errorf("cannot find GPIO for unknown pin: %s", pinName)
+		}
+	}
+
+	// check if the pin is being managed as a gpio
+	if pin, ok := b.gpios[bcom]; ok {
 		return pin, nil
 	}
 
 	// Check if pin is a digital interrupt: those can still be used as inputs.
-	if interrupt, interruptOk := b.interrupts[pinName]; interruptOk {
+	if interrupt, interruptOk := b.interrupts[bcom]; interruptOk {
 		return interrupt, nil
 	}
 
