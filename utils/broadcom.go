@@ -4,7 +4,7 @@ package rpiutils
 import "fmt"
 
 // DefaultPWMFreqHz is the default pwm frequency used for pwms on raspberry pis.
-// Original default from libpigpio
+// Original default from libpigpio.
 const DefaultPWMFreqHz = uint(800)
 
 // piHWPinToBroadcom maps the hardware inscribed pin number to

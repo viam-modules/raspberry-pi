@@ -14,11 +14,10 @@ import (
 	"context"
 	"fmt"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as

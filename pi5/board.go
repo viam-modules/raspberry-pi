@@ -224,6 +224,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 	return nil
 }
 
+// record all custom pin names that the user has defined in the config for lookup.
 func (b *pinctrlpi5) addUserDefinedNames(newConf *rpiutils.Config) error {
 	nameToPin := map[string]uint{}
 	for _, pinConf := range newConf.Pins {
@@ -304,6 +305,7 @@ func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt
 		}
 	}
 
+	// if we are already managing the interrupt, then return the interrupt
 	interrupt, ok := b.interrupts[bcom]
 	if ok {
 		return interrupt, nil
@@ -321,7 +323,9 @@ func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt
 
 	hardwareName := ""
 	var pinMapping gl.GPIOBoardMapping
-	// roll back and find which pinmapping is used for the ioPin
+	// When creating a new interrupt we need to pass in the genericlinux pin mapping.
+	// Unfortunately with the bcom logic it ended up hard to track the generic linux pinmapping with the bcom number
+	// to workaround this we have to run through all of the pinmappings to find which mapping is actually the requested version
 	for newName, mapping := range b.gpioMappings {
 		if mapping.GPIO == int(bcom) {
 			hardwareName = newName
@@ -329,10 +333,6 @@ func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt
 		}
 	}
 
-	// mapping, ok := b.gpioMappings[name]
-	// if !ok {
-	// 	return nil, fmt.Errorf("can't create digital interrupt on unknown pin %s", name)
-	// }
 	defaultInterruptConfig := board.DigitalInterruptConfig{
 		Name: hardwareName,
 		Pin:  hardwareName,
