@@ -3,6 +3,10 @@ package rpiutils
 
 import "fmt"
 
+// DefaultPWMFreqHz is the default pwm frequency used for pwms on raspberry pis.
+// Original default from libpigpio.
+const DefaultPWMFreqHz = uint(800)
+
 // piHWPinToBroadcom maps the hardware inscribed pin number to
 // its Broadcom pin. For the sake of programming, a user typically
 // knows the hardware pin since they have the board on hand but does
@@ -66,10 +70,12 @@ var piHWPinToBroadcom = map[string]uint{
 // BroadcomPinFromHardwareLabel returns a Raspberry Pi pin number given
 // a hardware label for the pin passed from a config.
 func BroadcomPinFromHardwareLabel(hwPin string) (uint, bool) {
+	// check if we were given a hardware pin & return the broadcom label if so
 	pin, ok := piHWPinToBroadcom[hwPin]
 	if ok {
 		return pin, true
 	}
+	// if we weren't given a hardware pin, check if we were given a broadcom label
 	for _, existingVal := range piHWPinToBroadcom {
 		if hwPin == fmt.Sprintf("io%d", existingVal) {
 			return existingVal, true
