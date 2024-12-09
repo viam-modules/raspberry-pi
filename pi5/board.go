@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -23,6 +21,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -130,7 +129,7 @@ func newBoard(
 	// Initialize the GPIO pins
 	for newName, mapping := range gpioMappings {
 		bcom, _ := rpiutils.BroadcomPinFromHardwareLabel(newName)
-		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(mapping)
+		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(mapping, rpiutils.DefaultPWMFreqHz)
 	}
 
 	if err := b.Reconfigure(ctx, nil, conf); err != nil {
@@ -210,8 +209,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 		}
 
 		// add back the gpio pin to make it available to the user
-		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(b.gpioMappings[oldConfig.Pin])
-
+		b.gpios[bcom] = b.boardPinCtrl.CreateGpioPin(b.gpioMappings[oldConfig.Pin], rpiutils.DefaultPWMFreqHz)
 	}
 	// add any new interrupts. DigitalInterruptByName will create the interrupt only if we are not already managing it.
 	for _, newConfig := range newConf.Pins {
@@ -245,6 +243,7 @@ func (b *pinctrlpi5) addUserDefinedNames(newConf *rpiutils.Config) error {
 	b.userDefinedNames = nameToPin
 	return nil
 }
+
 func (b *pinctrlpi5) reconfigurePullUpPullDowns(newConf *rpiutils.Config) error {
 	for _, pullConf := range newConf.Pins {
 		pin, ok := b.gpioMappings[pullConf.Pin]
@@ -354,7 +353,7 @@ func (b *pinctrlpi5) AnalogNames() []string {
 }
 
 // DigitalInterruptNames returns the names of all known digital interrupts.
-// Unimplemented because we do not have an api to communicate this over
+// Unimplemented because we do not have an api to communicate this over.
 func (b *pinctrlpi5) DigitalInterruptNames() []string {
 	return nil
 }

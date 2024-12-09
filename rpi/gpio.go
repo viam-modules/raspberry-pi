@@ -14,10 +14,11 @@ import (
 	"context"
 	"fmt"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -213,7 +214,7 @@ func (pi *piPigpio) SetPWMFreqBcom(bcom int, freqHz uint) error {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 	if freqHz == 0 {
-		freqHz = 800 // Original default from libpigpio
+		freqHz = rpiutils.DefaultPWMFreqHz
 	}
 	newRes := C.set_PWM_frequency(pi.piID, C.uint(bcom), C.uint(freqHz))
 
