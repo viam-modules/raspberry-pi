@@ -149,6 +149,9 @@ func (b *pinctrlpi5) Reconfigure(
 		return err
 	}
 
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	// make sure every pin has a name. We already know every pin has a pin
 	for _, c := range newConf.Pins {
 		if c.Name == "" {
@@ -216,7 +219,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 		if newConfig.Type != rpiutils.PinInterrupt {
 			continue
 		}
-		if _, err := b.DigitalInterruptByName(newConfig.Name); err != nil {
+		if _, err := b.digitalInterruptByName(newConfig.Name); err != nil {
 			return err
 		}
 	}
@@ -291,10 +294,8 @@ func (b *pinctrlpi5) AnalogByName(name string) (board.Analog, error) {
 	return nil, errors.New("analogs not supported")
 }
 
-// DigitalInterruptByName returns the interrupt by the given name if it exists.
-func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+// the implementation of digitalInterruptByName. The board mutex should be locked before calling this.
+func (b *pinctrlpi5) digitalInterruptByName(name string) (board.DigitalInterrupt, error) {
 	// first check if the pinName is a user defined name
 	bcom, ok := b.userDefinedNames[name]
 	if !ok {
@@ -345,6 +346,13 @@ func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt
 	delete(b.gpios, bcom)
 	b.interrupts[bcom] = interrupt
 	return interrupt, nil
+}
+
+// DigitalInterruptByName returns the interrupt by the given name if it exists.
+func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.digitalInterruptByName(name)
 }
 
 // AnalogNames returns the names of all known analog pins.
