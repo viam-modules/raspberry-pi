@@ -7,7 +7,7 @@ require (
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/actionlint v1.6.24
-	github.com/viam-modules/pinctrl v0.0.0-20241122191654-83914270ceff
+	github.com/viam-modules/pinctrl v0.0.0-20241206221207-94ef717afa64
 	go.uber.org/multierr v1.11.0
 	go.viam.com/api v0.1.357
 	go.viam.com/rdk v0.50.0

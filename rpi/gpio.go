@@ -213,7 +213,7 @@ func (pi *piPigpio) SetPWMFreqBcom(bcom int, freqHz uint) error {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()
 	if freqHz == 0 {
-		freqHz = 800 // Original default from libpigpio
+		freqHz = rpiutils.DefaultPWMFreqHz
 	}
 	newRes := C.set_PWM_frequency(pi.piID, C.uint(bcom), C.uint(freqHz))
 
