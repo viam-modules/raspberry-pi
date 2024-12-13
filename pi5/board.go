@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -23,6 +21,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -221,7 +220,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 		if newConfig.Type != rpiutils.PinInterrupt {
 			continue
 		}
-		if _, err := b.digitalInterruptByName(newConfig.Name); err != nil {
+		if _, err := b.digitalInterruptByName(newConfig.Name, newConfig.DebounceMS); err != nil {
 			return err
 		}
 	}
@@ -297,7 +296,7 @@ func (b *pinctrlpi5) AnalogByName(name string) (board.Analog, error) {
 }
 
 // the implementation of digitalInterruptByName. The board mutex should be locked before calling this.
-func (b *pinctrlpi5) digitalInterruptByName(name string) (board.DigitalInterrupt, error) {
+func (b *pinctrlpi5) digitalInterruptByName(name string, debounceMilliSeconds int) (board.DigitalInterrupt, error) {
 	// first check if the pinName is a user defined name
 	bcom, ok := b.userDefinedNames[name]
 	if !ok {
@@ -340,7 +339,7 @@ func (b *pinctrlpi5) digitalInterruptByName(name string) (board.DigitalInterrupt
 		Name: hardwareName,
 		Pin:  hardwareName,
 	}
-	interrupt, err := b.boardPinCtrl.NewDigitalInterrupt(defaultInterruptConfig, pinMapping, nil)
+	interrupt, err := b.boardPinCtrl.NewDigitalInterrupt(defaultInterruptConfig, pinMapping, debounceMilliSeconds, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +353,7 @@ func (b *pinctrlpi5) digitalInterruptByName(name string) (board.DigitalInterrupt
 func (b *pinctrlpi5) DigitalInterruptByName(name string) (board.DigitalInterrupt, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	return b.digitalInterruptByName(name)
+	return b.digitalInterruptByName(name, 0)
 }
 
 // AnalogNames returns the names of all known analog pins.
