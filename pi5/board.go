@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -21,7 +23,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -153,13 +154,14 @@ func (b *pinctrlpi5) Reconfigure(
 	defer b.mu.Unlock()
 
 	// make sure every pin has a name. We already know every pin has a pin
+	// possibly clean this up at a later date
 	for _, c := range newConf.Pins {
 		if c.Name == "" {
 			c.Name = c.Pin
 		}
 	}
 
-	if err := b.addUserDefinedNames(newConf); err != nil {
+	if err := b.validatePins(newConf); err != nil {
 		return err
 	}
 
@@ -228,7 +230,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 }
 
 // record all custom pin names that the user has defined in the config for lookup.
-func (b *pinctrlpi5) addUserDefinedNames(newConf *rpiutils.Config) error {
+func (b *pinctrlpi5) validatePins(newConf *rpiutils.Config) error {
 	nameToPin := map[string]uint{}
 	for _, pinConf := range newConf.Pins {
 		// ensure the configured pin is a real pin
