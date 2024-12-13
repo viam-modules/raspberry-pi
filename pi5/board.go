@@ -231,15 +231,15 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 func (b *pinctrlpi5) addUserDefinedNames(newConf *rpiutils.Config) error {
 	nameToPin := map[string]uint{}
 	for _, pinConf := range newConf.Pins {
-		// check if the pin name matches a name we handle by default
-		_, alreadyDefined := rpiutils.BroadcomPinFromHardwareLabel(pinConf.Name)
-		if alreadyDefined {
-			continue
-		}
 		// ensure the configured pin is a real pin
 		pin, ok := b.gpioMappings[pinConf.Pin]
 		if !ok {
 			return fmt.Errorf("pin %v could not be found", pinConf.Pin)
+		}
+		// check if the pin name matches a name we handle by default
+		_, alreadyDefined := rpiutils.BroadcomPinFromHardwareLabel(pinConf.Name)
+		if alreadyDefined {
+			continue
 		}
 		// add the new name to our list of names to track
 		nameToPin[pinConf.Name] = uint(pin.GPIO)
