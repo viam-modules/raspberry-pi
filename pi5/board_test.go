@@ -6,12 +6,11 @@ import (
 	"context"
 	"testing"
 
-	rpiutils "raspberry-pi/utils"
-
 	"go.viam.com/rdk/components/board/genericlinux"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
+	rpiutils "raspberry-pi/utils"
 )
 
 func TestEmptyBoard(t *testing.T) {
