@@ -45,7 +45,7 @@ $(TOOL_BIN)/golangci-lint:
 .PHONY: lint
 lint: $(TOOL_BIN)/golangci-lint
 	go mod tidy
-	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml --timeout 3m
+	$(TOOL_BIN)/golangci-lint run -v --fix --config=./etc/.golangci.yaml --timeout 5m
 
 .PHONY: docker-all
 docker-all: docker-build-64 docker-build-32
