@@ -10,7 +10,7 @@ The following models are provided in this module:
 * `viam:raspberry-pi:rpi1` - Configure a Raspberry Pi 1 board
 * `viam:raspberry-pi:rpi0` - Configure a Raspberry Pi 0 board
 * `viam:raspberry-pi:rpi0_2` - Configure a Raspberry Pi 0 2 W board
-* `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
+* `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board. Note this model is not supported on the rpi5 board.
 
 ## Requirements
 
