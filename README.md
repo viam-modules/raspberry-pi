@@ -3,7 +3,13 @@
 This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/#api) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/#api)
 
 Two models are provided in this module:
-* `viam:raspberry-pi:rpi` - Configure a Raspberry Pi 4, 3 and Zero 2 W,  board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
+* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
+* `viam:raspberry-pi:rpi4` - Configure a Raspberry Pi 4 board
+* `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
+* `viam:raspberry-pi:rpi2` - Configure a Raspberry Pi 2 board
+* `viam:raspberry-pi:rpi1` - Configure a Raspberry Pi 1 board
+* `viam:raspberry-pi:rpi0` - Configure a Raspberry Pi 0 board
+* `viam:raspberry-pi:rpi0_2` - Configure a Raspberry Pi 0 2 W board
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board.
 
 ## Requirements
@@ -22,7 +28,7 @@ Fill in the attributes as applicable to your board:
   "components": [
     {
       "name": "<your-pi-board-name>",
-      "model": "viam:raspberry-pi:rpi",
+      "model": "viam:raspberry-pi:<rpi-model>",
       "type": "board",
       "namespace": "rdk",
       "attributes": {
@@ -59,7 +65,7 @@ Fill in the attributes as applicable to your board:
 
 ### Attributes
 
-The following attributes are available for `viam:raspberry-pi:rpi` board:
+The following attributes are available for `viam:raspberry-pi:<raspberry-pi-model>` board:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
@@ -72,7 +78,7 @@ An [analog-to-digital converter](https://www.electronics-tutorials.ws/combinatio
 
 ADCs are useful when building a robot, as they enable your board to read the analog signal output by most types of [sensors](https://docs.viam.com/components/sensor/) and other hardware components.
 
-To integrate an ADC into your machine, you must first physically connect the pins on your ADC to your board.
+To integrate an ADC into your machine, you must first physically connect the pins on your ADC to your board. The Pi 5 board does not currently support the use of analogs.
 
 Then, integrate `analogs` into the `attributes` of your board by following the **Config Builder** instructions or by adding the following to your board’s JSON configuration:
 
