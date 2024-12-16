@@ -2,7 +2,7 @@
 
 This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/#api) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/#api)
 
-Two models are provided in this module:
+The following models are provided in this module:
 * `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
 * `viam:raspberry-pi:rpi4` - Configure a Raspberry Pi 4 board
 * `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
@@ -70,7 +70,7 @@ The following attributes are available for `viam:raspberry-pi:<raspberry-pi-mode
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 | `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
-| `pins` | object | Optional | Any pin's pin number and name. Used to configure gpios and interrupts. See [configuration info](#pins). |
+| `pins` | object | Optional | Any pin's pin number and name. Used to configure gpios and interrupts and setting the pull state for a pin. See [configuration info](#pins). |
 
 #### `analogs`
 
