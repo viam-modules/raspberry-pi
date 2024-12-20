@@ -2,13 +2,10 @@
 package main
 
 import (
-	"context"
-
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
-	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/module"
-	"go.viam.com/utils"
+	"go.viam.com/rdk/resource"
 	"raspberry-pi/pi5"
 	"raspberry-pi/rpi"
 	rpiservo "raspberry-pi/rpi-servo"
@@ -25,50 +22,14 @@ import (
 // }
 
 func main() {
-	utils.ContextualMain(mainWithArgs, module.NewLoggerFromArgs("raspberry-pi"))
-}
-
-func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) error {
-	module, err := module.NewModuleFromArgs(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err = module.AddModelFromRegistry(ctx, board.API, pi5.Model); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi4); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi3); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi2); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi1); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi0_2); err != nil {
-		return err
-	}
-	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi0); err != nil {
-		return err
-	}
-
-	if err = module.AddModelFromRegistry(ctx, servo.API, rpiservo.Model); err != nil {
-		return err
-	}
-
-	err = module.Start(ctx)
-	defer module.Close(ctx)
-	if err != nil {
-		return err
-	}
-
-	<-ctx.Done()
-	return nil
+	module.ModularMain(
+		resource.APIModel{board.API, pi5.Model},
+		resource.APIModel{board.API, rpi.ModelPi},
+		resource.APIModel{board.API, rpi.ModelPi4},
+		resource.APIModel{board.API, rpi.ModelPi3},
+		resource.APIModel{board.API, rpi.ModelPi2},
+		resource.APIModel{board.API, rpi.ModelPi1},
+		resource.APIModel{board.API, rpi.ModelPi0_2},
+		resource.APIModel{board.API, rpi.ModelPi0},
+		resource.APIModel{servo.API, rpiservo.Model})
 }
