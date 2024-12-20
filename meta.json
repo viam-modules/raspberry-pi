@@ -9,6 +9,30 @@
         "model": "viam:raspberry-pi:rpi"
       },
       {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi4"
+      },
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi3"
+      },
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi2"
+      },
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi1"
+      },
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi0"
+      },
+      {
+        "api": "rdk:component:board",
+        "model": "viam:raspberry-pi:rpi0_2"
+      },  
+      {
         "api": "rdk:component:servo",
         "model": "viam:raspberry-pi:rpi-servo"
       }
