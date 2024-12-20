@@ -47,7 +47,6 @@ var (
 	ModelPi1   = rpiutils.RaspiFamily.WithModel("rpi1")   // Raspberry Pi 1 model
 	ModelPi0_2 = rpiutils.RaspiFamily.WithModel("rpi0_2") // Raspberry Pi 0_2 model
 	ModelPi0   = rpiutils.RaspiFamily.WithModel("rpi0")   // Raspberry Pi 0 model
-	ModelPi    = rpiutils.RaspiFamily.WithModel("rpi")    // Generic Raspbery Pi model
 )
 
 var (
@@ -57,12 +56,6 @@ var (
 
 // init registers a pi board based on pigpio.
 func init() {
-	resource.RegisterComponent(
-		board.API,
-		ModelPi,
-		resource.Registration[board.Board, *rpiutils.Config]{
-			Constructor: newPigpio,
-		})
 	resource.RegisterComponent(
 		board.API,
 		ModelPi4,
