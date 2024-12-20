@@ -2,13 +2,10 @@
 package main
 
 import (
-	"context"
-
 	"go.viam.com/rdk/components/board"
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/module"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/utils"
 	"raspberry-pi/pi5"
 	"raspberry-pi/rpi"
 	rpiservo "raspberry-pi/rpi-servo"
