@@ -27,6 +27,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,7 +37,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -46,6 +47,7 @@ var (
 	ModelPi1   = rpiutils.RaspiFamily.WithModel("rpi1")   // Raspberry Pi 1 model
 	ModelPi0_2 = rpiutils.RaspiFamily.WithModel("rpi0_2") // Raspberry Pi 0_2 model
 	ModelPi0   = rpiutils.RaspiFamily.WithModel("rpi0")   // Raspberry Pi 0 model
+	ModelPi    = rpiutils.RaspiFamily.WithModel("rpi")    // Generic Raspbery Pi model
 )
 
 var (
@@ -55,6 +57,12 @@ var (
 
 // init registers a pi board based on pigpio.
 func init() {
+	resource.RegisterComponent(
+		board.API,
+		ModelPi,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
 	resource.RegisterComponent(
 		board.API,
 		ModelPi4,
@@ -138,7 +146,7 @@ func newPigpio(
 	if err != nil {
 		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
 	}
-	isPi5 := strings.Contains(string(piModel), "5")
+	isPi5 := strings.Contains(string(piModel), "Raspberry Pi 5")
 	if isPi5 {
 		return nil, rpiutils.WrongModelErr(conf.Name)
 	}
