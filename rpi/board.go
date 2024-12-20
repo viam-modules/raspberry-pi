@@ -27,6 +27,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -35,7 +37,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -145,7 +146,7 @@ func newPigpio(
 	if err != nil {
 		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
 	}
-	isPi5 := strings.Contains(string(piModel), "5")
+	isPi5 := strings.Contains(string(piModel), "Raspberry Pi 5")
 	if isPi5 {
 		return nil, rpiutils.WrongModelErr(conf.Name)
 	}

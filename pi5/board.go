@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -21,7 +23,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -90,7 +91,7 @@ func newBoard(
 	if err != nil {
 		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
 	}
-	isPi5 := strings.Contains(string(piModel), "5")
+	isPi5 := strings.Contains(string(piModel), "Raspberry Pi 5")
 	// ensure that we are a pi5 when not running tests
 	if !isPi5 && !testingMode {
 		return nil, rpiutils.WrongModelErr(conf.Name)
