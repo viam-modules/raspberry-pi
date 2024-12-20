@@ -40,6 +40,7 @@ import (
 
 // Model represents a raspberry pi board model.
 var (
+	ModelPi   = rpiutils.RaspiFamily.WithModel("rpi")   // Raspberry Pi Generic model
 	ModelPi4   = rpiutils.RaspiFamily.WithModel("rpi4")   // Raspberry Pi 4 model
 	ModelPi3   = rpiutils.RaspiFamily.WithModel("rpi3")   // Raspberry Pi 3 model
 	ModelPi2   = rpiutils.RaspiFamily.WithModel("rpi2")   // Raspberry Pi 2 model
@@ -55,6 +56,12 @@ var (
 
 // init registers a pi board based on pigpio.
 func init() {
+	resource.RegisterComponent(
+		board.API,
+		ModelPi,
+		resource.Registration[board.Board, *rpiutils.Config]{
+			Constructor: newPigpio,
+		})
 	resource.RegisterComponent(
 		board.API,
 		ModelPi4,
