@@ -37,6 +37,9 @@ func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) err
 	if err = module.AddModelFromRegistry(ctx, board.API, pi5.Model); err != nil {
 		return err
 	}
+	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi); err != nil {
+		return err
+	}
 	if err = module.AddModelFromRegistry(ctx, board.API, rpi.ModelPi4); err != nil {
 		return err
 	}
