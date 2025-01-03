@@ -14,10 +14,11 @@ import (
 	"context"
 	"fmt"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
 	rdkutils "go.viam.com/rdk/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // GPIOConfig tracks what each pin is currently configured as
@@ -52,7 +53,7 @@ func (pi *piPigpio) GPIOPinByName(pin string) (board.GPIOPin, error) {
 		}
 		// check if the pin was configured with a different name
 		if have && configuredPin.pin == bcom {
-			pi.logger.Warnf("pin %v has already been configured with name %v", pin, configuredPin.name)
+			pi.logger.Debugf("pin %v has already been configured with name %v", pin, configuredPin.name)
 			return gpioPin{pi, int(configuredPin.pin)}, nil
 		}
 	}
