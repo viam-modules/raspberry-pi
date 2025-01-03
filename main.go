@@ -11,16 +11,6 @@ import (
 	rpiservo "raspberry-pi/rpi-servo"
 )
 
-// func init() {
-// 	if isPi5 {
-
-// 		pi5.RegisterPINCTRL()
-// 	} else {
-// 		// init registers a pi board based on pigpio.
-// 		rpi.RegisterPIGPIO()
-// 	}
-// }
-
 func main() {
 	module.ModularMain(
 		resource.APIModel{board.API, pi5.Model},
