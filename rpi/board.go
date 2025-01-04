@@ -115,6 +115,7 @@ type piPigpio struct {
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
 	// to these same values. The two should always have the same set of values.
 	interrupts map[uint]*rpiInterrupt
+	pinConfigs []rpiutils.PinConfig
 	logger     logging.Logger
 	isClosed   bool
 
@@ -214,15 +215,16 @@ func (pi *piPigpio) Reconfigure(
 	if err != nil {
 		return err
 	}
+
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+
 	// make sure every pin has a name. We already know every pin has a pin
 	for _, c := range cfg.Pins {
 		if c.Name == "" {
 			c.Name = c.Pin
 		}
 	}
-
-	pi.mu.Lock()
-	defer pi.mu.Unlock()
 
 	if err := pi.reconfigureAnalogReaders(cfg); err != nil {
 		return err
