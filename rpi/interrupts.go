@@ -40,32 +40,40 @@ func findInterruptByName(
 	return nil, false
 }
 
-// reconfigureContext contains the context and state required for reconfiguring interrupts.
-type reconfigureContext struct {
-	pi  *piPigpio
-	ctx context.Context
-
-	// Map of old interrupts to be cleaned up
-	oldInterrupts map[uint]*rpiInterrupt
-
-	// New Interrupts to be created to replace the old ones
-	newInterrupts map[uint]*rpiInterrupt
-}
-
 // reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
 // It reuses existing interrupts when possible and creates new ones if necessary.
 func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *rpiutils.Config) error {
-	reconfigCtx := &reconfigureContext{
-		pi:            pi,
-		ctx:           ctx,
-		oldInterrupts: pi.interrupts,
-		newInterrupts: make(map[uint]*rpiInterrupt),
-	}
-
-	// teardown old interrupts
-	for _, interrupt := range reconfigCtx.oldInterrupts {
-		if result := C.teardownInterrupt(interrupt.callbackID); result != 0 {
-			return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+	// look at previous interrupt config, and see if we removed any
+	for _, oldConfig := range pi.pinConfigs {
+		if oldConfig.Type != rpiutils.PinInterrupt {
+			continue
+		}
+		sameInterrupt := false
+		for _, newConfig := range cfg.Pins {
+			if newConfig.Type != rpiutils.PinInterrupt {
+				continue
+			}
+			// check if we still have this interrupt
+			if oldConfig.Name == newConfig.Name && oldConfig.Pin == newConfig.Pin {
+				sameInterrupt = true
+				break
+			}
+		}
+		// if we still have the interrupt, don't modify it
+		if sameInterrupt {
+			continue
+		}
+		// we no longer want this interrupt, so we will remove it
+		bcom, ok := rpiutils.BroadcomPinFromHardwareLabel(oldConfig.Pin)
+		if !ok {
+			return errors.Errorf("cannot find GPIO for unknown pin: %s", oldConfig.Name)
+		}
+		interrupt, ok := pi.interrupts[bcom]
+		if ok {
+			if result := C.teardownInterrupt(interrupt.callbackID); result != 0 {
+				return rpiutils.ConvertErrorCodeToMessage(int(result), "error")
+			}
+			delete(pi.interrupts, bcom)
 		}
 	}
 
@@ -80,39 +88,46 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *rpiutils.Con
 			return errors.Errorf("no hw mapping for %s", newConfig.Pin)
 		}
 
+		// check if we are already managing pin
+		interrupt, ok := pi.interrupts[bcom]
+		if ok {
+			pi.logger.Infof("interrupt %v is already a tracked interrupt", interrupt.interrupt.Name())
+			continue
+		}
+
 		// create new interrupt
-		if err := reconfigCtx.createNewInterrupt(newConfig, bcom); err != nil {
+		_, err := pi.createNewInterrupt(newConfig, bcom)
+		if err != nil {
 			return err
 		}
 	}
 
-	pi.interrupts = reconfigCtx.newInterrupts
 	return nil
 }
 
 // createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
-func (ctx *reconfigureContext) createNewInterrupt(newConfig rpiutils.PinConfig, bcom uint) error {
-	di, err := rpiutils.CreateDigitalInterrupt(newConfig)
+func (pi *piPigpio) createNewInterrupt(newConfig rpiutils.PinConfig, bcom uint) (rpiutils.ReconfigurableDigitalInterrupt, error) {
+	d, err := rpiutils.CreateDigitalInterrupt(
+		rpiutils.PinConfig{
+			Name: newConfig.Name,
+			Pin:  newConfig.Pin,
+			Type: rpiutils.PinInterrupt,
+		})
 	if err != nil {
-		return err
+		return nil, err
+	}
+	callbackID := C.setupInterrupt(pi.piID, C.int(bcom))
+	if callbackID < 0 {
+		err := rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
+		return nil, errors.Errorf("Unable to set up interrupt on pin %s: %s", newConfig.Name, err)
 	}
 
-	newInterrupt := &rpiInterrupt{
-		interrupt:            di,
-		debounceMicroSeconds: uint64(newConfig.DebounceMS) * 1000,
+	pi.interrupts[bcom] = &rpiInterrupt{
+		interrupt:  d,
+		callbackID: C.uint(callbackID),
 	}
 
-	ctx.newInterrupts[bcom] = newInterrupt
-
-	// returns callback ID on success >= 0
-	callbackID := C.setupInterrupt(ctx.pi.piID, C.int(bcom))
-	if int(callbackID) < 0 {
-		return rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
-	}
-
-	newInterrupt.callbackID = C.uint(callbackID)
-
-	return nil
+	return d, nil
 }
 
 // DigitalInterruptNames returns the names of all known digital interrupts.
@@ -135,31 +150,16 @@ func (pi *piPigpio) DigitalInterruptByName(name string) (board.DigitalInterrupt,
 	defer pi.mu.Unlock()
 	d, ok := findInterruptByName(name, pi.interrupts)
 	if !ok {
-		var err error
 		if bcom, have := rpiutils.BroadcomPinFromHardwareLabel(name); have {
 			if d, ok := pi.interrupts[bcom]; ok {
 				return d.interrupt, nil
 			}
-			d, err = rpiutils.CreateDigitalInterrupt(
+			return pi.createNewInterrupt(
 				rpiutils.PinConfig{
 					Name: name,
 					Pin:  name,
 					Type: rpiutils.PinInterrupt,
-				})
-			if err != nil {
-				return nil, err
-			}
-			callbackID := C.setupInterrupt(pi.piID, C.int(bcom))
-			if callbackID < 0 {
-				err := rpiutils.ConvertErrorCodeToMessage(int(callbackID), "error")
-				return nil, errors.Errorf("Unable to set up interrupt on pin %s: %s", name, err)
-			}
-
-			pi.interrupts[bcom] = &rpiInterrupt{
-				interrupt:  d,
-				callbackID: C.uint(callbackID),
-			}
-			return d, nil
+				}, bcom)
 		}
 		return d, fmt.Errorf("interrupt %s does not exist", name)
 	}

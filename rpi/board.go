@@ -41,7 +41,7 @@ import (
 
 // Model represents a raspberry pi board model.
 var (
-	ModelPi   = rpiutils.RaspiFamily.WithModel("rpi")   // Raspberry Pi Generic model
+	ModelPi    = rpiutils.RaspiFamily.WithModel("rpi")    // Raspberry Pi Generic model
 	ModelPi4   = rpiutils.RaspiFamily.WithModel("rpi4")   // Raspberry Pi 4 model
 	ModelPi3   = rpiutils.RaspiFamily.WithModel("rpi3")   // Raspberry Pi 3 model
 	ModelPi2   = rpiutils.RaspiFamily.WithModel("rpi2")   // Raspberry Pi 2 model
@@ -110,6 +110,7 @@ type piPigpio struct {
 	mu            sync.Mutex
 	cancelCtx     context.Context
 	cancelFunc    context.CancelFunc
+	pinConfigs    []rpiutils.PinConfig
 	gpioPins      map[int]*rpiGPIO
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
@@ -172,6 +173,7 @@ func newPigpio(
 		cancelFunc: cancelFunc,
 		piID:       piID,
 		model:      conf.Model.Name,
+		interrupts: make(map[uint]*rpiInterrupt),
 	}
 
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
@@ -241,6 +243,8 @@ func (pi *piPigpio) Reconfigure(
 	if err := pi.reconfigurePulls(ctx, cfg); err != nil {
 		return err
 	}
+
+	pi.pinConfigs = cfg.Pins
 
 	boardInstanceMu.Lock()
 	defer boardInstanceMu.Unlock()
