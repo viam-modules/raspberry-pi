@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	rpiservo "raspberry-pi/rpi-servo"
+	rpiutils "raspberry-pi/utils"
+
 	"go.viam.com/rdk/components/servo"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/test"
-	rpiservo "raspberry-pi/rpi-servo"
-	rpiutils "raspberry-pi/utils"
 )
 
 func TestPiPigpio(t *testing.T) {
@@ -43,6 +44,25 @@ func TestPiPigpio(t *testing.T) {
 		err := p.Close(ctx)
 		test.That(t, err, test.ShouldBeNil)
 	}()
+
+	t.Run("test interrupts on reconfigure", func(t *testing.T) {
+		expectedNumInterrupts := 2
+		// before adding an interrupt using DigitalInterruptByName, confirm
+		// pi.interrupts length matches the number of interrupts in the config
+		test.That(t, len(p.interrupts), test.ShouldEqual, expectedNumInterrupts)
+
+		// add a digital interrupt using DigitalInterruptByName,
+		// check that it has been added to the pi.interrupts list
+		_, err := p.DigitalInterruptByName("10")
+		expectedNumInterrupts = 3
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, len(p.interrupts), test.ShouldEqual, expectedNumInterrupts)
+
+		// test that the number of interrupts is the same after reconfigure
+		err = p.Reconfigure(ctx, nil, resourceConfig)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, len(p.interrupts), test.ShouldEqual, expectedNumInterrupts)
+	})
 
 	t.Run("gpio and pwm", func(t *testing.T) {
 		pin, err := p.GPIOPinByName("29")
