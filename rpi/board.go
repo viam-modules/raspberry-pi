@@ -41,7 +41,7 @@ import (
 
 // Model represents a raspberry pi board model.
 var (
-	ModelPi   = rpiutils.RaspiFamily.WithModel("rpi")   // Raspberry Pi Generic model
+	ModelPi    = rpiutils.RaspiFamily.WithModel("rpi")    // Raspberry Pi Generic model
 	ModelPi4   = rpiutils.RaspiFamily.WithModel("rpi4")   // Raspberry Pi 4 model
 	ModelPi3   = rpiutils.RaspiFamily.WithModel("rpi3")   // Raspberry Pi 3 model
 	ModelPi2   = rpiutils.RaspiFamily.WithModel("rpi2")   // Raspberry Pi 2 model
@@ -110,6 +110,7 @@ type piPigpio struct {
 	mu            sync.Mutex
 	cancelCtx     context.Context
 	cancelFunc    context.CancelFunc
+	pinConfigs    []rpiutils.PinConfig
 	gpioPins      map[int]*rpiGPIO
 	analogReaders map[string]*pinwrappers.AnalogSmoother
 	// `interrupts` maps interrupt names to the interrupts. `interruptsHW` maps broadcom addresses
@@ -172,6 +173,7 @@ func newPigpio(
 		cancelFunc: cancelFunc,
 		piID:       piID,
 		model:      conf.Model.Name,
+		interrupts: make(map[uint]*rpiInterrupt),
 	}
 
 	if err := piInstance.Reconfigure(ctx, nil, conf); err != nil {
@@ -228,19 +230,21 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	if err := pi.reconfigureGPIOs(ctx, cfg); err != nil {
+	if err := pi.reconfigureGPIOs(cfg); err != nil {
 		return err
 	}
 
 	// This is the only one that actually uses ctx, but we pass it to all previous helpers, too, to
 	// keep the interface consistent.
-	if err := pi.reconfigureInterrupts(ctx, cfg); err != nil {
+	if err := pi.reconfigureInterrupts(cfg); err != nil {
 		return err
 	}
 
-	if err := pi.reconfigurePulls(ctx, cfg); err != nil {
+	if err := pi.reconfigurePulls(cfg); err != nil {
 		return err
 	}
+
+	pi.pinConfigs = cfg.Pins
 
 	boardInstanceMu.Lock()
 	defer boardInstanceMu.Unlock()
@@ -249,7 +253,7 @@ func (pi *piPigpio) Reconfigure(
 	return nil
 }
 
-func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *rpiutils.Config) error {
+func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 	for _, pullConf := range cfg.Pins {
 		// skip pins that do not have a pull state set
 		if pullConf.PullState == rpiutils.PullDefault {
