@@ -96,7 +96,7 @@ func (gp gpioPin) SetPWMFreq(ctx context.Context, freqHz uint, extra map[string]
 	return gp.pi.SetPWMFreqBcom(gp.bcom, freqHz)
 }
 
-func (pi *piPigpio) reconfigureGPIOs(ctx context.Context, cfg *rpiutils.Config) error {
+func (pi *piPigpio) reconfigureGPIOs(cfg *rpiutils.Config) error {
 	// Set new pins based on config
 	pi.gpioPins = map[int]*rpiGPIO{}
 	for _, newConfig := range cfg.Pins {

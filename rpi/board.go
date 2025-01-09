@@ -230,17 +230,17 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
-	if err := pi.reconfigureGPIOs(ctx, cfg); err != nil {
+	if err := pi.reconfigureGPIOs(cfg); err != nil {
 		return err
 	}
 
 	// This is the only one that actually uses ctx, but we pass it to all previous helpers, too, to
 	// keep the interface consistent.
-	if err := pi.reconfigureInterrupts(ctx, cfg); err != nil {
+	if err := pi.reconfigureInterrupts(cfg); err != nil {
 		return err
 	}
 
-	if err := pi.reconfigurePulls(ctx, cfg); err != nil {
+	if err := pi.reconfigurePulls(cfg); err != nil {
 		return err
 	}
 
@@ -253,7 +253,7 @@ func (pi *piPigpio) Reconfigure(
 	return nil
 }
 
-func (pi *piPigpio) reconfigurePulls(ctx context.Context, cfg *rpiutils.Config) error {
+func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 	for _, pullConf := range cfg.Pins {
 		// skip pins that do not have a pull state set
 		if pullConf.PullState == rpiutils.PullDefault {

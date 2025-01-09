@@ -11,13 +11,13 @@ package rpi
 import "C"
 
 import (
-	"context"
 	"fmt"
 	"math"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
-	rpiutils "raspberry-pi/utils"
 )
 
 type rpiInterrupt struct {
@@ -42,7 +42,7 @@ func findInterruptByName(
 
 // reconfigureInterrupts reconfigures the digital interrupts based on the new configuration provided.
 // It reuses existing interrupts when possible and creates new ones if necessary.
-func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *rpiutils.Config) error {
+func (pi *piPigpio) reconfigureInterrupts(cfg *rpiutils.Config) error {
 	// look at previous interrupt config, and see if we removed any
 	for _, oldConfig := range pi.pinConfigs {
 		if oldConfig.Type != rpiutils.PinInterrupt {
@@ -107,12 +107,7 @@ func (pi *piPigpio) reconfigureInterrupts(ctx context.Context, cfg *rpiutils.Con
 
 // createNewInterrupt creates a new digital interrupt and sets it up with the specified configuration.
 func (pi *piPigpio) createNewInterrupt(newConfig rpiutils.PinConfig, bcom uint) (rpiutils.ReconfigurableDigitalInterrupt, error) {
-	d, err := rpiutils.CreateDigitalInterrupt(
-		rpiutils.PinConfig{
-			Name: newConfig.Name,
-			Pin:  newConfig.Pin,
-			Type: rpiutils.PinInterrupt,
-		})
+	d, err := rpiutils.CreateDigitalInterrupt(newConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +118,9 @@ func (pi *piPigpio) createNewInterrupt(newConfig rpiutils.PinConfig, bcom uint) 
 	}
 
 	pi.interrupts[bcom] = &rpiInterrupt{
-		interrupt:  d,
-		callbackID: C.uint(callbackID),
+		interrupt:            d,
+		callbackID:           C.uint(callbackID),
+		debounceMicroSeconds: uint64(newConfig.DebounceMS) * 1000,
 	}
 
 	return d, nil
