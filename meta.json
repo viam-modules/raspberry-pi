@@ -7,49 +7,49 @@
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi5",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 5 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi4",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 4 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi3",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 3 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi2",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 2 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi1",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 1 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi0",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 0 GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi0_2",
-        "markdown_link": "README.md#attributes",
+        "markdown_link": "README.md#configure-your-raspberry-pi-board",
         "short_description": "A board component for the Raspberry Pi 0 2 GPIO pins."
       },  
       {
