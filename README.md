@@ -16,9 +16,9 @@ The following models are provided in this module:
 
 Follow the [setup guide](https://docs.viam.com/installation/prepare/rpi-setup/) to prepare your Pi for running `viam-server` before configuring this board.
 
-## Configure your `raspberry-pi` board
-
 Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https://app.viam.com), searching for `raspberry-pi`.
+
+## Configure your `raspberry-pi` board
 
 Fill in the attributes as applicable to your board:
 
