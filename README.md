@@ -21,58 +21,61 @@ Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https
 
 ## Configure your `raspberry-pi` board
 
-Fill in the attributes as applicable to your board:
+You can copy the following optional attributes to your json if you want to configure `pins` and `analogs`. These are not required to use the Raspberry Pi.
 
 ```json
 {
-  "components": [
+  "pins": [{ }],
+  "analogs": [{ } ]
+}
+```
+
+### `pins`
+Pins can be configured as GPIO pins and interrupts. [Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
+Example JSON Configuration:
+
+```json
+{
+  "pins": [
     {
-      "name": "<your-pi-board-name>",
-      "model": "viam:raspberry-pi:<rpi-model>",
-      "type": "board",
-      "namespace": "rdk",
-      "attributes": {
-        "analogs": [
-          {
-            "name": "<your-analog-reader-name>",
-            "pin": "<pin-number-on-adc>",
-            "spi_bus": "<your-spi-bus-index>",
-            "chip_select": "<chip-select-index>",
-            "average_over_ms": <int>,
-            "samples_per_sec": <int>
-          }
-        ],
-        "pins": [
-          {
-            "name": "<your-pin-name>",
-            "pin": "<pin-number>",
-            "type": "<gpio/interrupt>"
-          }
-        ]
-      }
-    }
-  ],
-  "modules": [
+      "name": "your-gpio-1",
+      "pin": "13",
+      "type": "gpio"
+    },
     {
-      "type": "registry",
-      "name": "viam_raspberry-pi",
-      "module_id": "viam:raspberry-pi",
-      "version": "^1"
+      "name": "your-gpio-2",
+      "pin": "14",
+      "pull": "down"
+    },
+    {
+      "name": "your-interrupt-1",
+      "pin": "15",
+      "type": "interrupt"
+    },
+    {
+      "name": "your-interrupt-2",
+      "pin": "16",
+      "type": "interrupt",
+      "pull": "down"
     }
   ]
 }
 ```
 
-### Attributes
-
-The following attributes are available for `viam:raspberry-pi:<raspberry-pi-model>` board:
+The following attributes are available for `pins`:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
-| `analogs` | object | Optional | Attributes of any pins that can be used as analog-to-digital converter (ADC) inputs. See [configuration info](#analogs). |
-| `pins` | object | Optional | Any pin's pin number and name. Used to configure gpios and interrupts and setting the pull state for a pin. See [configuration info](#pins). |
+|`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
+|`name` | string | Optional | Your name for the digital interrupt. |
+|`type`| string | Optional | Whether the pin should be an `interrupt` or `gpio` pin. Default: `"gpio"` |
+|`pull`| string | Optional | Define whether the pins should be pull up or pull down. Omitting this uses your Pi's default configuration |
+|`debounce_ms`| string | Optional | define a signal debounce for your interrupts to help prevent false triggers. </li> </ul> |
 
-#### `analogs`
+* When an interrupt configured on your board processes a change in the state of the GPIO pin it is configured to monitor, it ticks to record the state change. You can stream these ticks with the board API's [`StreamTicks()`](https://docs.viam.com/components/board/#streamticks), or get the current value of the digital interrupt with Value().
+* Calling [`GetGPIO()`](https://docs.viam.com/components/board/#getgpio) on a GPIO pin, which you can do without configuring interrupts, is useful when you want to know a pin's value at specific points in your program, but is less precise and convenient than using an interrupt.
+
+### `analogs`
 
 An [analog-to-digital converter](https://www.electronics-tutorials.ws/combination/analogue-to-digital-converter.html) (ADC) takes a continuous voltage input (analog signal) and converts it to an discrete integer output (digital signal).
 
@@ -80,135 +83,37 @@ ADCs are useful when building a robot, as they enable your board to read the ana
 
 To integrate an ADC into your machine, you must first physically connect the pins on your ADC to your board. The Pi 5 board does not currently support the use of analogs.
 
-Then, integrate `analogs` into the `attributes` of your board by following the **Config Builder** instructions or by adding the following to your board's JSON configuration:
+Then, integrate `analogs` into the `attributes` of your board by adding the following to your board's JSON configuration:
 
 ```json
-// "attributes": { ... ,
 "analogs": [
   {
-    "name": "<your-analog-reader-name>",
-    "pin": "<pin-number-on-adc>",
-    "spi_bus": "<your-spi-bus-index>",
-    "chip_select": "<chip-select-index>",
-    "average_over_ms": <int>,
-    "samples_per_sec": <int>
+    "name": "current",
+    "channel": "1",
+    "spi_bus": "1",
+    "chip_select": "0",
+    "average_over_ms": 10,
+    "samples_per_sec": 1
+  },
+  {
+    "name": "pressure",
+    "channel": "0",
+    "spi_bus": "1",
+    "chip_select": "0"
   }
 ]
 ```
 
-The following properties are available for `analogs`:
+The following attributes are available for `analogs`:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
 | `name` | string | **Required** | Your name for the analog reader. |
-| `pin` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC. |
+| `channel` | string | **Required** | The pin number of the ADC's connection pin, wired to the board. This should be labeled as the physical index of the pin on the ADC. |
 | `chip_select` | string | **Required** | The chip select index of the board's connection pin, wired to the ADC. |
 | `spi_bus` | string | **Required** | The index of the SPI bus connecting the ADC and board. |
 | `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
 | `samples_per_sec` | int | Optional | Sampling rate of the analog input in samples per second. |
-
-Example:
-
-```json
-{
-  "components": [
-    {
-      "model": "pi",
-      "name": "your-board",
-      "type": "board",
-      "attributes": {
-        "analogs": [
-          {
-            "name": "current",
-            "pin": "1",
-            "spi_bus": "1",
-            "chip_select": "0"
-          },
-          {
-            "name": "pressure",
-            "pin": "0",
-            "spi_bus": "1",
-            "chip_select": "0"
-          }
-        ]
-      }
-    }
-  ]
-}
-```
-
-#### `pins`
-
-Pins can be configured as GPIO pins and interrupts. [Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
-
-* When an interrupt configured on your board processes a change in the state of the GPIO pin it is configured to monitor, it ticks to record the state change. You can stream these ticks with the board API's [`StreamTicks()`](https://docs.viam.com/components/board/#streamticks), or get the current value of the digital interrupt with Value().
-* Calling [`GetGPIO()`](https://docs.viam.com/components/board/#getgpio) on a GPIO pin, which you can do without configuring interrupts, is useful when you want to know a pin's value at specific points in your program, but is less precise and convenient than using an interrupt.
-
-Integrate `pins` into your machine in the `attributes` of your board by following the **Config Builder** instructions, or by adding the following to your board's JSON configuration:
-
-```json
-// "attributes": { ... ,
-"pins": [
-  {
-    "name": "<your-digital-interrupt-name>",
-    "pin": "<pin-number>",
-    "type": "<gpio/interrupt>"
-  }
-]
-```
-
-The following properties are available for `pins`:
-
-| Name | Type | Required? | Description |
-| ---- | ---- | --------- | ----------- |
-|`name` | string | **Required** | Your name for the digital interrupt. |
-|`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
-|`type`| string | Optional | Whether the pin should be an `interrupt` or `gpio` pin. Default: `"gpio"` |
-|`pull`| string | Optional | Define whether the pins should be pull up or pull down. Omitting this uses your Pi's default configuration |
-|`debounce_ms`| string | Optional | define a signal debounce for your interrupts to help prevent false triggers. </li> </ul> |
-
-Example:
-
-```json
-{
-  "components": [
-    {
-      "model": "pi",
-      "name": "your-board",
-      "type": "board",
-      "attributes": {
-        "pins": [
-          {
-            "name": "your-gpio-1",
-            "pin": "13",
-            "type": "gpio"
-          },
-          {
-            "name": "your-gpio-2",
-            "pin": "14",
-            "pull": "down"
-          },
-          {
-            "name": "your-interrupt-1",
-            "pin": "15",
-            "type": "interrupt"
-          },
-          {
-            "name": "your-interrupt-2",
-            "pin": "16",
-            "type": "interrupt",
-            "pull": "down"
-          }
-        ]
-      }
-    }
-  ]
-}
-```
-
-### Additional Info for Dev
-
-This module uses Viam's [genericlinux implementation](https://github.com/viamrobotics/rdk/tree/main/components/board/genericlinux) for SPI and I2C.
 
 ## Configure your pi servo
 
@@ -218,32 +123,8 @@ Fill in the attributes as applicable to your servo, according to the example bel
 
 ```json
 {
-  "components": [
-    {
-      "name": "<your-servo-name>",
-      "model": "viam:raspberry-pi:rpi-servo",
-      "type": "servo",
-      "namespace": "rdk",
-      "attributes": {
-        "pin": "<your-pin-number>",
-        "board": "<your-board-name>",
-        "min": <float>,
-        "max": <float>,
-        "starting_position_deg": <float>,
-        "hold_position": <int>,
-        "max_rotation_deg": <int>,
-        "frequency_hz": <int>
-      }
-    }
-  ],
-  "modules": [
-    {
-      "type": "registry",
-      "name": "viam_raspberry-pi",
-      "module_id": "viam:raspberry-pi",
-      "version": "0.0.1"
-    }
-  ],
+  "pin": "11",
+  "board": "board-`",
 }
 ```
 
