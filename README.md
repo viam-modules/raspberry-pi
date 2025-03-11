@@ -2,16 +2,23 @@
 
 This module implements the [`rdk:component:board` API](https://docs.viam.com/components/board/#api) and [`rdk:component:servo` API](https://docs.viam.com/components/servo/#api)
 
-The following models are provided in this module:
+This module provides the following models to access GPIO functionality (input, output, PWM, power, serial interfaces, etc.):
 
-* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board to access GPIO functionality: input, output, PWM, power, serial interfaces, etc.
+* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board 
 * `viam:raspberry-pi:rpi4` - Configure a Raspberry Pi 4 board
 * `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
 * `viam:raspberry-pi:rpi2` - Configure a Raspberry Pi 2 board
 * `viam:raspberry-pi:rpi1` - Configure a Raspberry Pi 1 board
 * `viam:raspberry-pi:rpi0` - Configure a Raspberry Pi 0 board
 * `viam:raspberry-pi:rpi0_2` - Configure a Raspberry Pi 0 2 W board
+
+This module also provides a servo model:
+
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board. Note this model is not supported on the rpi5 board.
+
+Note that Raspberry Pi 0, 1, 2 and 3 are supported as GPIO peripherals but are not capable of running `viam-server` themselves.
+You can use these boards with Viam by connecting them to another computer or SBC.
+RPi 0 2W, 4, and 5 can run `viam-server`.
 
 ## Requirements
 
