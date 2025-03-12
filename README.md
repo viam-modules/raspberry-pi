@@ -16,9 +16,7 @@ This module also provides a servo model:
 
 * `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board. Note this model is not supported on the rpi5 board.
 
-Note that Raspberry Pi 0, 1, 2 and 3 are supported as GPIO peripherals but are not capable of running `viam-server` themselves.
-You can use these boards with Viam by connecting them to another computer or SBC.
-RPi 0 2W, 4, and 5 can run `viam-server`.
+All of the Pis above are supported as [board components](https://docs.viam.com/operate/reference/components/board/), but some older models are not capable of running `viam-server`--see [Set up a computer or SBC](https://docs.viam.com/operate/get-started/setup/) for `viam-server` system requirements.
 
 ## Requirements
 
