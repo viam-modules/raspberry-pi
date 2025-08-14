@@ -244,6 +244,10 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	if err := pi.configureI2C(cfg); err != nil {
+		return err
+	}
+
 	pi.pinConfigs = cfg.Pins
 
 	boardInstanceMu.Lock()
@@ -283,6 +287,54 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 	}
 	return nil
 }
+
+func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
+	var configChanged, moduleChanged bool
+	var err error
+
+	if cfg.EnableI2C {
+		configChanged, err = pi.updateI2CConfig("on")
+		if err != nil {
+			return fmt.Errorf("failed to enable I2C: %w", err)
+		}
+
+		moduleChanged, err = pi.updateI2CModule(true)
+		if err != nil {
+			return fmt.Errorf("failed to enable I2C module: %w", err)
+		}
+	} else {
+		configChanged, err = pi.updateI2CConfig("off")
+		if err != nil {
+			return fmt.Errorf("failed to disable I2C: %w", err)
+		}
+
+		moduleChanged, err = pi.updateI2CModule(false)
+		if err != nil {
+			return fmt.Errorf("failed to disable I2C module: %w", err)
+		}
+	}
+
+	if configChanged || moduleChanged {
+		action := "enabled"
+		if !cfg.EnableI2C {
+			action = "disabled"
+		}
+		pi.logger.Infof("I2C configuration %s. Initiating automatic reboot...", action)
+		go rpiutils.PerformReboot(pi.logger)
+	}
+
+	return nil
+}
+
+func (pi *piPigpio) updateI2CConfig(desiredValue string) (bool, error) {
+	configPath := rpiutils.GetBootConfigPath()
+	return rpiutils.UpdateConfigFile(configPath, "dtparam=i2c_arm", desiredValue, pi.logger)
+}
+
+func (pi *piPigpio) updateI2CModule(enable bool) (bool, error) {
+	return rpiutils.UpdateModuleFile("/etc/modules", "i2c-dev", enable, pi.logger)
+}
+
 
 // Close attempts to close all parts of the board cleanly.
 func (pi *piPigpio) Close(ctx context.Context) error {
