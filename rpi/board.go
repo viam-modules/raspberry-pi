@@ -291,27 +291,41 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
 	var configChanged, moduleChanged bool
 	var err error
+	var configFailed, moduleFailed bool
 
 	if cfg.EnableI2C {
 		configChanged, err = pi.updateI2CConfig("on")
 		if err != nil {
-			return fmt.Errorf("failed to enable I2C: %w", err)
+			pi.logger.Errorf("Failed to enable I2C in boot config: %v", err)
+			configFailed = true
 		}
 
 		moduleChanged, err = pi.updateI2CModule(true)
 		if err != nil {
-			return fmt.Errorf("failed to enable I2C module: %w", err)
+			pi.logger.Errorf("Failed to enable I2C module: %v", err)
+			moduleFailed = true
 		}
 	} else {
 		configChanged, err = pi.updateI2CConfig("off")
 		if err != nil {
-			return fmt.Errorf("failed to disable I2C: %w", err)
+			pi.logger.Errorf("Failed to disable I2C in boot config: %v", err)
+			configFailed = true
 		}
 
 		moduleChanged, err = pi.updateI2CModule(false)
 		if err != nil {
-			return fmt.Errorf("failed to disable I2C module: %w", err)
+			pi.logger.Errorf("Failed to disable I2C module: %v", err)
+			moduleFailed = true
 		}
+	}
+
+	if configFailed || moduleFailed {
+		action := "enable"
+		if !cfg.EnableI2C {
+			action = "disable"
+		}
+		pi.logger.Errorf("Automatic I2C configuration failed. Please manually %s I2C using 'sudo raspi-config' -> Interfacing Options -> I2C", action)
+		return nil
 	}
 
 	if configChanged || moduleChanged {

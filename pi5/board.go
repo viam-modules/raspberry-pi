@@ -444,27 +444,41 @@ func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.Digital
 func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 	var configChanged, moduleChanged bool
 	var err error
+	var configFailed, moduleFailed bool
 
 	if cfg.EnableI2C {
 		configChanged, err = b.updateI2CConfig("on")
 		if err != nil {
-			return fmt.Errorf("failed to enable I2C: %w", err)
+			b.logger.Errorf("Failed to enable I2C in boot config: %v", err)
+			configFailed = true
 		}
 
 		moduleChanged, err = b.updateI2CModule(true)
 		if err != nil {
-			return fmt.Errorf("failed to enable I2C module: %w", err)
+			b.logger.Errorf("Failed to enable I2C module: %v", err)
+			moduleFailed = true
 		}
 	} else {
 		configChanged, err = b.updateI2CConfig("off")
 		if err != nil {
-			return fmt.Errorf("failed to disable I2C: %w", err)
+			b.logger.Errorf("Failed to disable I2C in boot config: %v", err)
+			configFailed = true
 		}
 
 		moduleChanged, err = b.updateI2CModule(false)
 		if err != nil {
-			return fmt.Errorf("failed to disable I2C module: %w", err)
+			b.logger.Errorf("Failed to disable I2C module: %v", err)
+			moduleFailed = true
 		}
+	}
+
+	if configFailed || moduleFailed {
+		action := "enable"
+		if !cfg.EnableI2C {
+			action = "disable"
+		}
+		b.logger.Errorf("Automatic I2C configuration failed. Please manually %s I2C using 'sudo raspi-config' -> Interfacing Options -> I2C", action)
+		return nil
 	}
 
 	if configChanged || moduleChanged {
@@ -472,7 +486,7 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 		if !cfg.EnableI2C {
 			action = "disabled"
 		}
-		b.logger.Warnf("I2C configuration %s. Initiating automatic reboot...", action)
+		b.logger.Infof("I2C configuration %s. Initiating automatic reboot...", action)
 		go rpiutils.PerformReboot(b.logger)
 	}
 
