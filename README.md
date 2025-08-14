@@ -26,12 +26,13 @@ Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https
 
 ## Configure your `raspberry-pi` board
 
-You can copy the following optional attributes to your json if you want to configure `pins` and `analogs`. These are not required to use the Raspberry Pi.
+You can copy the following optional attributes to your json if you want to configure `pins`, `analogs`, and `enable_i2c`. These are not required to use the Raspberry Pi.
 
 ```json
 {
   "pins": [{ }],
-  "analogs": [{ } ]
+  "analogs": [{ } ],
+  "enable_i2c": true
 }
 ```
 
@@ -119,6 +120,36 @@ The following attributes are available for `analogs`:
 | `spi_bus` | string | **Required** | The index of the SPI bus connecting the ADC and board. |
 | `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
 | `samples_per_sec` | int | Optional | Sampling rate of the analog input in samples per second. |
+
+### `enable_i2c`
+
+The I2C interface on Raspberry Pi is disabled by default. When you set `enable_i2c` to `true`, the module will automatically configure your Raspberry Pi to enable I2C communication.
+
+```json
+{
+  "enable_i2c": true
+}
+```
+
+When I2C is enabled, the module will:
+
+1. Add `dtparam=i2c_arm=on` to `/boot/config.txt` (or `/boot/firmware/config.txt` on newer systems).
+2. Add `i2c-dev` to `/etc/modules` to ensure the I2C device interface is available.
+3. Log the configuration changes for your reference.
+4. **Automatically reboot the system** if changes were made.
+
+**Important Notes:**
+- The system will automatically reboot when I2C configuration changes are made.
+- I2C will be available on GPIO pins 2 & 3 (physical pins 3 & 5) for I2C1 after reboot.
+- The module requires appropriate permissions to modify system configuration files and perform reboot.
+- After the automatic reboot, you can verify I2C is working with `i2cdetect -y 1`.
+- If I2C is already enabled, no reboot will occur.
+
+The following attributes are available for I2C configuration:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
 
 ## Configure your pi servo
 
