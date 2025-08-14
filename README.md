@@ -148,9 +148,6 @@ When I2C is enabled, the module will:
 
 **Important Notes:**
 - The system will automatically reboot when I2C configuration changes are made.
-- I2C will be available on GPIO pins 2 & 3 (physical pins 3 & 5) for I2C1 after reboot.
-- The module requires appropriate permissions to modify system configuration files and perform reboot.
-- After the automatic reboot, you can verify I2C is working with `i2cdetect -y 1`.
 - If I2C is already enabled, no reboot will occur.
 
 The following attributes are available for I2C configuration:
