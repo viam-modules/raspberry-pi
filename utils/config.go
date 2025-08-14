@@ -15,6 +15,7 @@ var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 type Config struct {
 	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
 	Pins          []PinConfig                         `json:"pins,omitempty"`
+	EnableI2C     bool                                `json:"enable_i2c,omitempty"`
 }
 
 // Validate ensures all parts of the config are valid.
