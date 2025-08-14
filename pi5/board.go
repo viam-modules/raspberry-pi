@@ -448,7 +448,7 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 	if cfg.EnableI2C {
 		configChanged, err = b.updateI2CConfig("on")
 		if err != nil {
-			return fmt.Errorf("failed to enable I2C in /boot/config.txt: %w", err)
+			return fmt.Errorf("failed to enable I2C: %w", err)
 		}
 
 		moduleChanged, err = b.updateI2CModule(true)
@@ -458,7 +458,7 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 	} else {
 		configChanged, err = b.updateI2CConfig("off")
 		if err != nil {
-			return fmt.Errorf("failed to disable I2C in /boot/config.txt: %w", err)
+			return fmt.Errorf("failed to disable I2C: %w", err)
 		}
 
 		moduleChanged, err = b.updateI2CModule(false)
@@ -472,7 +472,7 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 		if !cfg.EnableI2C {
 			action = "disabled"
 		}
-		b.logger.Warnf("I2C configuration %s. Initiating automatic reboot in 3 seconds...", action)
+		b.logger.Warnf("I2C configuration %s. Initiating automatic reboot...", action)
 		go rpiutils.PerformReboot(b.logger)
 	}
 
