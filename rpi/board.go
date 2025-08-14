@@ -293,7 +293,7 @@ func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
 	var err error
 	var configFailed, moduleFailed bool
 
-	if cfg.EnableI2C {
+	if cfg.BoardSettings.EnableI2C {
 		configChanged, err = pi.updateI2CConfig("on")
 		if err != nil {
 			pi.logger.Errorf("Failed to enable I2C in boot config: %v", err)
@@ -321,7 +321,7 @@ func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
 
 	if configFailed || moduleFailed {
 		action := "enable"
-		if !cfg.EnableI2C {
+		if !cfg.BoardSettings.EnableI2C {
 			action = "disable"
 		}
 		pi.logger.Errorf("Automatic I2C configuration failed. Please manually %s I2C using 'sudo raspi-config' -> Interfacing Options -> I2C", action)
@@ -330,7 +330,7 @@ func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
 
 	if configChanged || moduleChanged {
 		action := "enabled"
-		if !cfg.EnableI2C {
+		if !cfg.BoardSettings.EnableI2C {
 			action = "disabled"
 		}
 		pi.logger.Infof("I2C configuration %s. Initiating automatic reboot...", action)

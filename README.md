@@ -26,13 +26,15 @@ Navigate to the **CONFIGURE** tab of your machine's page in the [Viam app](https
 
 ## Configure your `raspberry-pi` board
 
-You can copy the following optional attributes to your json if you want to configure `pins`, `analogs`, and `enable_i2c`. These are not required to use the Raspberry Pi.
+You can copy the following optional attributes to your json if you want to configure `pins`, `analogs`, and `board_settings`. These are not required to use the Raspberry Pi.
 
 ```json
 {
   "pins": [{ }],
   "analogs": [{ } ],
-  "enable_i2c": true
+  "board_settings": {
+    "enable_i2c": true
+  }
 }
 ```
 
@@ -121,13 +123,19 @@ The following attributes are available for `analogs`:
 | `average_over_ms` | int | Optional | Duration in milliseconds over which the rolling average of the analog input should be taken. |
 | `samples_per_sec` | int | Optional | Sampling rate of the analog input in samples per second. |
 
-### `enable_i2c`
+### `board_settings`
+
+The `board_settings` section allows you to configure board-level settings.
+
+#### `enable_i2c`
 
 The I2C interface on Raspberry Pi is disabled by default. When you set `enable_i2c` to `true`, the module will automatically configure your Raspberry Pi to enable I2C communication.
 
 ```json
 {
-  "enable_i2c": true
+  "board_settings": {
+    "enable_i2c": true
+  }
 }
 ```
 
@@ -149,7 +157,8 @@ The following attributes are available for I2C configuration:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
-| `enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
+| `board_settings` | object | Optional | Board-level configuration settings |
+| `board_settings.enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
 
 ## Configure your pi servo
 
