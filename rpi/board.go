@@ -289,51 +289,34 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 }
 
 func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
+	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
+	if !cfg.BoardSettings.TurnI2COn {
+		return nil
+	}
+
 	var configChanged, moduleChanged bool
 	var err error
 	var configFailed, moduleFailed bool
 
-	if cfg.BoardSettings.EnableI2C {
-		configChanged, err = pi.updateI2CConfig("on")
-		if err != nil {
-			pi.logger.Errorf("Failed to enable I2C in boot config: %v", err)
-			configFailed = true
-		}
+	configChanged, err = pi.updateI2CConfig("on")
+	if err != nil {
+		pi.logger.Errorf("Failed to enable I2C in boot config: %v", err)
+		configFailed = true
+	}
 
-		moduleChanged, err = pi.updateI2CModule(true)
-		if err != nil {
-			pi.logger.Errorf("Failed to enable I2C module: %v", err)
-			moduleFailed = true
-		}
-	} else {
-		configChanged, err = pi.updateI2CConfig("off")
-		if err != nil {
-			pi.logger.Errorf("Failed to disable I2C in boot config: %v", err)
-			configFailed = true
-		}
-
-		moduleChanged, err = pi.updateI2CModule(false)
-		if err != nil {
-			pi.logger.Errorf("Failed to disable I2C module: %v", err)
-			moduleFailed = true
-		}
+	moduleChanged, err = pi.updateI2CModule(true)
+	if err != nil {
+		pi.logger.Errorf("Failed to enable I2C module: %v", err)
+		moduleFailed = true
 	}
 
 	if configFailed || moduleFailed {
-		action := "enable"
-		if !cfg.BoardSettings.EnableI2C {
-			action = "disable"
-		}
-		pi.logger.Errorf("Automatic I2C configuration failed. Please manually %s I2C using 'sudo raspi-config' -> Interfacing Options -> I2C", action)
+		pi.logger.Errorf("Automatic I2C configuration failed. Please manually enable I2C using 'sudo raspi-config' -> Interfacing Options -> I2C")
 		return nil
 	}
 
 	if configChanged || moduleChanged {
-		action := "enabled"
-		if !cfg.BoardSettings.EnableI2C {
-			action = "disabled"
-		}
-		pi.logger.Infof("I2C configuration %s. Initiating automatic reboot...", action)
+		pi.logger.Infof("I2C configuration enabled. Initiating automatic reboot...")
 		go rpiutils.PerformReboot(pi.logger)
 	}
 
