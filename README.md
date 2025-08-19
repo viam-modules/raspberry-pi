@@ -149,6 +149,7 @@ When I2C is enabled, the module will:
 **Important Notes:**
 - The system will automatically reboot when I2C configuration changes are made.
 - If I2C is already enabled, no reboot will occur.
+- Setting this value to false will not disable I2C.
 
 The following attributes are available for I2C configuration:
 
