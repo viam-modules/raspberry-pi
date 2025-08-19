@@ -172,9 +172,7 @@ func (b *pinctrlpi5) Reconfigure(
 		return err
 	}
 
-	if err := b.configureI2C(newConf); err != nil {
-		return err
-	}
+	b.configureI2C(newConf)
 
 	b.pinConfigs = newConf.Pins
 
@@ -441,10 +439,10 @@ func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.Digital
 	return nil
 }
 
-func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
+func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) {
 	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
 	if !cfg.BoardSettings.TurnI2COn {
-		return nil
+		return
 	}
 
 	var configChanged, moduleChanged bool
@@ -465,15 +463,13 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) error {
 
 	if configFailed || moduleFailed {
 		b.logger.Errorf("Automatic I2C configuration failed. Please manually enable I2C using 'sudo raspi-config' -> Interfacing Options -> I2C")
-		return nil
+		return
 	}
 
 	if configChanged || moduleChanged {
 		b.logger.Infof("I2C configuration enabled. Initiating automatic reboot...")
 		go rpiutils.PerformReboot(b.logger)
 	}
-
-	return nil
 }
 
 func (b *pinctrlpi5) updateI2CConfig(desiredValue string) (bool, error) {

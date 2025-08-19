@@ -3,6 +3,7 @@ package rpiutils
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"go.viam.com/rdk/logging"
@@ -11,6 +12,7 @@ import (
 // UpdateConfigFile atomically updates a configuration file parameter.
 // It handles multiple entries, commented lines, and preserves file permissions
 func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging.Logger) (bool, error) {
+	filePath = filepath.Clean(filePath)
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return false, fmt.Errorf("failed to stat config file %s: %w", filePath, err)
@@ -56,7 +58,9 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 		}
 
 		if err := os.Rename(tempFile, filePath); err != nil {
-			os.Remove(tempFile)
+			if removeErr := os.Remove(tempFile); removeErr != nil {
+				logger.Warnf("Failed to clean up temp file %s: %v", tempFile, removeErr)
+			}
 			return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 		}
 
@@ -69,6 +73,7 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 // UpdateModuleFile atomically enables or disables a kernel module in /etc/modules.
 // It handles commenting/uncommenting existing entries and preserves file permissions.
 func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.Logger) (bool, error) {
+	filePath = filepath.Clean(filePath)
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return false, fmt.Errorf("failed to stat modules file %s: %w", filePath, err)
@@ -116,7 +121,9 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 		}
 
 		if err := os.Rename(tempFile, filePath); err != nil {
-			os.Remove(tempFile)
+			if removeErr := os.Remove(tempFile); removeErr != nil {
+				logger.Warnf("Failed to clean up temp file %s: %v", tempFile, removeErr)
+			}
 			return false, fmt.Errorf("failed to replace modules file %s: %w", filePath, err)
 		}
 
