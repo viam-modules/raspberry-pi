@@ -171,6 +171,9 @@ func (b *pinctrlpi5) Reconfigure(
 	if err := b.reconfigureInterrupts(newConf); err != nil {
 		return err
 	}
+
+	b.configureI2C(newConf)
+
 	b.pinConfigs = newConf.Pins
 
 	return nil
@@ -435,6 +438,49 @@ func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.Digital
 
 	return nil
 }
+
+func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) {
+	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
+	if !cfg.BoardSettings.TurnI2COn {
+		return
+	}
+
+	var configChanged, moduleChanged bool
+	var err error
+	var configFailed, moduleFailed bool
+
+	configChanged, err = b.updateI2CConfig("on")
+	if err != nil {
+		b.logger.Errorf("Failed to enable I2C in boot config: %v", err)
+		configFailed = true
+	}
+
+	moduleChanged, err = b.updateI2CModule(true)
+	if err != nil {
+		b.logger.Errorf("Failed to enable I2C module: %v", err)
+		moduleFailed = true
+	}
+
+	if configFailed || moduleFailed {
+		b.logger.Errorf("Automatic I2C configuration failed. Please manually enable I2C using 'sudo raspi-config' -> Interfacing Options -> I2C")
+		return
+	}
+
+	if configChanged || moduleChanged {
+		b.logger.Infof("I2C configuration enabled. Initiating automatic reboot...")
+		go rpiutils.PerformReboot(b.logger)
+	}
+}
+
+func (b *pinctrlpi5) updateI2CConfig(desiredValue string) (bool, error) {
+	configPath := rpiutils.GetBootConfigPath()
+	return rpiutils.UpdateConfigFile(configPath, "dtparam=i2c_arm", desiredValue, b.logger)
+}
+
+func (b *pinctrlpi5) updateI2CModule(enable bool) (bool, error) {
+	return rpiutils.UpdateModuleFile("/etc/modules", "i2c-dev", enable, b.logger)
+}
+
 
 // Close attempts to cleanly close each part of the board.
 func (b *pinctrlpi5) Close(ctx context.Context) error {

@@ -11,10 +11,16 @@ import (
 // RaspiFamily is the model family for the Raspberry Pi module.
 var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 
+// BoardSettings contains board-level configuration options.
+type BoardSettings struct {
+	TurnI2COn bool `json:"turn_i2c_on,omitempty"`
+}
+
 // A Config describes the configuration of a board and all of its connected parts.
 type Config struct {
 	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
 	Pins          []PinConfig                         `json:"pins,omitempty"`
+	BoardSettings BoardSettings                       `json:"board_settings,omitempty"`
 }
 
 // Validate ensures all parts of the config are valid.
