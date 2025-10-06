@@ -5,30 +5,36 @@ WHATPI=$(awk '{print $3}' /proc/device-tree/model)
 if [ "$WHATPI" = "5" ]; then
     exec ./bin/raspberry-pi-arm64 "$@" "pi5-detected"
 fi
-# install packages 
-apt-get install -qqy pigpio
 
-# enable pigpiod
-systemctl enable pigpiod
-
-# start the pigpiod service
-echo "Starting pigpiod service..."
-systemctl start pigpiod
-
-sleep 1 
-
-# Confirm pigpiod is running
-if systemctl status pigpiod | grep -q "active (running)"; then
-    echo "pigpiod is running successfully."
-else
-    echo "pigpiod failed to start." >&2
-    exit 1
-fi
-
-echo "Installation and verification completed successfully!"
-
-# Determine architecture and execute the correct binary
 ARCH=$(uname -m)
+
+# Pigpio client libraries
+apt install -yqq libpigpiod-if2-1
+
+# Check if pigpiod is already running.
+# NOTE: it may be running as a service or locally started process. No attempt is made to control it.
+if pgrep -x "pigpiod" > /dev/null; then
+    echo "pigpiod is already running, not explicitly starting it."
+else
+    echo "pigpiod is not running, starting..."
+
+    if [ "$ARCH" = "aarch64" ]; then
+        # 64-bit ARM architecture
+        LD_LIBRARY_PATH=./bin/pigpiod-arm64 ./bin/pigpiod-arm64/pigpiod -l
+    else
+        # 32-bit ARM architecture
+        LD_LIBRARY_PATH=./bin/pigpiod-arm ./bin/pigpiod-arm/pigpiod -l
+    fi
+
+    sleep 1
+
+    if pgrep -x "pigpiod" > /dev/null; then
+        echo "pigpiod started successfully."
+    else
+        echo "pigpiod failed to start." >&2
+        exit 1
+    fi
+fi
 
 if [ "$ARCH" = "aarch64" ]; then
     # 64-bit ARM architecture

@@ -1,4 +1,5 @@
 BIN_OUTPUT_PATH = bin
+BUILD_OUTPUT_PATH = build
 TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 
 DPKG_ARCH ?= $(shell dpkg --print-architecture)
@@ -15,14 +16,24 @@ OUTPUT_PATH = $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH)
 IMAGE_NAME = ghcr.io/viam-modules/raspberry-pi
 
 .PHONY: module
-module: build-$(DOCKER_ARCH)
+module: build-$(DOCKER_ARCH) $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)/pigpiod
 	rm -f $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz
 	cp $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) $(BIN_OUTPUT_PATH)/raspberry-pi
-	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) run.sh meta.json
+	tar czf $(BIN_OUTPUT_PATH)/raspberry-pi-module.tar.gz $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH) run.sh meta.json
 
 .PHONY: build-$(DOCKER_ARCH)
 build-$(DOCKER_ARCH):
 	go build -o $(BIN_OUTPUT_PATH)/raspberry-pi-$(DOCKER_ARCH) main.go
+
+$(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)/pigpiod:
+	mkdir -p $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
+	mkdir -p $(BUILD_OUTPUT_PATH)
+	cd $(BUILD_OUTPUT_PATH) && \
+		wget https://github.com/joan2937/pigpio/archive/master.tar.gz && \
+		tar zxf master.tar.gz && \
+		cd pigpio-master && \
+		make pigpiod
+	cp $(BUILD_OUTPUT_PATH)/pigpio-master/pigpiod $(BUILD_OUTPUT_PATH)/pigpio-master/libpigpio.so.1 $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
 
 .PHONY: update-rdk
 update-rdk:
@@ -83,4 +94,4 @@ setup:
 	sudo apt-get install -qqy pigpio
 
 clean:
-	rm -rf $(BIN_OUTPUT_PATH)
+	rm -rf $(BIN_OUTPUT_PATH) $(BUILD_OUTPUT_PATH)
