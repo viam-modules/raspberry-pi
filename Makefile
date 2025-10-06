@@ -29,8 +29,8 @@ $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)/pigpiod:
 	mkdir -p $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
 	mkdir -p $(BUILD_OUTPUT_PATH)
 	cd $(BUILD_OUTPUT_PATH) && \
-		wget https://github.com/joan2937/pigpio/archive/master.tar.gz && \
-		tar zxf master.tar.gz && \
+		wget https://github.com/joan2937/pigpio/archive/refs/tags/v79.tar.gz && \
+		tar zxf v79.tar.gz && \
 		cd pigpio-master && \
 		make pigpiod
 	cp $(BUILD_OUTPUT_PATH)/pigpio-master/pigpiod $(BUILD_OUTPUT_PATH)/pigpio-master/libpigpio.so.1 $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
