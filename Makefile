@@ -31,9 +31,10 @@ $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)/pigpiod:
 	cd $(BUILD_OUTPUT_PATH) && \
 		wget https://github.com/joan2937/pigpio/archive/refs/tags/v79.tar.gz && \
 		tar zxf v79.tar.gz && \
-		cd pigpio-master && \
+		cd pigpio-79 && \
+		cmake -DBUILD_SHARED_LIBS=off . && \
 		make pigpiod
-	cp $(BUILD_OUTPUT_PATH)/pigpio-master/pigpiod $(BUILD_OUTPUT_PATH)/pigpio-master/libpigpio.so.1 $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
+	cp $(BUILD_OUTPUT_PATH)/pigpio-79/pigpiod $(BIN_OUTPUT_PATH)/pigpiod-$(DOCKER_ARCH)
 
 .PHONY: update-rdk
 update-rdk:

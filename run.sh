@@ -20,10 +20,10 @@ else
 
     if [ "$ARCH" = "aarch64" ]; then
         # 64-bit ARM architecture
-        LD_LIBRARY_PATH=./bin/pigpiod-arm64 ./bin/pigpiod-arm64/pigpiod -l
+        ./bin/pigpiod-arm64/pigpiod -l
     else
         # 32-bit ARM architecture
-        LD_LIBRARY_PATH=./bin/pigpiod-arm ./bin/pigpiod-arm/pigpiod -l
+        ./bin/pigpiod-arm/pigpiod -l
     fi
 
     sleep 1
