@@ -92,7 +92,7 @@ docker-manifest:
 
 .PHONY: setup 
 setup: 
-	sudo apt-get install -qqy pigpio
+	sudo apt install -yqq libpigpiod-if2-1
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH) $(BUILD_OUTPUT_PATH)
