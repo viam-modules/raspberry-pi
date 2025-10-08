@@ -133,7 +133,6 @@ var (
 	// instead.
 	instanceMu      sync.RWMutex
 	instances       = map[*piPigpio]struct{}{}
-	daemonBootDelay = time.Duration(50) * time.Millisecond
 )
 
 // newPigpio makes a new pigpio based Board using the given config.
@@ -152,12 +151,6 @@ func newPigpio(
 		return nil, rpiutils.WrongModelErr(conf.Name)
 	}
 
-	err = startPigpiod(ctx, logger)
-	if err != nil {
-		logger.CErrorf(ctx, "Failed to start pigpiod: %v", err)
-		return nil, err
-	}
-	time.Sleep(daemonBootDelay)
 	piID, err := initializePigpio()
 	if err != nil {
 		return nil, err
