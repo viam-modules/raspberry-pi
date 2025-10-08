@@ -1,15 +1,15 @@
 #!/bin/sh
 
+# Pigpio client libraries
+apt install -yqq libpigpiod-if2-1
 
+# RPI5 doesn't need pigpiod
 WHATPI=$(awk '{print $3}' /proc/device-tree/model)
 if [ "$WHATPI" = "5" ]; then
     exec ./bin/raspberry-pi-arm64 "$@" "pi5-detected"
 fi
 
 ARCH=$(uname -m)
-
-# Pigpio client libraries
-apt install -yqq libpigpiod-if2-1
 
 # Check if pigpiod is already running.
 # NOTE: it may be running as a service or locally started process. No attempt is made to control it.
