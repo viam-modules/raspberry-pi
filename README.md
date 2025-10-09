@@ -4,7 +4,7 @@ This module implements the [`rdk:component:board` API](https://docs.viam.com/com
 
 This module provides the following models to access GPIO functionality (input, output, PWM, power, serial interfaces, etc.):
 
-* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board 
+* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board
 * `viam:raspberry-pi:rpi4` - Configure a Raspberry Pi 4 board
 * `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
 * `viam:raspberry-pi:rpi2` - Configure a Raspberry Pi 2 board
@@ -33,12 +33,14 @@ You can copy the following optional attributes to your json if you want to confi
   "pins": [{ }],
   "analogs": [{ } ],
   "board_settings": {
-    "enable_i2c": true
+    "enable_i2c": true,
+    "bluetooth_tethering_enabled": false
   }
 }
 ```
 
 ### `pins`
+
 Pins can be configured as GPIO pins and interrupts. [Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
 Example JSON Configuration:
 
@@ -147,9 +149,10 @@ When I2C is enabled, the module will:
 4. **Automatically reboot the system** if changes were made.
 
 **Important Notes:**
-- The system will automatically reboot when I2C configuration changes are made.
-- If I2C is already enabled, no reboot will occur.
-- Setting this value to false will not disable I2C.
+
+* The system will automatically reboot when I2C configuration changes are made.
+* If I2C is already enabled, no reboot will occur.
+* Setting this value to false will not disable I2C.
 
 The following attributes are available for I2C configuration:
 
@@ -157,6 +160,63 @@ The following attributes are available for I2C configuration:
 | ---- | ---- | --------- | ----------- |
 | `board_settings` | object | Optional | Board-level configuration settings |
 | `board_settings.enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
+
+#### `bluetooth_tethering_enabled`
+
+There are several generations of Bluetooth chipsets / firmware in the Raspberry Pi models. The `bluetooth_tethering_enabled` parameter can be used to control config.txt settings related to Bluetooth enablement and speeds. Tethered hotspot connections have been unstable at higher speeds on older Raspberry Pi devices.
+
+```json
+{
+  "board_settings": {
+    "bluetooth_tethering_enabled": true,
+    "bluetooth_uart": "full-uart | mini-uart",
+    "bluetooth_baud_rate": 576000
+  }
+}
+```
+
+When `bluetooth_tethering_enabled` is not present or set, the system settings will not be modified.  On a Raspberry Pi4, the default behavior is `enable_uart=1`
+
+When `bluetooth_tethering_enabled` is `false`, the module will:
+
+1. Remove any lines from  `/boot/config.txt` (or `/boot/firmware/config.txt` on newer systems) that start with `enable_uart`, `dtparam=krnbt_baudrate=`, `dtoverlay=miniuart-bt`
+2. Log the configuration changes for your reference.
+3. **Automatically reboot the system** if changes were made.
+
+When `bluetooth_tethering_enabled` is `true`, the module will:
+
+1. If the board_settings `bluetooth_uart` configuration is set to `full-uart`
+   * Remove `dtoverlay=miniuart-bt`
+   * Add `enable_uart=1`
+   * Add `dtparam=krnbt_baudrate=<baud speed>`
+     * Examples:
+
+        ```text
+        dtparam=krnbt_baudrate=921600
+        dtparam=krnbt_baudrate=576000
+        dtparam=krnbt_baudrate=460800
+        dtparam=krnbt_baudrate=230400
+        dtparam=krnbt_baudrate=115200
+        ```
+
+2. If the board_settings `bluetooth_uart` is `false`, the module will:
+   * Add `dtoverlay=miniuart-bt`
+   * Add `enable_uart=0`
+3. Log the configuration changes for your reference.
+4. **Automatically reboot the system** if changes were made.
+
+**Important Notes:**
+
+* The system will automatically reboot when Bluetooth tethering configuration changes are made.
+
+The following attributes are available for Bluetooth tethering configuration:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `board_settings` | object | Optional | Board-level configuration settings |
+| `board_settings.bluetooth_tethering_enabled` | boolean | Optional | Enable Bluetooth tethering on the Raspberry Pi. Default: system settings |
+| `board_settings.bluetooth_uart` | string | Optional | `full-uart` will enabled the bluetooth chipset. Set the `bluetooth_baud_rate` to a lower speed if the tether interface crashes the bluetooth kernel module.<br>`mini-uart` will enabled the serial uart, at a lower, but stable rate. |
+| `board_settings.bluetooth_baud_rate` | int | Optional | Control the baud speed (eg 921600, 576000, 460800, 230400) |
 
 ## Configure your pi servo
 

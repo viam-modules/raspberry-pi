@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -173,6 +174,10 @@ func (b *pinctrlpi5) Reconfigure(
 	}
 
 	b.configureI2C(newConf)
+
+	if err := b.configureBT(newConf); err != nil {
+		return err
+	}
 
 	b.pinConfigs = newConf.Pins
 
@@ -439,7 +444,132 @@ func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.Digital
 	return nil
 }
 
+func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) error {
+	if cfg.BoardSettings.BTtethering == nil {
+		// bluetooth_tethering_enabled is not set in the board_settings config
+		// The pointer is helpful so we can distinguish between nil, true, false
+		return nil
+	}
+	var configChanged bool = false
+	var configFailed bool = false
+	var err error
+	configPath := rpiutils.GetBootConfigPath()
+
+	b.logger.Debugf("cfg.BoardSettings.BTtethering=%v", *cfg.BoardSettings.BTtethering)
+	b.logger.Debugf("cfg.BoardSettings.BTuart=%v", cfg.BoardSettings.BTuart)
+	b.logger.Debugf("cfg.BoardSettings.BTbaudrate=%v", cfg.BoardSettings.BTbaudrate)
+
+	if *cfg.BoardSettings.BTtethering {
+		if cfg.BoardSettings.BTuart == "full-uart" {
+			// Configure the /boot/firmware/config.txt with the following parameters:
+			// - remove any "dtoverylay=miniuart-bt"
+			// - set enable_uart=1
+			// - add dtparam=krnbt_baudrate=
+
+			// remove any "dtoverylay=miniuart-bt"
+			b.logger.Infof("Remove dtoverlay=miniuart-bt from config.txt if it exists")
+			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtoverlay=miniuart-bt", b.logger)
+			if err != nil {
+				b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				configFailed = true
+			}
+			if !configFailed {
+				// set enable_uart=1
+				b.logger.Infof("Setting enable_uart=1 in config.txt")
+				configChanged, err = rpiutils.UpdateConfigFile(configPath, "enable_uart", "=1", b.logger)
+				if err != nil {
+					b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+					configFailed = true
+				}
+			}
+			if !configFailed {
+				// add dtparam=krnbt_baudrate=
+				// if cfg.BoardSettings.BTbaudrate is 0 on a Raspberry Pi5, the chipset/firmware will operate at full speed
+				if cfg.BoardSettings.BTbaudrate != 0 {
+					b.logger.Infof("Adding dtparam=krnbt_baudrate=%v in config.txt", cfg.BoardSettings.BTbaudrate)
+					configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate", "="+strconv.Itoa(cfg.BoardSettings.BTbaudrate), b.logger)
+					if err != nil {
+						b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+						configFailed = true
+					}
+				}
+			}
+		} else if cfg.BoardSettings.BTuart == "mini-uart" {
+			// Configure the /boot/firmware/config.txt with the following parameters:
+			// - set enable_uart=0
+			// - add any "dtoverylay=miniuart-bt"
+			// - remove dtparam=krnbt_baudrate
+
+			// set enable_uart=0
+			b.logger.Infof("Setting enable_uart=0 in config.txt")
+			configChanged, err = rpiutils.UpdateConfigFile(configPath, "enable_uart", "=0", b.logger)
+			if err != nil {
+				b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				configFailed = true
+			}
+			// set dtoverlay=miniuart-bt
+			if !configFailed {
+				b.logger.Infof("Adding dtoverlay=miniuart-bt to config.txt")
+				configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtoverlay=miniuart-bt", "", b.logger)
+				if err != nil {
+					b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+					configFailed = true
+				}
+			}
+			// Remove dtparam=krnbt_baudrate
+			if !configFailed {
+				b.logger.Infof("Remove any line that starts with dtparam=krnbt_baudrate")
+				configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtparam=krnbt_baudrate", b.logger)
+				if err != nil {
+					b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+					configFailed = true
+				}
+			}
+		} else {
+			// The bluetooth_uart is not set
+			b.logger.Infof("Valid parameters are \"bluetooth_uart\":\"full-uart\" or \"bluetooth_uart\":\"mini-uart\".")
+			configFailed = true
+		}
+	} else if !*cfg.BoardSettings.BTtethering {
+		// Remove any line that starts with enable_uart, dtparam=krnbt_baudrate=, dtoverlay=miniuart-bt
+		// Note that on a Raspberry Pi4, the default behavior is enable_uart=1
+		b.logger.Infof("Remove any line that starts with enable_uart, dtparam=krnbt_baudrate, dtoverlay=miniuart-bt")
+		configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart", b.logger)
+		if err != nil {
+			b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+			configFailed = true
+		}
+		if !configFailed {
+			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtoverlay=miniuart-bt", b.logger)
+			if err != nil {
+				b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				configFailed = true
+			}
+		}
+		if !configFailed {
+			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtparam=krnbt_baudrate", b.logger)
+			if err != nil {
+				b.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				configFailed = true
+			}
+		}
+	}
+
+	if configFailed {
+		b.logger.Errorf("Automatic Bluetooth configuration failed. Please manually edit config.txt")
+		return nil
+	}
+
+	if configChanged {
+		b.logger.Infof("Bluetooth configuration modified. Initiating automatic reboot...")
+		go rpiutils.PerformReboot(pi.logger)
+	}
+
+	return nil
+}
+
 func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) {
+	b.logger.Debugf("cfg.BoardSettings.TurnI2COn=%v", cfg.BoardSettings.TurnI2COn)
 	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
 	if !cfg.BoardSettings.TurnI2COn {
 		return
@@ -449,7 +579,7 @@ func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) {
 	var err error
 	var configFailed, moduleFailed bool
 
-	configChanged, err = b.updateI2CConfig("on")
+	configChanged, err = b.updateI2CConfig("=on")
 	if err != nil {
 		b.logger.Errorf("Failed to enable I2C in boot config: %v", err)
 		configFailed = true
@@ -480,7 +610,6 @@ func (b *pinctrlpi5) updateI2CConfig(desiredValue string) (bool, error) {
 func (b *pinctrlpi5) updateI2CModule(enable bool) (bool, error) {
 	return rpiutils.UpdateModuleFile("/etc/modules", "i2c-dev", enable, b.logger)
 }
-
 
 // Close attempts to cleanly close each part of the board.
 func (b *pinctrlpi5) Close(ctx context.Context) error {

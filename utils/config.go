@@ -13,7 +13,10 @@ var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 
 // BoardSettings contains board-level configuration options.
 type BoardSettings struct {
-	TurnI2COn bool `json:"turn_i2c_on,omitempty"`
+	TurnI2COn   bool   `json:"turn_i2c_on,omitempty"`
+	BTtethering *bool  `json:"bluetooth_tethering_enabled,omitempty"`
+	BTuart      string `json:"bluetooth_uart,omitempty"`
+	BTbaudrate  int    `json:"bluetooth_baud_rate,omitempty"`
 }
 
 // A Config describes the configuration of a board and all of its connected parts.
