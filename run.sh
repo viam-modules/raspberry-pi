@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Pigpio client libraries
-apt install -yqq libpigpiod-if2-1
+DEBIAN_FRONTEND=noninteractive apt install -qqy libpigpiod-if2-1 2>&1
 
 # RPI5 doesn't need pigpiod
 WHATPI=$(awk '{print $3}' /proc/device-tree/model)
