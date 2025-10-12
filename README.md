@@ -167,7 +167,7 @@ Fill in the attributes as applicable to your servo, according to the example bel
 ```json
 {
   "pin": "11",
-  "board": "board-`",
+  "board": "board-`"
 }
 ```
 
