@@ -144,7 +144,7 @@ func newPigpio(
 ) (board.Board, error) {
 	piModel, err := os.ReadFile("/proc/device-tree/model")
 	if err != nil {
-		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
+		logger.Errorw("Cannot determine raspberry pi model", "error", err)
 	}
 	isPi5 := strings.Contains(string(piModel), "Raspberry Pi 5")
 	if isPi5 {
