@@ -34,7 +34,7 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 	targetLine := paramPrefix + desiredValue
 
 	// Matches uncommented or commented param lines (skip commented lines below)
-	re := regexp.MustCompile(fmt.Sprintf(`^\s*#?\s*%s\s*=.*$`, regexp.QuoteMeta(paramPrefix)))
+	re := regexp.MustCompile(fmt.Sprintf(`^\s*#?\s*%s.*$`, regexp.QuoteMeta(targetLine)))
 
 	for i, line := range lines {
 		if !re.MatchString(line) {
