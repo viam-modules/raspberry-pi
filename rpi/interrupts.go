@@ -14,10 +14,9 @@ import (
 	"fmt"
 	"math"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/board"
+	rpiutils "raspberry-pi/utils"
 )
 
 type rpiInterrupt struct {
