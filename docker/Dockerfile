@@ -1,6 +1,6 @@
 FROM debian:bullseye
 
-ARG GO_VERSION=1.23.2
+ARG GO_VERSION=1.25.1
 
 RUN --mount=type=cache,target=/var/cache/apt apt-get update
 RUN --mount=type=cache,target=/var/cache/apt \

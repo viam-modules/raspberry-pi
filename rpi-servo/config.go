@@ -20,16 +20,16 @@ type ServoConfig struct {
 }
 
 // Validate ensures all parts of the config are valid.
-func (config *ServoConfig) Validate(path string) ([]string, error) {
+func (config *ServoConfig) Validate(path string) ([]string, []string, error) {
 	var deps []string
 	if config.Pin == "" {
-		return nil, resource.NewConfigValidationError(path,
+		return nil, nil,resource.NewConfigValidationError(path,
 			errors.New("need pin for pi servo"))
 	}
 	if config.BoardName == "" {
-		return nil, resource.NewConfigValidationError(path,
+		return nil, nil, resource.NewConfigValidationError(path,
 			errors.New("need the name of the board"))
 	}
 	deps = append(deps, config.BoardName)
-	return deps, nil
+	return deps, nil, nil
 }

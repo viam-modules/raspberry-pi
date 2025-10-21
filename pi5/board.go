@@ -37,10 +37,11 @@ const (
 )
 
 func init() {
-	gpioMappings, err := gl.GetGPIOBoardMappings(Model.Name, boardInfoMappings)
+	logger := logging.NewLogger("pi5.init")
+	gpioMappings, err := gl.GetGPIOBoardMappings(Model.Name, boardInfoMappings, logger)
 	var noBoardErr gl.NoBoardFoundError
 	if errors.As(err, &noBoardErr) {
-		logging.Global().Debugw("Error getting raspi5 GPIO board mapping", "error", err)
+		logger.Debugw("Error getting raspi5 GPIO board mapping", "error", err)
 	}
 
 	resource.RegisterComponent(
@@ -90,7 +91,7 @@ func newBoard(
 	var err error
 	piModel, err := os.ReadFile("/proc/device-tree/model")
 	if err != nil {
-		logging.Global().Errorw("Cannot determine raspberry pi model", "error", err)
+		logger.Errorw("Cannot determine raspberry pi model", "error", err)
 	}
 	isPi5 := strings.Contains(string(piModel), "Raspberry Pi 5")
 	// ensure that we are a pi5 when not running tests
