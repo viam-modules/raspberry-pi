@@ -4,7 +4,7 @@ This module implements the [`rdk:component:board` API](https://docs.viam.com/com
 
 This module provides the following models to access GPIO functionality (input, output, PWM, power, serial interfaces, etc.):
 
-* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board 
+* `viam:raspberry-pi:rpi5` - Configure a Raspberry Pi 5 board
 * `viam:raspberry-pi:rpi4` - Configure a Raspberry Pi 4 board
 * `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
 * `viam:raspberry-pi:rpi2` - Configure a Raspberry Pi 2 board
@@ -33,12 +33,14 @@ You can copy the following optional attributes to your json if you want to confi
   "pins": [{ }],
   "analogs": [{ } ],
   "board_settings": {
-    "enable_i2c": true
+    "enable_i2c": true,
+    "bluetooth_enable_uart": true
   }
 }
 ```
 
 ### `pins`
+
 Pins can be configured as GPIO pins and interrupts. [Interrupts](https://en.wikipedia.org/wiki/Interrupt) are a method of signaling precise state changes. Configuring digital interrupts to monitor GPIO pins on your board is useful when your application needs to know precisely when there is a change in GPIO value between high and low.
 Example JSON Configuration:
 
@@ -147,9 +149,10 @@ When I2C is enabled, the module will:
 4. **Automatically reboot the system** if changes were made.
 
 **Important Notes:**
-- The system will automatically reboot when I2C configuration changes are made.
-- If I2C is already enabled, no reboot will occur.
-- Setting this value to false will not disable I2C.
+
+* The system will automatically reboot when I2C configuration changes are made.
+* If I2C is already enabled, no reboot will occur.
+* Setting this value to false will not disable I2C.
 
 The following attributes are available for I2C configuration:
 
@@ -157,6 +160,51 @@ The following attributes are available for I2C configuration:
 | ---- | ---- | --------- | ----------- |
 | `board_settings` | object | Optional | Board-level configuration settings |
 | `board_settings.enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
+
+#### `bluetooth settings`
+
+There are several generations of Bluetooth chipsets / firmware in the Raspberry Pi models. These `bluetooth_*` parameters can be used to control config.txt settings related to Bluetooth enablement and speeds. Various combinations of these bluetooth settings can, for example, enable Bluetooth tethering.
+
+```json
+{
+  "board_settings": {
+    "bluetooth_enable_uart": true,
+    "bluetooth_baud_rate": 576000,
+    "bluetooth_dtoverlay_miniuart": false
+  }
+}
+```
+
+If there are bluetooth related parameters pre-existing in the config.txt, the absence of Viam `board_settings` parameters will **not** change them. The bluetooth related parameters in config.txt will only be modified / enforced if the `bluetooth_*` settings are present here.
+
+When `bluetooth_enable_uart` key/value is `true`, the config.txt parameter will be set to `enable_uart=1`. When `bluetooth_enable_uart` key/value is `false`, the config.txt parameter will be set to `enable_uart=0`. Note that on a Raspberry Pi4, the default behavior, when absent, is `enable_uart=1`.   You can override that behavior with `bluetooth_enable_uart:false`, which will set `enable_uart=0`
+
+When `bluetooth_dtoverlay_miniuart` key/value is `true`, the config.txt parameter will be set to `dtoverlay=miniuart-bt`. When `bluetooth_dtoverlay_miniuart` key/value is `false`, the `dtoverlay=miniuart-bt` parameter will removed from config.txt
+
+The `bluetooth_baud_rate` parameter can be used to set the `dtparam=krnbt_baudrate=<baud speed>` in config.txt. If you want to remove any previous `dtparam=krnbt_baudrate=` from config.txt, set `bluetooth_baud_rate: 0`
+
+* Examples of baud_rates:
+
+  ```text
+  dtparam=krnbt_baudrate=921600
+  dtparam=krnbt_baudrate=576000
+  dtparam=krnbt_baudrate=460800
+  dtparam=krnbt_baudrate=230400
+  dtparam=krnbt_baudrate=115200
+  ```
+
+**Important Notes:**
+
+* The system will automatically reboot when Bluetooth configuration changes are made.
+
+The following attributes are available for Bluetooth configuration:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `board_settings` | object | Optional | Board-level configuration settings |
+| `board_settings.bluetooth_enable_uart` | boolean | Optional | Enable/Disable the Bluetooth enable_uart on the Raspberry Pi. Default: system settings |
+| `board_settings.bluetooth_dtoverlay_miniuart` | boolean | Optional | the `dtoverlay=miniuart-bt` will enabled the serial uart, at a lower, but stable rate. |
+| `board_settings.bluetooth_baud_rate` | int | Optional | Control the baud speed (eg 921600, 576000, 460800, 230400) |
 
 ## Configure your pi servo
 
