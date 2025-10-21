@@ -2,9 +2,10 @@ module raspberry-pi
 
 go 1.25.1
 
+tool github.com/golangci/golangci-lint/cmd/golangci-lint
+
 require (
 	github.com/edaniels/golinters v0.0.5-0.20220906153528-641155550742
-	github.com/golangci/golangci-lint v1.61.0
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/actionlint v1.6.24
 	github.com/viam-modules/pinctrl v0.0.0-20241213172831-bdf11253b4c3
@@ -124,6 +125,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a // indirect
 	github.com/golangci/gofmt v0.0.0-20240816233607-d8596aa466a9 // indirect
+	github.com/golangci/golangci-lint v1.61.0 // indirect
 	github.com/golangci/misspell v0.6.0 // indirect
 	github.com/golangci/modinfo v0.3.4 // indirect
 	github.com/golangci/plugin-module-register v0.1.1 // indirect
