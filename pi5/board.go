@@ -443,8 +443,8 @@ func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.Digital
 }
 
 func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
-	configChanged := false // bool
-	configFailed := false  // bool
+	configChanged := false
+	configFailed := false
 	var err error
 	configPath := rpiutils.GetBootConfigPath()
 
@@ -452,7 +452,7 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 	if cfg.BoardSettings.BTenableuart != nil {
 		b.logger.Debugf("cfg.BoardSettings.BTenableuart=%v", *cfg.BoardSettings.BTenableuart)
 
-		if *cfg.BoardSettings.BTenableuart { // true
+		if *cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=0 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=0", b.logger)
 			if err != nil {
@@ -466,7 +466,7 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 				b.logger.Errorf("Failed to add enable_uart=1 Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if !*cfg.BoardSettings.BTenableuart { // false
+		} else if !*cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=1 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=1", b.logger)
 			if err != nil {
@@ -486,14 +486,14 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 	// Handle dtoverlay=miniuart-bt
 	if cfg.BoardSettings.BTdtoverlay != nil {
 		b.logger.Debugf("cfg.BoardSettings.BTdtoverlay=%v", *cfg.BoardSettings.BTdtoverlay)
-		if *cfg.BoardSettings.BTdtoverlay { // true
+		if *cfg.BoardSettings.BTdtoverlay {
 			b.logger.Infof("Adding dtoverlay=miniuart-bt to config.txt")
 			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtoverlay=miniuart-bt", "", b.logger)
 			if err != nil {
 				b.logger.Errorf("Failed to add dtoverlay=miniuart-bt Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if !*cfg.BoardSettings.BTdtoverlay { // false
+		} else if !*cfg.BoardSettings.BTdtoverlay {
 			// remove any "dtoverylay=miniuart-bt"
 			b.logger.Infof("Remove dtoverlay=miniuart-bt from config.txt if it exists")
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtoverlay=miniuart-bt", b.logger)

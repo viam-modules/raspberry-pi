@@ -77,9 +77,8 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
 	if err := os.Rename(tempFile, filePath); err != nil {
-		if rmErr := os.Remove(tempFile); rmErr != nil {
-			_ = rmErr // intentionally ignore cleanup error to pass the linter
-		}
+		//nolint:errcheck  // best attempt to clean up the temp file
+		_ = os.Remove(tempFile)
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}
 
@@ -205,9 +204,8 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 	}
 
 	if err := os.Rename(tempFile, filePath); err != nil {
-		if rmErr := os.Remove(tempFile); rmErr != nil {
-			_ = rmErr // intentionally ignore cleanup error to pass the linter
-		}
+		//nolint:errcheck  // best attempt to clean up the temp file
+		_ = os.Remove(tempFile)
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}
 
