@@ -286,8 +286,8 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 }
 
 func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
-	configChanged := false // bool
-	configFailed := false  // bool
+	configChanged := false
+	configFailed := false
 	var err error
 	configPath := rpiutils.GetBootConfigPath()
 
@@ -295,7 +295,7 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 	if cfg.BoardSettings.BTenableuart != nil {
 		pi.logger.Debugf("cfg.BoardSettings.BTenableuart=%v", *cfg.BoardSettings.BTenableuart)
 
-		if *cfg.BoardSettings.BTenableuart { // true
+		if *cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=0 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=0", pi.logger)
 			if err != nil {
@@ -309,7 +309,7 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 				pi.logger.Errorf("Failed to add enable_uart=1 Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if !*cfg.BoardSettings.BTenableuart { // false
+		} else if !*cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=1 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=1", pi.logger)
 			if err != nil {
@@ -329,14 +329,14 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 	// Handle dtoverlay=miniuart-bt
 	if cfg.BoardSettings.BTdtoverlay != nil {
 		pi.logger.Debugf("cfg.BoardSettings.BTdtoverlay=%v", *cfg.BoardSettings.BTdtoverlay)
-		if *cfg.BoardSettings.BTdtoverlay { // true
+		if *cfg.BoardSettings.BTdtoverlay {
 			pi.logger.Infof("Adding dtoverlay=miniuart-bt to config.txt")
 			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtoverlay=miniuart-bt", "", pi.logger)
 			if err != nil {
 				pi.logger.Errorf("Failed to add dtoverlay=miniuart-bt Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if !*cfg.BoardSettings.BTdtoverlay { // false
+		} else if !*cfg.BoardSettings.BTdtoverlay {
 			// remove any "dtoverylay=miniuart-bt"
 			pi.logger.Infof("Remove dtoverlay=miniuart-bt from config.txt if it exists")
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtoverlay=miniuart-bt", pi.logger)
