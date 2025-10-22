@@ -15,7 +15,7 @@ import (
 // - Leaves commented lines intact
 // - Appends only if the (uncommented) line exists
 // - Preserves file permissions (uses os.Stat + os.WriteFile with original mode)
-// - Atomic via temp file + rename
+// - Atomic via temp file + rename.
 func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging.Logger) (bool, error) {
 	filePath = filepath.Clean(filePath)
 	fileInfo, err := os.Stat(filePath)
@@ -77,6 +77,7 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
 	if err := os.Rename(tempFile, filePath); err != nil {
+		//nolint:errcheck  // best attempt to clean up the temp file
 		_ = os.Remove(tempFile)
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}
@@ -203,6 +204,7 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 	}
 
 	if err := os.Rename(tempFile, filePath); err != nil {
+		//nolint:errcheck  // best attempt to clean up the temp file
 		_ = os.Remove(tempFile)
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}

@@ -28,8 +28,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -38,6 +36,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -287,8 +286,8 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 }
 
 func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
-	var configChanged bool = false
-	var configFailed bool = false
+	configChanged := false
+	configFailed := false
 	var err error
 	configPath := rpiutils.GetBootConfigPath()
 
@@ -296,30 +295,32 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 	if cfg.BoardSettings.BTenableuart != nil {
 		pi.logger.Debugf("cfg.BoardSettings.BTenableuart=%v", *cfg.BoardSettings.BTenableuart)
 
-		if *cfg.BoardSettings.BTenableuart == true {
+		if *cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=0 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=0", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to remove enable_uart=0 Bluetooth settings from boot config: %v", err)
 				configFailed = true
 			}
+			_ = configChanged
 			pi.logger.Infof("Setting enable_uart=1 in config.txt")
 			configChanged, err = rpiutils.UpdateConfigFile(configPath, "enable_uart", "=1", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to add enable_uart=1 Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if *cfg.BoardSettings.BTenableuart == false {
+		} else if !*cfg.BoardSettings.BTenableuart {
 			// remove any previous enable_uart=1 settings
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "enable_uart=1", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to remove enable_uart=1 Bluetooth settings from boot config: %v", err)
 				configFailed = true
 			}
+			_ = configChanged
 			pi.logger.Infof("Setting enable_uart=0 in config.txt")
 			configChanged, err = rpiutils.UpdateConfigFile(configPath, "enable_uart", "=0", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to add enable_uart=0 Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
 		}
@@ -328,19 +329,19 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 	// Handle dtoverlay=miniuart-bt
 	if cfg.BoardSettings.BTdtoverlay != nil {
 		pi.logger.Debugf("cfg.BoardSettings.BTdtoverlay=%v", *cfg.BoardSettings.BTdtoverlay)
-		if *cfg.BoardSettings.BTdtoverlay == true {
+		if *cfg.BoardSettings.BTdtoverlay {
 			pi.logger.Infof("Adding dtoverlay=miniuart-bt to config.txt")
 			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtoverlay=miniuart-bt", "", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to add dtoverlay=miniuart-bt Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
-		} else if *cfg.BoardSettings.BTdtoverlay == false {
+		} else if !*cfg.BoardSettings.BTdtoverlay {
 			// remove any "dtoverylay=miniuart-bt"
 			pi.logger.Infof("Remove dtoverlay=miniuart-bt from config.txt if it exists")
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtoverlay=miniuart-bt", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to remove dtoverlay=miniuart-bt Bluetooth settings from boot config: %v", err)
 				configFailed = true
 			}
 		}
@@ -355,7 +356,7 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 			pi.logger.Debugf("Remove any line that starts with dtparam=krnbt_baudrate")
 			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtparam=krnbt_baudrate", pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to remove dtparam=krnbt_baudrate Bluetooth settings from boot config: %v", err)
 				configFailed = true
 			}
 		}
@@ -365,9 +366,10 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 		// cfg.BoardSettings.BTkbaudrate == 0 is how to remove the param from config.txt
 		if *cfg.BoardSettings.BTkbaudrate != 0 {
 			pi.logger.Infof("Adding dtparam=krnbt_baudrate=%v in config.txt", *cfg.BoardSettings.BTkbaudrate)
-			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate", "="+strconv.Itoa(*cfg.BoardSettings.BTkbaudrate), pi.logger)
+			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate",
+				"="+strconv.Itoa(*cfg.BoardSettings.BTkbaudrate), pi.logger)
 			if err != nil {
-				pi.logger.Errorf("Failed to modify Bluetooth settings in boot config: %v", err)
+				pi.logger.Errorf("Failed to add dtparam=krnbt_baudrate Bluetooth settings to boot config: %v", err)
 				configFailed = true
 			}
 		}

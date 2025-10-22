@@ -23,7 +23,7 @@ type ServoConfig struct {
 func (config *ServoConfig) Validate(path string) ([]string, []string, error) {
 	var deps []string
 	if config.Pin == "" {
-		return nil, nil,resource.NewConfigValidationError(path,
+		return nil, nil, resource.NewConfigValidationError(path,
 			errors.New("need pin for pi servo"))
 	}
 	if config.BoardName == "" {

@@ -14,11 +14,11 @@ func TestI2CConfiguration(t *testing.T) {
 	logger := logging.NewTestLogger(t)
 
 	testCases := []struct {
-		name           string
-		turnI2COn      bool
-		expectChange   bool
-		initialConfig  string
-		initialModule  string
+		name          string
+		turnI2COn     bool
+		expectChange  bool
+		initialConfig string
+		initialModule string
 	}{
 		{
 			name:          "turn_on_from_scratch",
@@ -70,10 +70,10 @@ func TestI2CConfiguration(t *testing.T) {
 			configPath := filepath.Join(tempDir, "config.txt")
 			modulePath := filepath.Join(tempDir, "modules")
 
-			if err := os.WriteFile(configPath, []byte(tc.initialConfig), 0644); err != nil {
+			if err := os.WriteFile(configPath, []byte(tc.initialConfig), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(modulePath, []byte(tc.initialModule), 0644); err != nil {
+			if err := os.WriteFile(modulePath, []byte(tc.initialModule), 0o644); err != nil {
 				t.Fatal(err)
 			}
 
@@ -84,10 +84,10 @@ func TestI2CConfiguration(t *testing.T) {
 			if tc.turnI2COn {
 				configChanged, err = UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
 				test.That(t, err, test.ShouldBeNil)
-				
+
 				moduleChanged, err = UpdateModuleFile(modulePath, "i2c-dev", true, logger)
 				test.That(t, err, test.ShouldBeNil)
-				
+
 				// Verify final state - should be enabled
 				finalConfig, err := os.ReadFile(configPath)
 				test.That(t, err, test.ShouldBeNil)
@@ -101,7 +101,7 @@ func TestI2CConfiguration(t *testing.T) {
 				// When turn_i2c_on is false, no operations should occur
 				configChanged = false
 				moduleChanged = false
-				
+
 				// Verify no changes were made to files
 				finalConfig, err := os.ReadFile(configPath)
 				test.That(t, err, test.ShouldBeNil)
@@ -169,15 +169,15 @@ func TestI2CEdgeCases(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.txt")
 		modulePath := filepath.Join(tempDir, "modules")
-		
+
 		// Start with I2C explicitly disabled
 		initialConfig := "dtparam=i2c_arm=off\nother=setting\n"
 		initialModule := "snd-bcm2835\n#i2c-dev\nother-module\n"
-		
-		if err := os.WriteFile(configPath, []byte(initialConfig), 0644); err != nil {
+
+		if err := os.WriteFile(configPath, []byte(initialConfig), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(modulePath, []byte(initialModule), 0644); err != nil {
+		if err := os.WriteFile(modulePath, []byte(initialModule), 0o644); err != nil {
 			t.Fatal(err)
 		}
 
@@ -185,7 +185,7 @@ func TestI2CEdgeCases(t *testing.T) {
 		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, configChanged, test.ShouldBeTrue)
-		
+
 		moduleChanged, err := UpdateModuleFile(modulePath, "i2c-dev", true, logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, moduleChanged, test.ShouldBeTrue)
@@ -208,15 +208,15 @@ func TestI2CEdgeCases(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.txt")
 		modulePath := filepath.Join(tempDir, "modules")
-		
+
 		// Start with I2C already enabled
 		initialConfig := "dtparam=i2c_arm=on\n"
 		initialModule := "i2c-dev\n"
-		
-		if err := os.WriteFile(configPath, []byte(initialConfig), 0644); err != nil {
+
+		if err := os.WriteFile(configPath, []byte(initialConfig), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(modulePath, []byte(initialModule), 0644); err != nil {
+		if err := os.WriteFile(modulePath, []byte(initialModule), 0o644); err != nil {
 			t.Fatal(err)
 		}
 
@@ -224,7 +224,7 @@ func TestI2CEdgeCases(t *testing.T) {
 		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, configChanged, test.ShouldBeFalse)
-		
+
 		moduleChanged, err := UpdateModuleFile(modulePath, "i2c-dev", true, logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, moduleChanged, test.ShouldBeFalse)
