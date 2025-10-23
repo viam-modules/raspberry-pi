@@ -14,7 +14,7 @@ This module provides the following models to access GPIO functionality (input, o
 
 This module also provides a servo model:
 
-* `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board. Note this model is not supported on the rpi5 board.
+* `viam:raspberry-pi:rpi-servo` - Configure a servo controlled by the GPIO pins on the board. This model is not supported on the rpi5 board. On rpi5, use the `gpio` servo model.
 
 All of the Pis above are supported as [board components](https://docs.viam.com/operate/reference/components/board/), but some older models are not capable of running `viam-server`--see [Set up a computer or SBC](https://docs.viam.com/operate/get-started/setup/) for `viam-server` system requirements.
 
@@ -76,7 +76,7 @@ The following attributes are available for `pins`:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
-|`pin`| string | **Required** | The pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
+|`pin`| string | **Required** | The physical pin number of the board's GPIO pin that you wish to configure the digital interrupt for. |
 |`name` | string | Optional | Your name for the digital interrupt. |
 |`type`| string | Optional | Whether the pin should be an `interrupt` or `gpio` pin. Default: `"gpio"` |
 |`pull`| string | Optional | Define whether the pins should be pull up or pull down. Omitting this uses your Pi's default configuration |
@@ -225,7 +225,7 @@ The following attributes are available for `viam:raspberry-pi:rpi-servo` servos:
 
 | Name | Type | Required? | Description |
 | ---- | ---- | --------- | ----------- |
-| `pin` | string | **Required** | The pin number of the pin the servo's control wire is wired to on the board. |
+| `pin` | string | **Required** | The pin number of the physical pin the servo's control wire is wired to on the board. |
 | `board` | string | **Required** | `name` of the board the servo is wired to. |
 | `min` | float | Optional | Sets a software limit on the minimum angle in degrees your servo can rotate to. <br> Default = `0.0` <br> Range = [`0.0`, `180.0`] |
 | `max` | float | Optional | Sets a software limit on the maximum angle in degrees your servo can rotate to. <br> Default = `180.0` <br> Range = [`0.0`, `180.0`] |
