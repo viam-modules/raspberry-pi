@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -22,7 +24,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -508,26 +509,41 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 	if cfg.BoardSettings.BTkbaudrate != nil {
 		b.logger.Debugf("cfg.BoardSettings.BTkbaudrate=%v", *cfg.BoardSettings.BTkbaudrate)
 
-		// Always remove any previous dtparam=krnbt_baudrate setting before adding a potentially different value.
-		if !configFailed {
-			b.logger.Debugf("Remove any line that starts with dtparam=krnbt_baudrate")
-			configChanged, err = rpiutils.RemoveConfigParam(configPath, "dtparam=krnbt_baudrate", b.logger)
-			if err != nil {
-				b.logger.Errorf("Failed to remove dtparam=krnbt_baudrate Bluetooth settings from boot config: %v", err)
-				configFailed = true
-			}
+		// Try to add the dtparam=krnbt_baudrate setting
+		b.logger.Infof("Confirming if dtparam=krnbt_baudrate=%v needs to be added to config.txt", *cfg.BoardSettings.BTkbaudrate)
+		configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate",
+			"="+strconv.Itoa(*cfg.BoardSettings.BTkbaudrate), b.logger)
+		if err != nil {
+			b.logger.Errorf("Failed to add dtparam=krnbt_baudrate Bluetooth settings to boot config: %v", err)
+			configFailed = true
 		}
 
-		// Add dtparam=krnbt_baudrate=
-		// if cfg.BoardSettings.BTkbaudrate is 0 on a Raspberry Pi5, the chipset/firmware will operate at full speed
-		// cfg.BoardSettings.BTkbaudrate == 0 is how to remove the param from config.txt
-		if *cfg.BoardSettings.BTkbaudrate != 0 {
-			b.logger.Infof("Adding dtparam=krnbt_baudrate=%v in config.txt", *cfg.BoardSettings.BTkbaudrate)
-			configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate",
-				"="+strconv.Itoa(*cfg.BoardSettings.BTkbaudrate), b.logger)
-			if err != nil {
-				b.logger.Errorf("Failed to add dtparam=krnbt_baudrate Bluetooth settings to boot config: %v", err)
-				configFailed = true
+		// if configChanged is false the parameter is already there, do nothing else, no need to reboot
+		if configChanged {
+			// The new parameter was added, but its possible there might have been a previous value.
+			// Remove all previous dtparam=krnbt_baudrate settings
+			if !configFailed {
+				b.logger.Debugf("Remove any line that starts with dtparam=krnbt_baudrate")
+				_, err = rpiutils.RemoveConfigParam(configPath, "dtparam=krnbt_baudrate", b.logger)
+				if err != nil {
+					b.logger.Errorf("Failed to remove dtparam=krnbt_baudrate Bluetooth settings from boot config: %v", err)
+					configFailed = true
+				}
+			}
+
+			// Now add the dtparam=krnbt_baudrate= specified by the configuration.
+			// if cfg.BoardSettings.BTkbaudrate is 0 on a Raspberry Pi5, the chipset/firmware will operate at full speed
+			// cfg.BoardSettings.BTkbaudrate == 0 is how to remove the param from config.txt
+			if *cfg.BoardSettings.BTkbaudrate != 0 {
+				b.logger.Infof("Adding dtparam=krnbt_baudrate=%v in config.txt", *cfg.BoardSettings.BTkbaudrate)
+				b.logger.Debugf("before baudrate configChanged=%v", configChanged)
+				configChanged, err = rpiutils.UpdateConfigFile(configPath, "dtparam=krnbt_baudrate",
+					"="+strconv.Itoa(*cfg.BoardSettings.BTkbaudrate), b.logger)
+				b.logger.Debugf("after baudrate configChanged=%v", configChanged)
+				if err != nil {
+					b.logger.Errorf("Failed to add dtparam=krnbt_baudrate Bluetooth settings to boot config: %v", err)
+					configFailed = true
+				}
 			}
 		}
 	}
