@@ -209,7 +209,7 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}
 
-	logger.Debugf("Removed uncommented lines matching %q in %s", lineRegex.String(), filePath)
+	logger.Debugf("Removed uncommented line matching %q in %s", lineRegex.String(), filePath)
 	return true, nil
 }
 
@@ -217,4 +217,46 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 func RemoveConfigParam(filePath, paramPrefix string, logger logging.Logger) (bool, error) {
 	re := regexp.MustCompile(fmt.Sprintf(`^\s*%s.*$`, regexp.QuoteMeta(paramPrefix)))
 	return RemoveLineMatching(filePath, re, logger)
+}
+
+// FindLineMatching detects if there is at least one uncommented line that matches the given regular expression.
+// Returns true if any line is a match. Does not write the file.
+func FindLineMatching(filePath string, lineRegex *regexp.Regexp, logger logging.Logger) (bool, error) {
+	filePath = filepath.Clean(filePath)
+	_, err := os.Stat(filePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to stat config file %s: %w", filePath, err)
+	}
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to read config file %s: %w", filePath, err)
+	}
+
+	origLines := strings.Split(string(content), "\n")
+	found := false
+
+	for _, line := range origLines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") {
+			continue // skip comments entirely
+		}
+		if lineRegex.MatchString(line) {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return false, nil
+	}
+
+	logger.Debugf("Found uncommented lines matching %q in %s", lineRegex.String(), filePath)
+	return true, nil
+}
+
+// DetectConfigParam detects if any *uncommented* line is an exact match for a config.txt param.
+func DetectConfigParam(filePath, param string, logger logging.Logger) (bool, error) {
+	re := regexp.MustCompile(fmt.Sprintf(`^\s*%s.*$`, regexp.QuoteMeta(param)))
+	return FindLineMatching(filePath, re, logger)
 }
