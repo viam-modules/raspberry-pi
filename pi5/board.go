@@ -450,6 +450,7 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 		configFailed  = false
 	)
 
+	b.logger.Debugf("Bluetooth parameter configuration starting...")
 	if cfg.BoardSettings.BTenableuart != nil {
 		changed, failed := b.updateBTenableuart(configPath, *cfg.BoardSettings.BTenableuart)
 		configChanged = configChanged || changed
@@ -475,30 +476,31 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 
 	if configChanged {
 		b.logger.Infof("Bluetooth configuration modified. Initiating automatic reboot...")
-		// go rpiutils.PerformReboot(b.logger)
+		go rpiutils.PerformReboot(b.logger)
 	}
 }
 
 // updateBTenableuart ensures either enable_uart=1 or enable_uart=0 is set, and the opposite is removed.
 func (b *pinctrlpi5) updateBTenableuart(configPath string, enable bool) (bool, bool) {
 	var (
-		configChanged bool
-		configFailed  bool
+		configChanged = false
+		configFailed  = false
 	)
 
 	uartLine := "enable_uart=0"
 	if enable {
 		uartLine = "enable_uart=1"
 	}
-	b.logger.Debugf("updateBTenableuart: target=%s", uartLine)
+	b.logger.Debugf("Bluetooth parameter configuration - updateBTenableuart: target=%s", uartLine)
 
 	// Detect if the desired line already exists
 	found, err := rpiutils.DetectConfigParam(configPath, uartLine, b.logger)
 	if err != nil {
-		b.logger.Errorf("DetectConfigParam(%q) error: %v", uartLine, err)
+		b.logger.Errorf("Bluetooth parameter configuration - DetectConfigParam(%q) error: %v", uartLine, err)
+		return false, false
 	}
 	if found {
-		b.logger.Infof("Found existing %s; no change needed", uartLine)
+		b.logger.Debugf("Bluetooth parameter configuration - found existing %s; no change needed", uartLine)
 		return false, false
 	}
 
@@ -510,20 +512,22 @@ func (b *pinctrlpi5) updateBTenableuart(configPath string, enable bool) (bool, b
 		removeLine = "enable_uart=1"
 	}
 	if removed, err := rpiutils.RemoveConfigParam(configPath, removeLine, b.logger); err != nil {
-		b.logger.Errorf("Failed to remove %s from boot config: %v", removeLine, err)
+		b.logger.Errorf("Bluetooth parameter configuration - Failed to remove %s from boot config.txt: %v", removeLine, err)
 		configFailed = true
 	} else if removed {
 		configChanged = true
 	}
 
-	// Add the desired setting
-	b.logger.Infof("Setting %s in config.txt", uartLine)
-	changed, err := rpiutils.UpdateConfigFile(configPath, "enable_uart", "="+map[bool]string{true: "1", false: "0"}[enable], b.logger)
-	if err != nil {
-		b.logger.Errorf("Failed to add %s to boot config: %v", uartLine, err)
-		configFailed = true
-	} else if changed {
-		configChanged = true
+	if !configFailed {
+		// Add the desired setting, only if the removal of the prior parameter succeeded
+		b.logger.Infof("Bluetooth parameter configuration - Setting %s in config.txt", uartLine)
+		changed, err := rpiutils.UpdateConfigFile(configPath, "enable_uart", "="+map[bool]string{true: "1", false: "0"}[enable], b.logger)
+		if err != nil {
+			b.logger.Errorf("Bluetooth parameter configuration - Failed to add %s to boot config.txt: %v", uartLine, err)
+			configFailed = true
+		} else if changed {
+			configChanged = true
+		}
 	}
 
 	return configChanged, configFailed
@@ -537,33 +541,34 @@ func (b *pinctrlpi5) updateBTminiuart(configPath string, enable bool) (bool, boo
 	)
 
 	const line = "dtoverlay=miniuart-bt"
-	b.logger.Debugf("updateBTminiuart: dtoverlay=miniuart-bt presence should be %v", enable)
+	b.logger.Debugf("Bluetooth parameter configuration - updateBTminiuart: dtoverlay=miniuart-bt presence should be %v", enable)
 
 	found, err := rpiutils.DetectConfigParam(configPath, line, b.logger)
 	if err != nil {
-		b.logger.Errorf("DetectConfigParam(%q) error: %v", line, err)
+		b.logger.Errorf("Bluetooth parameter configuration - DetectConfigParam(%q) error: %v", line, err)
+		return false, false
 	}
 
 	if enable {
 		if found {
-			b.logger.Infof("Found existing %s; no change needed", line)
+			b.logger.Debugf("Bluetooth parameter configuration - Found existing %s; no change needed", line)
 			return false, false
 		}
-		b.logger.Infof("Adding %s to config.txt", line)
+		b.logger.Infof("Bluetooth parameter configuration - Adding %s to config.txt", line)
 		if changed, err := rpiutils.UpdateConfigFile(configPath, line, "", b.logger); err != nil {
-			b.logger.Errorf("Failed to add %s to boot config: %v", line, err)
+			b.logger.Errorf("Bluetooth parameter configuration - Failed to add %s to boot config.txt: %v", line, err)
 			configFailed = true
 		} else if changed {
 			configChanged = true
 		}
 	} else {
 		if !found {
-			b.logger.Infof("%s not present; no change needed", line)
+			b.logger.Debugf("Bluetooth parameter configuration - %s not present; no change needed", line)
 			return false, false
 		}
-		b.logger.Infof("Removing %s from config.txt", line)
+		b.logger.Infof("Bluetooth parameter configuration - Removing %s from config.txt", line)
 		if removed, err := rpiutils.RemoveConfigParam(configPath, line, b.logger); err != nil {
-			b.logger.Errorf("Failed to remove %s from boot config: %v", line, err)
+			b.logger.Errorf("Bluetooth parameter configuration - Failed to remove %s from boot config: %v", line, err)
 			configFailed = true
 		} else if removed {
 			configChanged = true
@@ -577,8 +582,8 @@ func (b *pinctrlpi5) updateBTminiuart(configPath string, enable bool) (bool, boo
 // or removed entirely.
 func (b *pinctrlpi5) updateBTbaudrate(configPath string, rate int) (bool, bool) {
 	var (
-		configChanged bool
-		configFailed  bool
+		configChanged = false
+		configFailed  = false
 	)
 
 	baseKey := "dtparam=krnbt_baudrate"
@@ -586,18 +591,19 @@ func (b *pinctrlpi5) updateBTbaudrate(configPath string, rate int) (bool, bool) 
 
 	if rate == 0 {
 		// When 0: remove any dtparam=krnbt_baudrate line(s)
-		b.logger.Debugf("updateBTbaudrate: rate==0; removing any %s entries", baseKey)
+		b.logger.Debugf("Bluetooth parameter configuration - updateBTbaudrate: rate==0; removing any %s entries", baseKey)
 		found, err := rpiutils.DetectConfigParam(configPath, baseKey, b.logger)
 		if err != nil {
-			b.logger.Errorf("DetectConfigParam(%q) error: %v", baseKey, err)
-		}
-		if !found {
-			b.logger.Infof("%s not present; no change needed", baseKey)
+			b.logger.Errorf("Bluetooth parameter configuration - DetectConfigParam(%q) error: %v", baseKey, err)
 			return false, false
 		}
-		b.logger.Infof("Removing any %s entries from config.txt", baseKey)
+		if !found {
+			b.logger.Debugf("Bluetooth parameter configuration - %s not present; no change needed", baseKey)
+			return false, false
+		}
+		b.logger.Infof("Bluetooth parameter configuration - Removing %s entries from config.txt", baseKey)
 		if removed, err := rpiutils.RemoveConfigParam(configPath, baseKey, b.logger); err != nil {
-			b.logger.Errorf("Failed to remove %s from boot config: %v", baseKey, err)
+			b.logger.Errorf("Bluetooth parameter configuration - Failed to remove %s from boot config.txt: %v", baseKey, err)
 			configFailed = true
 		} else if removed {
 			configChanged = true
@@ -606,34 +612,37 @@ func (b *pinctrlpi5) updateBTbaudrate(configPath string, rate int) (bool, bool) 
 	}
 
 	// Non-zero rate: ensure exact line exists; if different value exists, replace.
-	b.logger.Debugf("updateBTbaudrate: target=%s", baudLine)
+	b.logger.Debugf("Bluetooth parameter configuration - updateBTbaudrate: target=%s", baudLine)
 
 	// If the exact desired line already exists, nothing to do.
 	foundExact, err := rpiutils.DetectConfigParam(configPath, baudLine, b.logger)
 	if err != nil {
-		b.logger.Errorf("DetectConfigParam(%q) error: %v", baudLine, err)
+		b.logger.Errorf("Bluetooth parameter configuration - DetectConfigParam(%q) error: %v", baudLine, err)
+		return false, false
 	}
 	if foundExact {
-		b.logger.Infof("Found existing %s; no change needed", baudLine)
+		b.logger.Debugf("Bluetooth parameter configuration - Found existing %s; no change needed", baudLine)
 		return false, false
 	}
 
 	// Remove any existing dtparam=krnbt_baudrate lines (with any value)
-	b.logger.Debugf("Removing any existing %s entries", baseKey)
+	b.logger.Infof("Bluetooth parameter configuration - Removing any existing %s entries", baseKey)
 	if removed, err := rpiutils.RemoveConfigParam(configPath, baseKey, b.logger); err != nil {
-		b.logger.Errorf("Failed to remove %s entries from boot config: %v", baseKey, err)
+		b.logger.Errorf("Bluetooth parameter configuration - Failed to remove %s entries from boot config.txt: %v", baseKey, err)
 		configFailed = true
 	} else if removed {
 		configChanged = true
 	}
 
-	// Add the desired baudrate line
-	b.logger.Infof("Adding %s to config.txt", baudLine)
-	if changed, err := rpiutils.UpdateConfigFile(configPath, baseKey, "="+strconv.Itoa(rate), b.logger); err != nil {
-		b.logger.Errorf("Failed to add %s to boot config: %v", baudLine, err)
-		configFailed = true
-	} else if changed {
-		configChanged = true
+	if !configFailed {
+		// Add the desired baudrate line, only if the removal of the prior parameter succeeded
+		b.logger.Infof("Bluetooth parameter configuration - Adding %s to config.txt", baudLine)
+		if changed, err := rpiutils.UpdateConfigFile(configPath, baseKey, "="+strconv.Itoa(rate), b.logger); err != nil {
+			b.logger.Errorf("Bluetooth parameter configuration - Failed to add %s to boot config.txt: %v", baudLine, err)
+			configFailed = true
+		} else if changed {
+			configChanged = true
+		}
 	}
 
 	return configChanged, configFailed
