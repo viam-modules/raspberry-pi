@@ -1,6 +1,7 @@
 package rpiutils
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -209,7 +210,7 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 		return false, fmt.Errorf("failed to replace config file %s: %w", filePath, err)
 	}
 
-	logger.Debugf("Removed uncommented lines matching %q in %s", lineRegex.String(), filePath)
+	logger.Debugf("Removed uncommented line matching %q in %s", lineRegex.String(), filePath)
 	return true, nil
 }
 
@@ -217,4 +218,43 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 func RemoveConfigParam(filePath, paramPrefix string, logger logging.Logger) (bool, error) {
 	re := regexp.MustCompile(fmt.Sprintf(`^\s*%s.*$`, regexp.QuoteMeta(paramPrefix)))
 	return RemoveLineMatching(filePath, re, logger)
+}
+
+// DetectConfigParam detects if any *uncommented* line is an exact match for a config.txt param.
+func DetectConfigParam(filePath, param string, logger logging.Logger) (bool, error) {
+	f, err := os.Open(filepath.Clean(filePath))
+	if err != nil {
+		return false, fmt.Errorf("failed to open config file %s: %w", filePath, err)
+	}
+	// Ensure Close error is checked
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			logger.Errorf("error closing file %s: %v", filePath, cerr)
+		}
+	}()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// strip leading/trailing space
+		line = strings.TrimSpace(line)
+		if len(line) == 0 || strings.HasPrefix(line, "#") {
+			continue // blank or full-line comment
+		}
+
+		// remove inline comment
+		if i := strings.Index(line, "#"); i >= 0 {
+			line = strings.TrimSpace(line[:i])
+		}
+
+		if line == param { // exact match only
+			logger.Debugf("Found uncommented line matching %q in %s", line, filePath)
+			return true, nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return false, err
+	}
+	return false, nil
 }
