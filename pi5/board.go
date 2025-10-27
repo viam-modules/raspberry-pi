@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -24,6 +22,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -447,8 +446,8 @@ func (b *pinctrlpi5) configureBT(cfg *rpiutils.Config) {
 	configPath := rpiutils.GetBootConfigPath()
 
 	var (
-		configChanged bool
-		configFailed  bool
+		configChanged = false
+		configFailed  = false
 	)
 
 	if cfg.BoardSettings.BTenableuart != nil {

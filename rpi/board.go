@@ -28,8 +28,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"go.uber.org/multierr"
 	pb "go.viam.com/api/component/board/v1"
 	"go.viam.com/rdk/components/board"
@@ -38,6 +36,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model represents a raspberry pi board model.
@@ -290,8 +289,8 @@ func (pi *piPigpio) configureBT(cfg *rpiutils.Config) error {
 	configPath := rpiutils.GetBootConfigPath()
 
 	var (
-		configChanged bool
-		configFailed  bool
+		configChanged = false
+		configFailed  = false
 	)
 
 	if cfg.BoardSettings.BTenableuart != nil {
