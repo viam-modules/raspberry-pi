@@ -1,6 +1,7 @@
 package rpiutils
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -219,44 +220,41 @@ func RemoveConfigParam(filePath, paramPrefix string, logger logging.Logger) (boo
 	return RemoveLineMatching(filePath, re, logger)
 }
 
-// FindLineMatching detects if there is at least one uncommented line that matches the given regular expression.
-// Returns true if any line is a match. Does not write the file.
-func FindLineMatching(filePath string, lineRegex *regexp.Regexp, logger logging.Logger) (bool, error) {
-	filePath = filepath.Clean(filePath)
-	_, err := os.Stat(filePath)
-	if err != nil {
-		return false, fmt.Errorf("failed to stat config file %s: %w", filePath, err)
-	}
-
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return false, fmt.Errorf("failed to read config file %s: %w", filePath, err)
-	}
-
-	origLines := strings.Split(string(content), "\n")
-	found := false
-
-	for _, line := range origLines {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "#") {
-			continue // skip comments entirely
-		}
-		if lineRegex.MatchString(line) {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return false, nil
-	}
-
-	logger.Debugf("Found uncommented lines matching %q in %s", lineRegex.String(), filePath)
-	return true, nil
-}
-
 // DetectConfigParam detects if any *uncommented* line is an exact match for a config.txt param.
 func DetectConfigParam(filePath, param string, logger logging.Logger) (bool, error) {
-	re := regexp.MustCompile(fmt.Sprintf(`^\s*%s.*$`, regexp.QuoteMeta(param)))
-	return FindLineMatching(filePath, re, logger)
+	f, err := os.Open(filepath.Clean(filePath))
+	if err != nil {
+		return false, fmt.Errorf("failed to open config file %s: %w", filePath, err)
+	}
+	// Ensure Close error is checked
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			logger.Errorf("error closing file %s: %v", filePath, cerr)
+		}
+	}()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// strip leading/trailing space
+		line = strings.TrimSpace(line)
+		if len(line) == 0 || strings.HasPrefix(line, "#") {
+			continue // blank or full-line comment
+		}
+
+		// remove inline comment
+		if i := strings.Index(line, "#"); i >= 0 {
+			line = strings.TrimSpace(line[:i])
+		}
+
+		if line == param { // exact match only
+			logger.Debugf("Found uncommented line matching %q in %s", line, filePath)
+			return true, nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return false, err
+	}
+	return false, nil
 }
