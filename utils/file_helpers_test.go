@@ -234,3 +234,239 @@ func TestI2CEdgeCases(t *testing.T) {
 		test.That(t, shouldReboot, test.ShouldBeFalse)
 	})
 }
+
+// TestRemoveConfigParam tests the removal of any *uncommented* line matching the given param (paramPrefix=.*).
+func TestRemoveConfigParam(t *testing.T) {
+	logger := logging.NewTestLogger(t)
+
+	testCases := []struct {
+		name          string
+		removeLine    string
+		expectChange  bool
+		initialConfig string
+	}{
+		{
+			name:          "enable_uart_off_empty",
+			removeLine:    "enable_uart=0",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "enable_uart_on_empty",
+			removeLine:    "enable_uart=1",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "miniuart_empty",
+			removeLine:    "dtoverlay=miniuart-bt",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "baudrate_any_value_empty",
+			removeLine:    "dtparam=krnbt_baudrate=576000",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "enable_uart_on_comment",
+			removeLine:    "enable_uart=1",
+			expectChange:  false,
+			initialConfig: "# enable_uart=1",
+		},
+		{
+			name:          "miniuart_comment",
+			removeLine:    "dtoverlay=miniuart-bt",
+			expectChange:  false,
+			initialConfig: "  # dtoverlay=miniuart-bt",
+		},
+		{
+			name:          "baudrate_any_value_comment",
+			removeLine:    "dtparam=krnbt_baudrate",
+			expectChange:  false,
+			initialConfig: " #dtparam=krnbt_baudrate=576000",
+		},
+		{
+			name:          "enable_uart_off_existing",
+			removeLine:    "enable_uart=0",
+			expectChange:  true,
+			initialConfig: "enable_uart=0",
+		},
+		{
+			name:          "enable_uart_on_existing",
+			removeLine:    "enable_uart=1",
+			expectChange:  true,
+			initialConfig: "enable_uart=1",
+		},
+		{
+			name:          "miniuart_existing",
+			removeLine:    "dtoverlay=miniuart-bt",
+			expectChange:  true,
+			initialConfig: "dtoverlay=miniuart-bt",
+		},
+		{
+			name:          "baudrate_any_value_existing",
+			removeLine:    "dtparam=krnbt_baudrate=576000",
+			expectChange:  true,
+			initialConfig: " dtparam=krnbt_baudrate=576000",
+		},
+		{
+			name:          "enable_uart_on_extra_comment",
+			removeLine:    "enable_uart=1",
+			expectChange:  true,
+			initialConfig: "enable_uart=1   # extra comment\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+			configPath := filepath.Join(tempDir, "config.txt")
+
+			if err := os.WriteFile(configPath, []byte(tc.initialConfig), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			// Test the RemoveConfigParam() function
+			var configChanged bool
+			var err error
+
+			configChanged, err = RemoveConfigParam(configPath, tc.removeLine, logger)
+			test.That(t, err, test.ShouldBeNil)
+			test.That(t, configChanged, test.ShouldEqual, tc.expectChange)
+
+			if tc.expectChange {
+				// Verify final state - should be deleted
+				finalConfig, err := os.ReadFile(configPath)
+				test.That(t, err, test.ShouldBeNil)
+				test.That(t, string(finalConfig), test.ShouldEqual, "")
+			} else {
+				// no operations should occur if the line did not exist or was a comment
+				// Verify no changes were made to config.txt file
+				finalConfig, err := os.ReadFile(configPath)
+				test.That(t, err, test.ShouldBeNil)
+				test.That(t, string(finalConfig), test.ShouldEqual, tc.initialConfig)
+			}
+
+			shouldReboot := configChanged
+			test.That(t, shouldReboot, test.ShouldEqual, tc.expectChange)
+		})
+	}
+}
+
+// TestDetectConfigParam tests if the exact desired line already exists.
+func TestDetectConfigParam(t *testing.T) {
+	logger := logging.NewTestLogger(t)
+
+	testCases := []struct {
+		name          string
+		detectLine    string
+		expectChange  bool
+		initialConfig string
+	}{
+		{
+			name:          "detect_enable_uart_off_empty",
+			detectLine:    "enable_uart=0",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "detect_enable_uart_on_empty",
+			detectLine:    "enable_uart=1",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "detect_miniuart_empty",
+			detectLine:    "dtoverlay=miniuart-bt",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "detect_baudrate_specific_value_empty",
+			detectLine:    "dtparam=krnbt_baudrate=576000",
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "detect_enable_uart_off_existing",
+			detectLine:    "enable_uart=0",
+			expectChange:  true,
+			initialConfig: "enable_uart=0",
+		},
+		{
+			name:          "detect_enable_uart_on_existing",
+			detectLine:    "enable_uart=1",
+			expectChange:  true,
+			initialConfig: "enable_uart=1",
+		},
+		{
+			name:          "detect_miniuart_existing",
+			detectLine:    "dtoverlay=miniuart-bt",
+			expectChange:  true,
+			initialConfig: "dtoverlay=miniuart-bt",
+		},
+		{
+			name:          "detect_baudrate_specific_value_existing",
+			detectLine:    "dtparam=krnbt_baudrate=576000",
+			expectChange:  true,
+			initialConfig: "dtparam=krnbt_baudrate=576000",
+		},
+		{
+			name:          "detect_baudrate_wrong_value_existing",
+			detectLine:    "dtparam=krnbt_baudrate=576000",
+			expectChange:  false,
+			initialConfig: "dtparam=krnbt_baudrate=921600",
+		},
+		{
+			name:          "detect_enable_uart_on_comment",
+			detectLine:    "enable_uart=1",
+			expectChange:  false,
+			initialConfig: "# enable_uart=1",
+		},
+		{
+			name:          "detect_enable_uart_off_comment",
+			detectLine:    "enable_uart=0",
+			expectChange:  false,
+			initialConfig: "# enable_uart=0",
+		},
+		{
+			name:          "detect_miniuart_comment",
+			detectLine:    "dtoverlay=miniuart-bt",
+			expectChange:  false,
+			initialConfig: "  # dtoverlay=miniuart-bt",
+		},
+		{
+			name:          "detect_baudrate_any_value_comment",
+			detectLine:    "dtparam=krnbt_baudrate",
+			expectChange:  false,
+			initialConfig: " #dtparam=krnbt_baudrate=576000",
+		},
+		{
+			name:          "detect_enable_uart_on_extra_comment",
+			detectLine:    "enable_uart=1",
+			expectChange:  true,
+			initialConfig: "enable_uart=1   # extra comment\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+			configPath := filepath.Join(tempDir, "config.txt")
+
+			if err := os.WriteFile(configPath, []byte(tc.initialConfig), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			// Test the DetectConfigParam() function
+			var found bool
+			var err error
+
+			found, err = RemoveConfigParam(configPath, tc.detectLine, logger)
+			test.That(t, err, test.ShouldBeNil)
+			test.That(t, found, test.ShouldEqual, tc.expectChange)
+		})
+	}
+}
