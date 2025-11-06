@@ -592,15 +592,6 @@ func (b *pinctrlpi5) updateBTbaudrate(configPath string, rate int) (bool, bool) 
 	if rate == 0 {
 		// When 0: remove any dtparam=krnbt_baudrate line(s)
 		b.logger.Debugf("Bluetooth parameter configuration - updateBTbaudrate: rate==0; removing any %s entries", baseKey)
-		found, err := rpiutils.DetectConfigParam(configPath, baseKey, b.logger)
-		if err != nil {
-			b.logger.Errorf("Bluetooth parameter configuration - DetectConfigParam(%q) error: %v", baseKey, err)
-			return false, false
-		}
-		if !found {
-			b.logger.Debugf("Bluetooth parameter configuration - %s not present; no change needed", baseKey)
-			return false, false
-		}
 		b.logger.Infof("Bluetooth parameter configuration - Removing %s entries from config.txt", baseKey)
 		if removed, err := rpiutils.RemoveConfigParam(configPath, baseKey, b.logger); err != nil {
 			b.logger.Errorf("Bluetooth parameter configuration - Failed to remove %s from boot config.txt: %v", baseKey, err)
