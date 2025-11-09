@@ -44,20 +44,20 @@
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi0",
         "markdown_link": "README.md#configure-your-raspberry-pi-board",
-        "short_description": "A board component for the Raspberry Pi 0 GPIO pins."
+        "short_description": "A board component for the Raspberry Pi Zero GPIO pins."
       },
       {
         "api": "rdk:component:board",
         "model": "viam:raspberry-pi:rpi0_2",
         "markdown_link": "README.md#configure-your-raspberry-pi-board",
-        "short_description": "A board component for the Raspberry Pi 0 2 GPIO pins."
+        "short_description": "A board component for the Raspberry Pi Zero 2 W GPIO pins."
       },  
       {
         "api": "rdk:component:servo",
         "model": "viam:raspberry-pi:rpi-servo"
         ,
         "markdown_link": "README.md#configure-your-pi-servo",
-        "short_description": "A servo to run a servo on the Raspberry Pi 0 to 4. On 5 use servo model gpio."
+        "short_description": "A servo to run a servo on the Raspberry Pi Zero to 4. On 5 use servo model gpio."
       }
     ],
     "build": {
