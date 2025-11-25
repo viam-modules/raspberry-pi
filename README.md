@@ -9,8 +9,8 @@ This module provides the following models to access GPIO functionality (input, o
 * `viam:raspberry-pi:rpi3` - Configure a Raspberry Pi 3 board
 * `viam:raspberry-pi:rpi2` - Configure a Raspberry Pi 2 board
 * `viam:raspberry-pi:rpi1` - Configure a Raspberry Pi 1 board
-* `viam:raspberry-pi:rpi0` - Configure a Raspberry Pi 0 board
-* `viam:raspberry-pi:rpi0_2` - Configure a Raspberry Pi 0 2 W board
+* `viam:raspberry-pi:rpi0` - Configure a Raspberry Pi Zero board
+* `viam:raspberry-pi:rpi0_2` - Configure a Raspberry Pi Zero 2 W board
 
 This module also provides a servo model:
 
