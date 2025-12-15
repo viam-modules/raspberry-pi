@@ -15,49 +15,49 @@ func TestI2CConfiguration(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		turnI2COn     bool
+		i2cEnable     bool
 		expectChange  bool
 		initialConfig string
 		initialModule string
 	}{
 		{
 			name:          "turn_on_from_scratch",
-			turnI2COn:     true,
+			i2cEnable:     true,
 			expectChange:  true,
 			initialConfig: "",
 			initialModule: "",
 		},
 		{
 			name:          "turn_on_already_enabled",
-			turnI2COn:     true,
+			i2cEnable:     true,
 			expectChange:  false,
 			initialConfig: "dtparam=i2c_arm=on\n",
 			initialModule: "i2c-dev\n",
 		},
 		{
 			name:          "turn_on_from_commented",
-			turnI2COn:     true,
+			i2cEnable:     true,
 			expectChange:  true,
 			initialConfig: "#dtparam=i2c_arm=on\n",
 			initialModule: "#i2c-dev\n",
 		},
 		{
 			name:          "false_does_nothing_empty",
-			turnI2COn:     false,
+			i2cEnable:     false,
 			expectChange:  false,
 			initialConfig: "",
 			initialModule: "",
 		},
 		{
 			name:          "false_does_nothing_enabled",
-			turnI2COn:     false,
+			i2cEnable:     false,
 			expectChange:  false,
 			initialConfig: "dtparam=i2c_arm=on\n",
 			initialModule: "i2c-dev\n",
 		},
 		{
 			name:          "false_does_nothing_disabled",
-			turnI2COn:     false,
+			i2cEnable:     false,
 			expectChange:  false,
 			initialConfig: "dtparam=i2c_arm=off\n",
 			initialModule: "#i2c-dev\n",
@@ -81,7 +81,7 @@ func TestI2CConfiguration(t *testing.T) {
 			var configChanged, moduleChanged bool
 			var err error
 
-			if tc.turnI2COn {
+			if tc.i2cEnable {
 				configChanged, err = UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
 				test.That(t, err, test.ShouldBeNil)
 
@@ -126,25 +126,25 @@ func TestI2CConfigIntegration(t *testing.T) {
 		expectCalls bool
 	}{
 		{
-			name: "turn_i2c_on_true",
+			name: "i2c_enable_true",
 			config: Config{
 				BoardSettings: BoardSettings{
-					TurnI2COn: true,
+					I2Cenable: true,
 				},
 			},
 			expectCalls: true,
 		},
 		{
-			name: "turn_i2c_on_false",
+			name: "i2c_enable_false",
 			config: Config{
 				BoardSettings: BoardSettings{
-					TurnI2COn: false,
+					I2Cenable: false,
 				},
 			},
 			expectCalls: false,
 		},
 		{
-			name: "turn_i2c_on_omitted",
+			name: "i2c_enable_omitted",
 			config: Config{
 				BoardSettings: BoardSettings{},
 			},
@@ -155,7 +155,7 @@ func TestI2CConfigIntegration(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Test that the logic correctly interprets the config
-			shouldEnable := tc.config.BoardSettings.TurnI2COn
+			shouldEnable := tc.config.BoardSettings.I2Cenable
 			test.That(t, shouldEnable, test.ShouldEqual, tc.expectCalls)
 		})
 	}

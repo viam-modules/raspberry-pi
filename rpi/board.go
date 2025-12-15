@@ -51,7 +51,7 @@ var (
 )
 
 var (
-	boardInstance   *piPigpio    // global instance of raspberry pi borad for interrupt callbacks
+	boardInstance   *piPigpio    // global instance of raspberry pi board for interrupt callbacks
 	boardInstanceMu sync.RWMutex // mutex to protect boardInstance
 )
 
@@ -484,9 +484,9 @@ func (pi *piPigpio) updateBTbaudrate(configPath string, rate int) (bool, bool) {
 }
 
 func (pi *piPigpio) configureI2C(cfg *rpiutils.Config) error {
-	pi.logger.Debugf("cfg.BoardSettings.TurnI2COn=%v", cfg.BoardSettings.TurnI2COn)
+	pi.logger.Debugf("cfg.BoardSettings.I2Cenable=%v", cfg.BoardSettings.I2Cenable)
 	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
-	if !cfg.BoardSettings.TurnI2COn {
+	if !cfg.BoardSettings.I2Cenable {
 		return nil
 	}
 
