@@ -13,7 +13,7 @@ var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 
 // BoardSettings contains board-level configuration options.
 type BoardSettings struct {
-	TurnI2COn    bool  `json:"turn_i2c_on,omitempty"`
+	I2Cenable    bool  `json:"enable_i2c,omitempty"`
 	BTenableuart *bool `json:"bluetooth_enable_uart,omitempty"`
 	BTdtoverlay  *bool `json:"bluetooth_dtoverlay_miniuart,omitempty"`
 	BTkbaudrate  *int  `json:"bluetooth_baud_rate,omitempty"`
@@ -23,7 +23,7 @@ type BoardSettings struct {
 type Config struct {
 	AnalogReaders []mcp3008helper.MCP3008AnalogConfig `json:"analogs,omitempty"`
 	Pins          []PinConfig                         `json:"pins,omitempty"`
-	BoardSettings BoardSettings                       `json:"board_settings,omitempty"`
+	BoardSettings BoardSettings                       `json:"board_settings"`
 }
 
 // Validate ensures all parts of the config are valid.

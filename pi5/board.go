@@ -640,9 +640,9 @@ func (b *pinctrlpi5) updateBTbaudrate(configPath string, rate int) (bool, bool) 
 }
 
 func (b *pinctrlpi5) configureI2C(cfg *rpiutils.Config) {
-	b.logger.Debugf("cfg.BoardSettings.TurnI2COn=%v", cfg.BoardSettings.TurnI2COn)
+	b.logger.Debugf("cfg.BoardSettings.I2Cenable=%v", cfg.BoardSettings.I2Cenable)
 	// Only enable I2C if turn_i2c_on is true, otherwise do nothing
-	if !cfg.BoardSettings.TurnI2COn {
+	if !cfg.BoardSettings.I2Cenable {
 		return
 	}
 
