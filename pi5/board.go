@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	rpiutils "raspberry-pi/utils"
-
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -24,6 +22,7 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
+	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -710,7 +709,7 @@ func (b *pinctrlpi5) Close(ctx context.Context) error {
 }
 
 // checkHardwarePWMOverlayIsConfigured checks if the hardware PWM overlay is enabled in config.txt.
-// If not present or commented out returns an error
+// If not present or commented out returns an error.
 func checkHardwarePWMOverlayIsConfigured() error {
 	configPath := "/boot/firmware/config.txt"
 	content, err := os.ReadFile(configPath)
@@ -728,6 +727,6 @@ func checkHardwarePWMOverlayIsConfigured() error {
 	}
 
 	// If we get here, the overlay is either missing or commented out
-	return fmt.Errorf("Hardware PWM overlay is not configured in %s. Some hardware PWM functions may not work."+
-		"To enable hardware PWM, add 'dtoverlay=pwm-2chan' to your %s file and reboot.", configPath, configPath)
+	return fmt.Errorf("hardware PWM overlay is not configured in %s. Some hardware PWM functions may not work."+
+		"To enable hardware PWM, add 'dtoverlay=pwm-2chan' to your %s file and reboot", configPath, configPath)
 }
