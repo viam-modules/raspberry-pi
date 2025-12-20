@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	rpiutils "raspberry-pi/utils"
+
 	"github.com/pkg/errors"
 	"github.com/viam-modules/pinctrl/pinctrl"
 	"go.uber.org/multierr"
@@ -22,7 +24,6 @@ import (
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/utils"
-	rpiutils "raspberry-pi/utils"
 )
 
 // Model is the model for a Raspberry Pi 5.
@@ -727,5 +728,6 @@ func checkHardwarePWMOverlayIsConfigured() error {
 	}
 
 	// If we get here, the overlay is either missing or commented out
-	return fmt.Errorf("Hardware PWM overlay is not configured in %s. Some hardware PWM functions may not work. To enable hardware PWM, add 'dtoverlay=pwm-2chan' to your %s file and reboot.", configPath, configPath)
+	return fmt.Errorf("Hardware PWM overlay is not configured in %s. Some hardware PWM functions may not work."+
+		"To enable hardware PWM, add 'dtoverlay=pwm-2chan' to your %s file and reboot.", configPath, configPath)
 }
