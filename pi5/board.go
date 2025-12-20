@@ -97,6 +97,12 @@ func newBoard(
 	if !isPi5 && !testingMode {
 		return nil, rpiutils.WrongModelErr(conf.Name)
 	}
+
+	// Check for hardware PWM overlay in config.txt
+	if err = checkHardwarePWMOverlayIsConfigured(); err != nil {
+		logger.Warnf("%v", err)
+	}
+
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 
 	b := &pinctrlpi5{
@@ -700,4 +706,27 @@ func (b *pinctrlpi5) Close(ctx context.Context) error {
 		err = multierr.Combine(err, interrupt.Close())
 	}
 	return err
+}
+
+// checkHardwarePWMOverlayIsConfigured checks if the hardware PWM overlay is enabled in config.txt.
+// If not present or commented out returns an error.
+func checkHardwarePWMOverlayIsConfigured() error {
+	configPath := "/boot/firmware/config.txt"
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("couldn't read %s", configPath)
+	}
+
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "dtoverlay=pwm-2chan") {
+			// dtoverlay=pwm-2chan is uncommented
+			return nil
+		}
+	}
+
+	// If we get here, the overlay is either missing or commented out
+	return fmt.Errorf("hardware PWM overlay is not configured in %s. Some hardware PWM functions may not work."+
+		"To enable hardware PWM, add 'dtoverlay=pwm-2chan' to your %s file and reboot", configPath, configPath)
 }
