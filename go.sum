@@ -1200,6 +1200,8 @@ github.com/valyala/quicktemplate v1.6.3/go.mod h1:fwPzK2fHuYEODzJ9pkw0ipCPNHZ2tD
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/viam-modules/pinctrl v0.0.0-20241213172831-bdf11253b4c3 h1:TJwUzh2Z91fY7ERTbaAZcgl8gBOQZRU0OAx83XTb/l4=
 github.com/viam-modules/pinctrl v0.0.0-20241213172831-bdf11253b4c3/go.mod h1:klkE1Ll5blcoLTi8abPsujXNyLOY0cte5tHYOjTo5u8=
+github.com/viam-modules/pinctrl v0.0.0-20251230164603-b51a5031d7da h1:iC2TcpEluuppGM1h/K/1N99qQfwvSmS9Vx5Uofxu1aA=
+github.com/viam-modules/pinctrl v0.0.0-20251230164603-b51a5031d7da/go.mod h1:klkE1Ll5blcoLTi8abPsujXNyLOY0cte5tHYOjTo5u8=
 github.com/viamrobotics/ice/v2 v2.3.40 h1:H9r4ztsKkxWSn42R4fLvYlaPtpBys1Yj7/MERBtZY0k=
 github.com/viamrobotics/ice/v2 v2.3.40/go.mod h1:MFqB81U1pliDKaXJx2hGHvYKg1PepyEYwEY10828Ve0=
 github.com/viamrobotics/webrtc/v3 v3.99.16 h1:N3OQoWnV9Zg68mTDOq8ymsx2AMpbEjuo1gHWaVd7wB0=
