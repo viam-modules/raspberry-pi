@@ -8,7 +8,7 @@ require (
 	github.com/edaniels/golinters v0.0.5-0.20220906153528-641155550742
 	github.com/pkg/errors v0.9.1
 	github.com/rhysd/actionlint v1.7.8
-	github.com/viam-modules/pinctrl v0.0.0-20251230164603-b51a5031d7da
+	github.com/viam-modules/pinctrl v0.0.0-20260209172625-ac74bc61d9d4
 	go.uber.org/multierr v1.11.0
 	go.viam.com/api v0.1.487
 	go.viam.com/rdk v0.102.1
