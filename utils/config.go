@@ -14,6 +14,7 @@ var RaspiFamily = resource.NewModelFamily("viam", "raspberry-pi")
 // BoardSettings contains board-level configuration options.
 type BoardSettings struct {
 	I2Cenable    bool  `json:"enable_i2c,omitempty"`
+	SPIenable    bool  `json:"enable_spi,omitempty"`
 	BTenableuart *bool `json:"bluetooth_enable_uart,omitempty"`
 	BTdtoverlay  *bool `json:"bluetooth_dtoverlay_miniuart,omitempty"`
 	BTkbaudrate  *int  `json:"bluetooth_baud_rate,omitempty"`

@@ -181,6 +181,8 @@ func (b *pinctrlpi5) Reconfigure(
 
 	b.configureI2C(newConf)
 
+	b.configureSPI(newConf)
+
 	b.configureBT(newConf)
 
 	b.pinConfigs = newConf.Pins
@@ -686,6 +688,26 @@ func (b *pinctrlpi5) updateI2CConfig(desiredValue string) (bool, error) {
 
 func (b *pinctrlpi5) updateI2CModule(enable bool) (bool, error) {
 	return rpiutils.UpdateModuleFile("/etc/modules", "i2c-dev", enable, b.logger)
+}
+
+func (b *pinctrlpi5) configureSPI(cfg *rpiutils.Config) {
+	b.logger.Debugf("cfg.BoardSettings.SPIenable=%v", cfg.BoardSettings.SPIenable)
+	if !cfg.BoardSettings.SPIenable {
+		return
+	}
+
+	configPath := rpiutils.GetBootConfigPath()
+	changed, err := rpiutils.UpdateConfigFile(configPath, "dtparam=spi", "=on", b.logger)
+	if err != nil {
+		b.logger.Errorf("Failed to enable SPI in boot config: %v", err)
+		b.logger.Errorf("Automatic SPI configuration failed. Please manually enable SPI using 'sudo raspi-config' -> Interfacing Options -> SPI")
+		return
+	}
+
+	if changed {
+		b.logger.Infof("SPI configuration enabled. Initiating automatic reboot...")
+		go rpiutils.PerformReboot(b.logger)
+	}
 }
 
 // Close attempts to cleanly close each part of the board.

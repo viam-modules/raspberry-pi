@@ -241,6 +241,10 @@ func (pi *piPigpio) Reconfigure(
 		return err
 	}
 
+	if err := pi.configureSPI(cfg); err != nil {
+		return err
+	}
+
 	if err := pi.configureBT(cfg); err != nil {
 		return err
 	}
@@ -526,6 +530,28 @@ func (pi *piPigpio) updateI2CConfig(desiredValue string) (bool, error) {
 
 func (pi *piPigpio) updateI2CModule(enable bool) (bool, error) {
 	return rpiutils.UpdateModuleFile("/etc/modules", "i2c-dev", enable, pi.logger)
+}
+
+func (pi *piPigpio) configureSPI(cfg *rpiutils.Config) error {
+	pi.logger.Debugf("cfg.BoardSettings.SPIenable=%v", cfg.BoardSettings.SPIenable)
+	if !cfg.BoardSettings.SPIenable {
+		return nil
+	}
+
+	configPath := rpiutils.GetBootConfigPath()
+	changed, err := rpiutils.UpdateConfigFile(configPath, "dtparam=spi", "=on", pi.logger)
+	if err != nil {
+		pi.logger.Errorf("Failed to enable SPI in boot config: %v", err)
+		pi.logger.Errorf("Automatic SPI configuration failed. Please manually enable SPI using 'sudo raspi-config' -> Interfacing Options -> SPI")
+		return nil
+	}
+
+	if changed {
+		pi.logger.Infof("SPI configuration enabled. Initiating automatic reboot...")
+		go rpiutils.PerformReboot(pi.logger)
+	}
+
+	return nil
 }
 
 // Close attempts to close all parts of the board cleanly.

@@ -82,7 +82,7 @@ func TestI2CConfiguration(t *testing.T) {
 			var err error
 
 			if tc.i2cEnable {
-				configChanged, err = UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
+				configChanged, err = UpdateConfigFile(configPath, "dtparam=i2c_arm", "=on", logger)
 				test.That(t, err, test.ShouldBeNil)
 
 				moduleChanged, err = UpdateModuleFile(modulePath, "i2c-dev", true, logger)
@@ -182,7 +182,7 @@ func TestI2CEdgeCases(t *testing.T) {
 		}
 
 		// Enable I2C
-		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
+		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "=on", logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, configChanged, test.ShouldBeTrue)
 
@@ -221,7 +221,7 @@ func TestI2CEdgeCases(t *testing.T) {
 		}
 
 		// Try to enable again - should be no-op
-		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "on", logger)
+		configChanged, err := UpdateConfigFile(configPath, "dtparam=i2c_arm", "=on", logger)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, configChanged, test.ShouldBeFalse)
 
@@ -464,9 +464,113 @@ func TestDetectConfigParam(t *testing.T) {
 			var found bool
 			var err error
 
-			found, err = RemoveConfigParam(configPath, tc.detectLine, logger)
+			found, err = DetectConfigParam(configPath, tc.detectLine, logger)
 			test.That(t, err, test.ShouldBeNil)
 			test.That(t, found, test.ShouldEqual, tc.expectChange)
 		})
 	}
+}
+
+// TestSPIConfiguration tests the enable_spi behavior.
+func TestSPIConfiguration(t *testing.T) {
+	logger := logging.NewTestLogger(t)
+
+	testCases := []struct {
+		name          string
+		spiEnable     bool
+		expectChange  bool
+		initialConfig string
+	}{
+		{
+			name:          "turn_on_from_scratch",
+			spiEnable:     true,
+			expectChange:  true,
+			initialConfig: "",
+		},
+		{
+			name:          "turn_on_already_enabled",
+			spiEnable:     true,
+			expectChange:  false,
+			initialConfig: "dtparam=spi=on\n",
+		},
+		{
+			name:          "turn_on_from_commented",
+			spiEnable:     true,
+			expectChange:  true,
+			initialConfig: "#dtparam=spi=on\n",
+		},
+		{
+			name:          "false_does_nothing_empty",
+			spiEnable:     false,
+			expectChange:  false,
+			initialConfig: "",
+		},
+		{
+			name:          "false_does_nothing_enabled",
+			spiEnable:     false,
+			expectChange:  false,
+			initialConfig: "dtparam=spi=on\n",
+		},
+		{
+			name:          "false_does_nothing_disabled",
+			spiEnable:     false,
+			expectChange:  false,
+			initialConfig: "dtparam=spi=off\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+			configPath := filepath.Join(tempDir, "config.txt")
+
+			if err := os.WriteFile(configPath, []byte(tc.initialConfig), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			var configChanged bool
+			var err error
+
+			if tc.spiEnable {
+				configChanged, err = UpdateConfigFile(configPath, "dtparam=spi", "=on", logger)
+				test.That(t, err, test.ShouldBeNil)
+
+				finalConfig, err := os.ReadFile(configPath)
+				test.That(t, err, test.ShouldBeNil)
+				test.That(t, string(finalConfig), test.ShouldContainSubstring, "dtparam=spi=on")
+			} else {
+				configChanged = false
+
+				finalConfig, err := os.ReadFile(configPath)
+				test.That(t, err, test.ShouldBeNil)
+				test.That(t, string(finalConfig), test.ShouldEqual, tc.initialConfig)
+			}
+
+			test.That(t, configChanged, test.ShouldEqual, tc.expectChange)
+		})
+	}
+}
+
+// TestSPIEdgeCases tests edge cases for the SPI configuration.
+func TestSPIEdgeCases(t *testing.T) {
+	logger := logging.NewTestLogger(t)
+
+	t.Run("enable_with_existing_disabled_config", func(t *testing.T) {
+		tempDir := t.TempDir()
+		configPath := filepath.Join(tempDir, "config.txt")
+
+		initialConfig := "dtparam=spi=off\nother=setting\n"
+		if err := os.WriteFile(configPath, []byte(initialConfig), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		configChanged, err := UpdateConfigFile(configPath, "dtparam=spi", "=on", logger)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, configChanged, test.ShouldBeTrue)
+
+		finalConfig, err := os.ReadFile(configPath)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, string(finalConfig), test.ShouldContainSubstring, "dtparam=spi=on")
+		test.That(t, string(finalConfig), test.ShouldContainSubstring, "other=setting")
+	})
 }
