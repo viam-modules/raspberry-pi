@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_and_lint:
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    runs-on: ubuntu-4cpu-arm
     container: ghcr.io/viam-modules/raspberry-pi:arm64
     timeout-minutes: 30
 

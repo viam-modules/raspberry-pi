@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         architecture: [arm, arm64]
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    runs-on: ubuntu-4cpu-arm
     container:
       image: ghcr.io/viam-modules/raspberry-pi:${{ matrix.architecture }}
       volumes:
