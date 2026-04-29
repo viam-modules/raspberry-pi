@@ -34,6 +34,7 @@ You can copy the following optional attributes to your json if you want to confi
   "analogs": [{ } ],
   "board_settings": {
     "enable_i2c": true,
+    "enable_spi": true,
     "bluetooth_enable_uart": true
   }
 }
@@ -160,6 +161,37 @@ The following attributes are available for I2C configuration:
 | ---- | ---- | --------- | ----------- |
 | `board_settings` | object | Optional | Board-level configuration settings |
 | `board_settings.enable_i2c` | boolean | Optional | Enable I2C interface on the Raspberry Pi. Default: `false` |
+
+#### `enable_spi`
+
+The SPI interface on Raspberry Pi is disabled by default. When you set `enable_spi` to `true`, the module will automatically configure your Raspberry Pi to enable SPI communication.
+
+```json
+{
+  "board_settings": {
+    "enable_spi": true
+  }
+}
+```
+
+When SPI is enabled, the module will:
+
+1. Add `dtparam=spi=on` to `/boot/config.txt` (or `/boot/firmware/config.txt` on newer systems).
+2. Log the configuration changes for your reference.
+3. **Automatically reboot the system** if changes were made.
+
+**Important Notes:**
+
+* The system will automatically reboot when SPI configuration changes are made.
+* If SPI is already enabled, no reboot will occur.
+* Setting this value to false will not disable SPI.
+
+The following attributes are available for SPI configuration:
+
+| Name | Type | Required? | Description |
+| ---- | ---- | --------- | ----------- |
+| `board_settings` | object | Optional | Board-level configuration settings |
+| `board_settings.enable_spi` | boolean | Optional | Enable SPI interface on the Raspberry Pi. Default: `false` |
 
 #### `bluetooth settings`
 
