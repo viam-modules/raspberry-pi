@@ -414,6 +414,7 @@ func (b *pinctrlpi5) SetPowerMode(
 	ctx context.Context,
 	mode pb.PowerMode,
 	duration *time.Duration,
+	extra map[string]interface{},
 ) error {
 	return grpc.UnimplementedError
 }
