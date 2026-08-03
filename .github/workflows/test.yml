@@ -28,7 +28,7 @@ jobs:
           /__e/node20/bin/node --version
           echo "Node Installed"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Verify no uncommitted changes from make lint
         run: |
