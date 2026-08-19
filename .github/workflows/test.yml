@@ -18,6 +18,9 @@ jobs:
         # override /__e/node20 on 32-bit because it is 64-bit
         - /tmp/node20:/__e${{matrix.architecture != 'arm' && '-armhf' || ''}}/node20
     timeout-minutes: 30
+    # Node 20 is the last release with a 32-bit ARM (armv7l) build
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
 
     steps:
       - name: Unbork NodeJS for 32-bit
@@ -28,7 +31,7 @@ jobs:
           /__e/node20/bin/node --version
           echo "Node Installed"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Verify no uncommitted changes from make lint
         run: |
