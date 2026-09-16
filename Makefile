@@ -51,7 +51,7 @@ test:
 .PHONY: lint
 lint:
 	go mod tidy
-	go tool github.com/golangci/golangci-lint/cmd/golangci-lint run -v --fix --config=./etc/.golangci.yaml --timeout 5m
+	go tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint run -v --fix --config=./etc/.golangci.yaml --timeout 5m
 
 .PHONY: docker-all
 docker-all: docker-build-64 docker-build-32
