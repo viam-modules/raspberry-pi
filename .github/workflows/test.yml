@@ -14,41 +14,38 @@ jobs:
     runs-on: ubuntu-4cpu-arm
     container:
       image: ghcr.io/viam-modules/raspberry-pi:${{ matrix.architecture }}
-      volumes:
-        # override /__e/node20 on 32-bit because it is 64-bit
-        - /tmp/node20:/__e${{matrix.architecture != 'arm' && '-armhf' || ''}}/node20
     timeout-minutes: 30
-    # Node 20 is the last release with a 32-bit ARM (armv7l) build
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
 
+    # JavaScript actions (e.g. actions/checkout) run on the runner's 64-bit Node, which cannot
+    # execute inside the 32-bit arm container, so this job only uses plain `run` steps.
     steps:
-      - name: Unbork NodeJS for 32-bit
-        if: matrix.architecture == 'arm'
+      - name: Checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -L https://nodejs.org/download/release/v20.18.0/node-v20.18.0-linux-armv7l.tar.xz | tar -xJ -C /__e/node20 --strip-components=1 --overwrite
-          file /__e/node20/bin/node
-          /__e/node20/bin/node --version
-          echo "Node Installed"
-
-      - uses: actions/checkout@v4
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git init -q .
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git -c http.extraheader="$auth" fetch -q --depth 1 origin "$GITHUB_SHA"
+          git checkout -q --detach FETCH_HEAD
+          git log -1 --oneline
 
       - name: Verify no uncommitted changes from make lint
         run: |
-          git init
-          git add .
           chown -R testbot:testbot .
           sudo -u testbot bash -lc 'make lint'
-          if [ -n "$GEN_DIFF" ]; then
+          changes=$(git status --porcelain)
+          if [ -n "$changes" ]; then
               echo '"make lint" resulted in changes not in git' 1>&2
               git status
+              git diff
               exit 1
           fi
 
       - name: make build
         run: |
           sudo -u testbot bash -lc 'make'
-  
+
   # test_on_pi:
   #   # The following steps are run on an external runner "rpibull"
   #   runs-on: pi-4
