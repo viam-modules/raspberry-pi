@@ -6,23 +6,27 @@ linters:
   default: all
   disable:
     - asasalint
-    - mnd
     - containedctx
     - contextcheck
     - cyclop
     - depguard
+    - err113
     - exhaustruct
+    - exhaustruct_v5
     - forcetypeassert
     - funlen
-    - gocognit
-    - godox
     - gochecknoglobals
     - gochecknoinits
+    - gocognit
     - gocyclo
+    - godox
+    - gomodguard # gomodguard is deprecated in favor of gomodguard_v2
+    - importas
     - interfacebloat
     - ireturn
     - maintidx
     - makezero
+    - mnd
     - musttag
     - nakedret
     - nestif
@@ -37,67 +41,74 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+    - wsl_v5
+  settings:
+    errcheck:
+      check-blank: true
+    gosec:
+      excludes:
+        - G115
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+        - composites
+      enable-all: true
+    lll:
+      line-length: 140
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: testing.TB,*testing.T,*testing.B,*testing.F
+          disabled: false
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: var-declaration
+        - name: var-naming
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupword
+          - errcheck
+          - exhaustive
+          - goconst
+          - gosec
+        path: _test\.go$
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 formatters:
   enable:
+    - gci
     - gofumpt
   settings:
+    gci:
+      sections:
+        - standard
+        - default
     gofumpt:
       extra:
         group-params: true
-linters-settings:
-  errcheck:
-    check-blank: true
-  gci:
-    sections:
-      - standard
-      - default
-  gosec:
-    excludes:
-      - G115
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-      - shadow
-      - composites
-  revive:
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-        disabled: false
-        arguments:
-          - allowTypesBefore: "testing.TB,*testing.T,*testing.B,*testing.F"
-      - name: context-keys-type
-      - name: dot-imports
-      - name: empty-block
-      - name: error-naming
-      - name: error-return
-      - name: error-strings
-      - name: errorf
-      - name: exported
-      - name: increment-decrement
-      - name: indent-error-flow
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: redefines-builtin-id
-      - name: superfluous-else
-      - name: time-naming
-      - name: unexported-return
-      - name: unreachable-code
-      - name: var-declaration
-      - name: var-naming
-  lll:
-    line-length: 140
-issues:
-  exclude-rules:
-    - path: _test\.go$
-      linters:
-        - dupword
-        - errcheck
-        - exhaustive
-        - goconst
-        - gosec
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0

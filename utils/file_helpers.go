@@ -107,13 +107,14 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
-		if trimmedLine == moduleName {
+		switch trimmedLine {
+		case moduleName:
 			moduleFound = true
 			if !enable {
 				lines[i] = "#" + line
 				configChanged = true
 			}
-		} else if trimmedLine == "#"+moduleName {
+		case "#" + moduleName:
 			if enable {
 				lines[i] = moduleName
 				configChanged = true
@@ -133,12 +134,15 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 		newContent := strings.Join(lines, "\n")
 
 		tempFile := filePath + ".tmp"
-		if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
+		err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode())
+		if err != nil {
 			return false, fmt.Errorf("failed to write temp modules file %s: %w", tempFile, err)
 		}
 
-		if err := os.Rename(tempFile, filePath); err != nil {
-			if removeErr := os.Remove(tempFile); removeErr != nil {
+		err = os.Rename(tempFile, filePath)
+		if err != nil {
+			removeErr := os.Remove(tempFile)
+			if removeErr != nil {
 				logger.Warnf("Failed to clean up temp file %s: %v", tempFile, removeErr)
 			}
 			return false, fmt.Errorf("failed to replace modules file %s: %w", filePath, err)
@@ -228,7 +232,8 @@ func DetectConfigParam(filePath, param string, logger logging.Logger) (bool, err
 	}
 	// Ensure Close error is checked
 	defer func() {
-		if cerr := f.Close(); cerr != nil {
+		cerr := f.Close()
+		if cerr != nil {
 			logger.Errorf("error closing file %s: %v", filePath, cerr)
 		}
 	}()

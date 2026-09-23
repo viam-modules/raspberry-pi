@@ -60,7 +60,8 @@ func (config *PinConfig) Validate(path string) error {
 	if config.Pin == "" {
 		return resource.NewConfigValidationFieldRequiredError(path, "pin")
 	}
-	if err := config.PullState.Validate(); err != nil {
+	err := config.PullState.Validate()
+	if err != nil {
 		return err
 	}
 	return nil
@@ -88,7 +89,8 @@ func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, erro
 		return nil, fmt.Errorf("expected pin %v to be configured as %v, got %v instead", cfg.Name, PinInterrupt, cfg.Type)
 	}
 
-	if err := i.Reconfigure(cfg); err != nil {
+	err := i.Reconfigure(cfg)
+	if err != nil {
 		return nil, err
 	}
 	return i, nil
@@ -97,7 +99,7 @@ func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, erro
 // A BasicDigitalInterrupt records how many ticks/interrupts happen and can
 // report when they happen to interested callbacks.
 type BasicDigitalInterrupt struct {
-	count int64
+	count atomic.Int64
 
 	callbacks []chan board.Tick
 
@@ -106,10 +108,10 @@ type BasicDigitalInterrupt struct {
 }
 
 // Value returns the amount of ticks that have occurred.
-func (i *BasicDigitalInterrupt) Value(ctx context.Context, extra map[string]interface{}) (int64, error) {
+func (i *BasicDigitalInterrupt) Value(ctx context.Context, extra map[string]any) (int64, error) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	count := atomic.LoadInt64(&i.count)
+	count := i.count.Load()
 	return count, nil
 }
 
@@ -117,7 +119,7 @@ func (i *BasicDigitalInterrupt) Value(ctx context.Context, extra map[string]inte
 // the DigitalInterrupt interface for caveats.
 func Tick(ctx context.Context, i *BasicDigitalInterrupt, high bool, nanoseconds uint64) error {
 	if high {
-		atomic.AddInt64(&i.count, 1)
+		i.count.Add(1)
 	}
 
 	i.mu.RLock()

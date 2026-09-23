@@ -60,6 +60,7 @@ func init() {
 
 type pinctrlpi5 struct {
 	resource.Named
+
 	mu sync.Mutex
 
 	gpioMappings map[string]gl.GPIOBoardMapping
@@ -99,7 +100,8 @@ func newBoard(
 	}
 
 	// Check for hardware PWM overlay in config.txt
-	if err = checkHardwarePWMOverlayIsConfigured(); err != nil {
+	err = checkHardwarePWMOverlayIsConfigured()
+	if err != nil {
 		logger.Warnf("%v", err)
 	}
 
@@ -221,7 +223,8 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 		// this actually removes the interrupt
 		interrupt, ok := b.interrupts[bcom]
 		if ok {
-			if err := interrupt.Close(); err != nil {
+			err := interrupt.Close()
+			if err != nil {
 				return err
 			}
 			delete(b.interrupts, bcom)
@@ -414,14 +417,14 @@ func (b *pinctrlpi5) SetPowerMode(
 	ctx context.Context,
 	mode pb.PowerMode,
 	duration *time.Duration,
-	extra map[string]interface{},
+	extra map[string]any,
 ) error {
 	return grpc.UnimplementedError
 }
 
 // StreamTicks starts a stream of digital interrupt ticks.
 func (b *pinctrlpi5) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
-	extra map[string]interface{},
+	extra map[string]any,
 ) error {
 	var rawInterrupts []*pinctrl.DigitalInterrupt
 	for _, i := range interrupts {
@@ -740,8 +743,8 @@ func checkHardwarePWMOverlayIsConfigured() error {
 		return fmt.Errorf("couldn't read %s", configPath)
 	}
 
-	lines := strings.Split(string(content), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(string(content), "\n")
+	for line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "dtoverlay=pwm-2chan") {
 			// dtoverlay=pwm-2chan is uncommented
