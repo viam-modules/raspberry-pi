@@ -86,7 +86,7 @@ docker-manifest:
 
 .PHONY: setup 
 setup: 
-	sudo apt install -yqq libpigpiod-if2-1
+	sudo apt install -yqq libpigpiod-if-dev
 
 clean:
 	rm -rf $(BIN_OUTPUT_PATH) $(BUILD_OUTPUT_PATH)
