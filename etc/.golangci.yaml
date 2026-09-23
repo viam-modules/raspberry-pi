@@ -45,6 +45,8 @@ linters:
   settings:
     errcheck:
       check-blank: true
+    funcorder:
+      struct-method: false # keep helpers next to the exported methods that use them
     gosec:
       excludes:
         - G115
