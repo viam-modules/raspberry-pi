@@ -196,10 +196,7 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 		// we have not passed the debounce time, ignore this interrupt
 		return
 	}
-	high := true
-	if level == 0 {
-		high = false
-	}
+	high := level != 0
 	switch di := interrupt.interrupt.(type) {
 	case *rpiutils.BasicDigitalInterrupt:
 		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)

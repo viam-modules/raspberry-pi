@@ -1,6 +1,7 @@
 package rpiutils
 
 import (
+	"context"
 	"os/exec"
 
 	"go.viam.com/rdk/logging"
@@ -9,12 +10,13 @@ import (
 // PerformReboot attempts to reboot the system using multiple fallback methods.
 // It tries systemctl first, then sudo shutdown, and finally logs a warning if both fail.
 func PerformReboot(logger logging.Logger) {
-	err := exec.Command("systemctl", "reboot").Run()
+	// The reboot must not be cancelled when the calling request ends, so use a background context.
+	err := exec.CommandContext(context.Background(), "systemctl", "reboot").Run()
 	if err != nil {
 		logger.Debugf("systemctl reboot failed: %v", err)
 
 		// TODO: Do you need sudo here?
-		err := exec.Command("sudo", "shutdown", "-r", "now").Run()
+		err = exec.CommandContext(context.Background(), "sudo", "shutdown", "-r", "now").Run()
 		if err != nil {
 			logger.Debugf("sudo shutdown failed: %v", err)
 

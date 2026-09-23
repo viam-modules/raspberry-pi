@@ -23,6 +23,7 @@ import (
 // GPIOConfig tracks what each pin is currently configured as
 type GPIOConfig int
 
+// The possible GPIOConfig values.
 const (
 	GPIODefault   GPIOConfig = iota // GPIODefault is the default pin state, before we have modified the pin
 	GPIOInput                       // GPIOInput is when a pin is configured as a digital input

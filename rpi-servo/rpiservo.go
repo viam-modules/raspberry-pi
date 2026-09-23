@@ -118,6 +118,7 @@ func initializeServo(conf resource.Config, logger logging.Logger, bcom uint, new
 type piPigpioServo struct {
 	resource.Named
 	resource.AlwaysRebuild
+
 	logger      logging.Logger
 	pin         C.uint
 	pinname     string
