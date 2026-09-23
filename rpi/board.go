@@ -105,6 +105,7 @@ func init() {
 // accessed via pigpio.
 type piPigpio struct {
 	resource.Named
+
 	model string
 
 	mu            sync.Mutex
@@ -268,6 +269,7 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 		if !have {
 			return fmt.Errorf("error configuring pull: no gpio pin found for %s", pullConf.Name)
 		}
+		//nolint:exhaustive // PullDefault is skipped above
 		switch pullConf.PullState {
 		case rpiutils.PullNone:
 			if result := C.setPullNone(pi.piID, C.int(gpioNum)); result != 0 {
@@ -284,7 +286,6 @@ func (pi *piPigpio) reconfigurePulls(cfg *rpiutils.Config) error {
 		default:
 			return fmt.Errorf("error configuring gpio pin %v pull: unexpected pull method %v", pullConf.Name, pullConf.PullState)
 		}
-
 	}
 	return nil
 }
@@ -585,7 +586,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 
 // StreamTicks starts a stream of digital interrupt ticks.
 func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
-	extra map[string]interface{},
+	extra map[string]any,
 ) error {
 	for _, i := range interrupts {
 		rpiutils.AddCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
@@ -607,7 +608,7 @@ func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalI
 	return nil
 }
 
-func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration) error {
+func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration, extra map[string]any) error {
 	return grpc.UnimplementedError
 }
 

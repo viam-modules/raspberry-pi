@@ -1,4 +1,3 @@
-// Package rpiservo contains servo config to ensure it is valid with a pin and board name.
 package rpiservo
 
 import (

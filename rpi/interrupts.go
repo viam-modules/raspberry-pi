@@ -26,7 +26,7 @@ type rpiInterrupt struct {
 	debounceMicroSeconds uint64
 }
 
-// findInterruptByName finds an interrupt by its name, such as: "interrupt-1"
+// findInterruptByName finds an interrupt by its name, such as: "interrupt-1".
 func findInterruptByName(
 	name string,
 	interrupts map[uint]*rpiInterrupt,
@@ -165,7 +165,7 @@ var (
 	lastTick = uint32(0)
 	// the interrupt callback returns the time since boot in microseconds, but will wrap every ~72 minutes
 	// we use the tickRollovers global variable to track each time this has occurred, and update the ticks for every active interrupt
-	// we assume that uint64 will be large enough for us to not worry about the ticks overflowing further
+	// we assume that uint64 will be large enough for us to not worry about the ticks overflowing further.
 	tickRollovers = 0
 )
 
@@ -196,10 +196,7 @@ func pigpioInterruptCallback(gpio, level int, rawTick uint32) {
 		// we have not passed the debounce time, ignore this interrupt
 		return
 	}
-	high := true
-	if level == 0 {
-		high = false
-	}
+	high := level != 0
 	switch di := interrupt.interrupt.(type) {
 	case *rpiutils.BasicDigitalInterrupt:
 		err := rpiutils.Tick(boardInstance.cancelCtx, di, high, tick*1000)

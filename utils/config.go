@@ -1,4 +1,6 @@
-// Package rpiutils contains implementations for digital_interrupts here.
+// Package rpiutils contains utilities shared by the Raspberry Pi board implementations,
+// including board and pin configuration, Broadcom pin mapping, digital interrupts,
+// pigpio error conversion, and helpers for editing boot config files and rebooting.
 package rpiutils
 
 import (

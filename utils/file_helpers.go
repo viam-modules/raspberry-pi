@@ -74,6 +74,7 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 	newContent := strings.Join(lines, "\n")
 	tempFile := filePath + ".tmp"
 
+	//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 	if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
@@ -107,13 +108,14 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
-		if trimmedLine == moduleName {
+		switch trimmedLine {
+		case moduleName:
 			moduleFound = true
 			if !enable {
 				lines[i] = "#" + line
 				configChanged = true
 			}
-		} else if trimmedLine == "#"+moduleName {
+		case "#" + moduleName:
 			if enable {
 				lines[i] = moduleName
 				configChanged = true
@@ -133,11 +135,12 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 		newContent := strings.Join(lines, "\n")
 
 		tempFile := filePath + ".tmp"
+		//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 		if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 			return false, fmt.Errorf("failed to write temp modules file %s: %w", tempFile, err)
 		}
 
-		if err := os.Rename(tempFile, filePath); err != nil {
+		if err = os.Rename(tempFile, filePath); err != nil {
 			if removeErr := os.Remove(tempFile); removeErr != nil {
 				logger.Warnf("Failed to clean up temp file %s: %v", tempFile, removeErr)
 			}
@@ -200,6 +203,7 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 
 	newContent := strings.Join(filtered, "\n")
 	tempFile := filePath + ".tmp"
+	//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 	if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
