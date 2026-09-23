@@ -1,4 +1,4 @@
-// Package rpiservo implements pi servo
+// Package rpiservo implements a servo component for the Raspberry Pi using pigpio.
 package rpiservo
 
 /*
@@ -35,7 +35,7 @@ import (
 // Model represents a pi servo model.
 var Model = resource.NewModel("viam", "raspberry-pi", "rpi-servo")
 
-// Default configuration collected from data sheet
+// Default configuration collected from data sheet.
 var (
 	holdTime                = 250000000 // 250ms in nanoseconds
 	servoDefaultMaxRotation = 180
@@ -133,7 +133,7 @@ type piPigpioServo struct {
 }
 
 // Move moves the servo to the given angle (0-180 degrees)
-// This will block until done or a new operation cancels this one
+// This will block until done or a new operation cancels this one.
 func (s *piPigpioServo) Move(ctx context.Context, angle uint32, extra map[string]any) error {
 	ctx, done := s.opMgr.New(ctx)
 	defer done()

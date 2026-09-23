@@ -1,4 +1,3 @@
-// Package rpiutils contains implementations for switching between Broadcom to physical pin.
 package rpiutils
 
 import "fmt"

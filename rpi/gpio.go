@@ -20,7 +20,7 @@ import (
 	rpiutils "raspberry-pi/utils"
 )
 
-// GPIOConfig tracks what each pin is currently configured as
+// GPIOConfig tracks what each pin is currently configured as.
 type GPIOConfig int
 
 // The possible GPIOConfig values.
@@ -113,7 +113,7 @@ func (pi *piPigpio) reconfigureGPIOs(cfg *rpiutils.Config) error {
 	return nil
 }
 
-// GetGPIOBcom gets the level of the given broadcom pin
+// GetGPIOBcom gets the level of the given broadcom pin.
 func (pi *piPigpio) GetGPIOBcom(bcom int) (bool, error) {
 	pi.mu.Lock()
 	defer pi.mu.Unlock()

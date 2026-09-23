@@ -74,7 +74,7 @@ func handleHoldPosition(piServo *piPigpioServo, newConf *ServoConfig) error {
 	return nil
 }
 
-// sets the servo's pulse width
+// sets the servo's pulse width.
 func (s *piPigpioServo) setServoPulseWidth(pulseWidth int) error {
 	// Check if pulse width is within the valid range
 	if pulseWidth < 0 || pulseWidth > 2500 {
@@ -122,7 +122,7 @@ func getBroadcomPin(pin string) (uint, error) {
 	return bcom, nil
 }
 
-// pigpioErrors returns piGPIO specific errors to user
+// pigpioErrors returns piGPIO specific errors to user.
 func (s *piPigpioServo) pigpioErrors(res int) error {
 	switch {
 	case res == C.PI_NOT_SERVO_GPIO:
@@ -140,14 +140,14 @@ func (s *piPigpioServo) pigpioErrors(res int) error {
 }
 
 // angleToPulseWidth changes the input angle in degrees
-// into the corresponding pulsewidth value in microsecond
+// into the corresponding pulsewidth value in microsecond.
 func angleToPulseWidth(angle, maxRotation int) int {
 	pulseWidth := 500 + (2000 * angle / maxRotation)
 	return pulseWidth
 }
 
 // pulseWidthToAngle changes the pulsewidth value in microsecond
-// to the corresponding angle in degrees
+// to the corresponding angle in degrees.
 func pulseWidthToAngle(pulseWidth, maxRotation int) int {
 	angle := maxRotation * (pulseWidth + 1 - 500) / 2000
 	return angle

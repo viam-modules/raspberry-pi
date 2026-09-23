@@ -1,4 +1,3 @@
-// Package pi5 implements a raspberry pi5 board using pinctrl
 package pi5
 
 import "go.viam.com/rdk/components/board/genericlinux"

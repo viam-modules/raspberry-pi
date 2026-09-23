@@ -1,4 +1,3 @@
-// Package rpiutils contains implementations for digital_interrupts here.
 package rpiutils
 
 import (

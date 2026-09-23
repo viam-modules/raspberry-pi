@@ -1,4 +1,3 @@
-// Package rpiutils contains implementations to convert error codes to human readable format.
 package rpiutils
 
 import (

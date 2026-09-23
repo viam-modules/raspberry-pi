@@ -1,6 +1,6 @@
 //go:build linux
 
-// Package pi5 implements a raspberry pi5 board using pinctrl
+// Package pi5 implements a Raspberry Pi 5 board using pinctrl.
 package pi5
 
 import (
