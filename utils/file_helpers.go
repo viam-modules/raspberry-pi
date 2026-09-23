@@ -74,6 +74,7 @@ func UpdateConfigFile(filePath, paramPrefix, desiredValue string, logger logging
 	newContent := strings.Join(lines, "\n")
 	tempFile := filePath + ".tmp"
 
+	//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 	if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
@@ -134,6 +135,7 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 		newContent := strings.Join(lines, "\n")
 
 		tempFile := filePath + ".tmp"
+		//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 		err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode())
 		if err != nil {
 			return false, fmt.Errorf("failed to write temp modules file %s: %w", tempFile, err)
@@ -204,6 +206,7 @@ func RemoveLineMatching(filePath string, lineRegex *regexp.Regexp, logger loggin
 
 	newContent := strings.Join(filtered, "\n")
 	tempFile := filePath + ".tmp"
+	//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
 	if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 		return false, fmt.Errorf("failed to write temp config file %s: %w", tempFile, err)
 	}
