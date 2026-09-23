@@ -59,8 +59,7 @@ func (config *PinConfig) Validate(path string) error {
 	if config.Pin == "" {
 		return resource.NewConfigValidationFieldRequiredError(path, "pin")
 	}
-	err := config.PullState.Validate()
-	if err != nil {
+	if err := config.PullState.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -88,8 +87,7 @@ func CreateDigitalInterrupt(cfg PinConfig) (ReconfigurableDigitalInterrupt, erro
 		return nil, fmt.Errorf("expected pin %v to be configured as %v, got %v instead", cfg.Name, PinInterrupt, cfg.Type)
 	}
 
-	err := i.Reconfigure(cfg)
-	if err != nil {
+	if err := i.Reconfigure(cfg); err != nil {
 		return nil, err
 	}
 	return i, nil

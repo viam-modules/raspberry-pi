@@ -100,8 +100,7 @@ func newBoard(
 	}
 
 	// Check for hardware PWM overlay in config.txt
-	err = checkHardwarePWMOverlayIsConfigured()
-	if err != nil {
+	if err := checkHardwarePWMOverlayIsConfigured(); err != nil {
 		logger.Warnf("%v", err)
 	}
 
@@ -223,8 +222,7 @@ func (b *pinctrlpi5) reconfigureInterrupts(newConf *rpiutils.Config) error {
 		// this actually removes the interrupt
 		interrupt, ok := b.interrupts[bcom]
 		if ok {
-			err := interrupt.Close()
-			if err != nil {
+			if err := interrupt.Close(); err != nil {
 				return err
 			}
 			delete(b.interrupts, bcom)

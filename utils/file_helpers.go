@@ -136,15 +136,12 @@ func UpdateModuleFile(filePath, moduleName string, enable bool, logger logging.L
 
 		tempFile := filePath + ".tmp"
 		//nolint:gosec // G703 false positive: callers only pass hardcoded paths (boot config, /etc/modules)
-		err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode())
-		if err != nil {
+		if err := os.WriteFile(tempFile, []byte(newContent), fileInfo.Mode()); err != nil {
 			return false, fmt.Errorf("failed to write temp modules file %s: %w", tempFile, err)
 		}
 
-		err = os.Rename(tempFile, filePath)
-		if err != nil {
-			removeErr := os.Remove(tempFile)
-			if removeErr != nil {
+		if err = os.Rename(tempFile, filePath); err != nil {
+			if removeErr := os.Remove(tempFile); removeErr != nil {
 				logger.Warnf("Failed to clean up temp file %s: %v", tempFile, removeErr)
 			}
 			return false, fmt.Errorf("failed to replace modules file %s: %w", filePath, err)
@@ -235,8 +232,7 @@ func DetectConfigParam(filePath, param string, logger logging.Logger) (bool, err
 	}
 	// Ensure Close error is checked
 	defer func() {
-		cerr := f.Close()
-		if cerr != nil {
+		if cerr := f.Close(); cerr != nil {
 			logger.Errorf("error closing file %s: %v", filePath, cerr)
 		}
 	}()
