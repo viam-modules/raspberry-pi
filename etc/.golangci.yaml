@@ -113,5 +113,6 @@ formatters:
         - standard
         - default
     gofumpt:
+      module-path: raspberry-pi
       extra:
         group-params: true
