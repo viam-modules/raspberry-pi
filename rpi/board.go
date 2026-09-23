@@ -586,7 +586,7 @@ func (pi *piPigpio) Close(ctx context.Context) error {
 
 // StreamTicks starts a stream of digital interrupt ticks.
 func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalInterrupt, ch chan board.Tick,
-	extra map[string]interface{},
+	extra map[string]any,
 ) error {
 	for _, i := range interrupts {
 		rpiutils.AddCallback(i.(*rpiutils.BasicDigitalInterrupt), ch)
@@ -608,7 +608,7 @@ func (pi *piPigpio) StreamTicks(ctx context.Context, interrupts []board.DigitalI
 	return nil
 }
 
-func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration, extra map[string]interface{}) error {
+func (pi *piPigpio) SetPowerMode(ctx context.Context, mode pb.PowerMode, duration *time.Duration, extra map[string]any) error {
 	return grpc.UnimplementedError
 }
 
