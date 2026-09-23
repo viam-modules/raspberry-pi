@@ -31,6 +31,7 @@ linters:
     - nakedret
     - nestif
     - nlreturn
+    - noinlineerr
     - nonamedreturns
     - nosprintfhostport
     - paralleltest
