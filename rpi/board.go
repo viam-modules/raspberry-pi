@@ -195,7 +195,11 @@ func initializePigpio() (C.int, error) {
 		if os.Getuid() != 0 {
 			return -1, errors.New("not running as root, try sudo")
 		}
-		return -1, rpiutils.ConvertErrorCodeToMessage(int(piID), "error")
+		port := os.Getenv("PIGPIO_PORT")
+		if port == "" {
+			port = "8888"
+		}
+		return -1, rpiutils.ConvertErrorCodeToMessage(int(piID), "error connecting to pigpiod on port "+port)
 	}
 
 	return piID, nil
