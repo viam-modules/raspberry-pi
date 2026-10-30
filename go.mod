@@ -1,6 +1,6 @@
 module raspberry-pi
 
-go 1.26.0
+go 1.26.10
 
 tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
@@ -10,10 +10,10 @@ require (
 	github.com/rhysd/actionlint v1.7.8
 	github.com/viam-modules/pinctrl v0.0.0-20260209172625-ac74bc61d9d4
 	go.uber.org/multierr v1.11.0
-	go.viam.com/api v0.1.599
-	go.viam.com/rdk v1.13.0
+	go.viam.com/api v0.1.602
+	go.viam.com/rdk v1.14.0
 	go.viam.com/test v1.2.5
-	go.viam.com/utils v0.15.1
+	go.viam.com/utils v0.16.0
 )
 
 require (
@@ -220,7 +220,7 @@ require (
 	github.com/kellydunn/golang-geo v0.7.0 // indirect
 	github.com/kisielk/errcheck v1.20.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.6 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/kulti/thelper v0.7.1 // indirect
 	github.com/kunwardeep/paralleltest v1.0.15 // indirect
 	github.com/kylelemons/go-gypsy v1.0.0 // indirect
@@ -271,20 +271,21 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/petermattis/goid v0.0.0-20260330135022-df67b199bc81 // indirect
-	github.com/pion/datachannel v1.5.10 // indirect
+	github.com/pion/datachannel v1.6.3 // indirect
 	github.com/pion/dtls/v2 v2.2.12 // indirect
-	github.com/pion/interceptor v0.1.42 // indirect
+	github.com/pion/interceptor v0.1.49 // indirect
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/mdns v0.0.12 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
-	github.com/pion/rtcp v1.2.16 // indirect
-	github.com/pion/rtp v1.8.26 // indirect
-	github.com/pion/sctp v1.8.41 // indirect
-	github.com/pion/sdp/v3 v3.0.16 // indirect
+	github.com/pion/rtcp v1.2.19 // indirect
+	github.com/pion/rtp v1.10.5 // indirect
+	github.com/pion/sctp v1.12.0 // indirect
+	github.com/pion/sdp/v3 v3.0.20 // indirect
 	github.com/pion/srtp/v2 v2.0.20 // indirect
 	github.com/pion/stun v0.6.1 // indirect
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pion/transport/v3 v3.1.1 // indirect
+	github.com/pion/transport/v5 v5.1.1 // indirect
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
