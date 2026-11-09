@@ -47,6 +47,13 @@ jobs:
         run: |
           sudo -u testbot bash -lc 'make'
 
+      # Run as testbot rather than root: the tests that drive real Pi hardware
+      # skip themselves unless they run as root on a Pi. `make test` is for the
+      # Pi itself, where it runs the compiled tests under sudo.
+      - name: go test
+        run: |
+          sudo -u testbot bash -lc 'go test -timeout 5m ./...'
+
   # test_on_pi:
   #   # The following steps are run on an external runner "rpibull"
   #   runs-on: pi-4
