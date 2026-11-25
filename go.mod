@@ -10,7 +10,7 @@ require (
 	github.com/rhysd/actionlint v1.7.8
 	github.com/viam-modules/pinctrl v0.0.0-20260209172625-ac74bc61d9d4
 	go.uber.org/multierr v1.11.0
-	go.viam.com/api v0.1.607
+	go.viam.com/api v0.1.610
 	go.viam.com/rdk v1.17.0
 	go.viam.com/test v1.2.5
 	go.viam.com/utils v0.17.1
@@ -412,7 +412,7 @@ require (
 	google.golang.org/api v0.288.0 // indirect
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260817212433-ac3dfec99bb1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261116203732-fd2c7689a808 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261123191846-1e707ab9fbc2 // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
